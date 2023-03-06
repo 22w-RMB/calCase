@@ -1,0 +1,27 @@
+url_domain:
+  test_domain: https://adssx-test-gzdevops3.tsintergy.com
+  tcloud_domain:
+  hn_domain:
+logininfo:
+  test_info:
+    publicKey_url:
+    login_url: /usercenter/web/login
+    switch_url: /usercenter/web/switchTenant?tenantId=e4dc742184ac6fe3018584ad84043154
+    username: hn_zhanzw_test01
+    password: passwd123@
+    loginMode: 2
+  tcloud_info:
+    publicKey_url:
+    login_url: /usercenter/web/login
+    switch_url: /usercenter/web/switchTenant?tenantId=
+    username:
+    password:
+    loginMode:
+  hn_info:
+    publicKey_url: /usercenter/web/pf/login/info/publicKey
+    login_url: /usercenter/web/login
+    switch_url: /usercenter/web/switchTenant?tenantId=
+    username: zhanzw
+    password: huaneng123@
+    loginMode: 2
+

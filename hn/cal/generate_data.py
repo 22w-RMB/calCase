@@ -1,3 +1,4 @@
+import random
 
 from common.common import CommonClass
 
@@ -8,18 +9,22 @@ hn_tem_path  = CommonClass.mkDir( *["hn" , "template"],isGetStr=True)
 
 
 
-
 def generateUnit(count,prefix=""):
 
-    unitNames = []
+    unitList = []
 
     prefix = prefix + "#"
 
     for i in range(0,count):
 
-        unitNames.append( prefix + str(i+1)  )
+        unitList.append(
+            {
+                "unitName" : prefix + str(i+1),
+                "businessType" : CommonClass.randomBusinessType(),
+            }
+             )
 
-    return  unitNames
+    return  unitList
 
 
 def outputPrivateData(units, startDate, endDate, templateInfo):
@@ -27,8 +32,10 @@ def outputPrivateData(units, startDate, endDate, templateInfo):
 
     for unit in units:
 
-        filename = unit[unitName]
+        # filename = unit[unitName]
 
+
+        pass
 
 
     pass
