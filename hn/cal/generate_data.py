@@ -1,6 +1,8 @@
 import random
 import datetime
 
+import pythoncom
+
 from common.common import CommonClass
 from common.excel_handler import ExcelHepler
 
@@ -74,6 +76,53 @@ def outputPrivateData( startDate, days , unitsInfo, templateInfo):
 
     e.close()
 
+def outputPrivateDataThread( startDate, days , unitsInfo, templateInfo,queue):
+
+    pythoncom.CoInitialize()
+
+    temList = []
+    for t in templateInfo:
+        templatePath = CommonClass.mkDir(hn_tem_path, t + ".xlsx", isGetStr=True)
+
+        e = ExcelHepler(templatePath)
+        templateValue = e.getTemplateStyle()
+        e.close()
+
+        temList.append(
+            {
+                "temName" : t,
+                "temValue" : templateValue
+            }
+        )
+
+    print(temList)
+
+    e = ExcelHepler()
+
+    for unit in unitsInfo:
+        unitName = unit['unitName']
+        date = datetime.datetime.strptime(startDate, "%Y-%m-%d")
+        for i in range(0,days):
+            dateStr = datetime.datetime.strftime(date,"%Y%m%d")
+
+            for t in temList:
+                filename = unitName + "-" + t["temName"] + "-"+ dateStr + ".xlsx"
+                outputFilePath = CommonClass.mkDir(hn_out_path,filename,isGetStr=True)
+
+                print(outputFilePath)
+
+                e.newExcel(templateStyle=t["temValue"])
+
+                e.saveFile(outputFilePath)
+
+                queue.put([filename,outputFilePath])
+            date += datetime.timedelta(days=1)
+
+    queue.put(None)
+        # filename = unit[unitName]
+
+
+    e.close()
 
 
 

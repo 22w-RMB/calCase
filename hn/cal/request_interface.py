@@ -1,4 +1,6 @@
 import os
+import queue
+import threading
 
 import requests
 
@@ -82,6 +84,7 @@ class Henan:
         pass
 
 
+    #直接把文件夹下面的文件进行导入
     def importPrivate(self):
 
         url = self.domain + "/hnfire/api/hn/data/import/private/multi"
@@ -116,8 +119,39 @@ class Henan:
             #
                 res = CommonClass.execRequest(self.session,sleepTime=2, method=method, url=url,files=importDatas).json()
                 print(res)
-        pass
+        # pass
 
+    def importPrivateThread(self, queue):
+
+        url = self.domain + "/hnfire/api/hn/data/import/private/multi"
+        method = "POST"
+
+        # proxy = "106.14.255.124:80"
+        # proxies = {
+        #     "http": proxy,
+        #     "https": proxy,
+        # }
+
+        self.session.keep_alive = False
+
+        while True:
+            data = queue.get()
+            if data is None:
+                print("所有文件已经导入")
+                break
+
+            importDatas = [
+                ("date", (None, "2023-03-18")),
+                ("fileNames", (None, data[0])),
+                ("files", (data[0], open(data[1], "rb")))
+            ]
+
+            print(importDatas)
+            #
+            res = CommonClass.execRequest(self.session, sleepTime=2, method=method, url=url, files=importDatas).json()
+            print(res)
+
+            queue.task_done()
 
 
 if __name__ == '__main__':
@@ -134,5 +168,21 @@ if __name__ == '__main__':
     # hn_test.deleteUnit(filterUnits=['开封#1','开封#2','开封#3'])
 
     templateInfo = ["实时出清结果","日前出清结果","电厂实际上网电量"]
-    outputPrivateData("2023-01-01", 120, unitsInfo, templateInfo)
-    hn_test.importPrivate()
+    # outputPrivateData("2023-01-01", 120, unitsInfo, templateInfo)
+    # hn_test.importPrivate()
+
+    q = queue.Queue()
+
+    thread1 = threading.Thread(target=outputPrivateDataThread,args=("2023-01-01", 1, unitsInfo, templateInfo,q))
+
+    thread2 = threading.Thread(target= hn_test.importPrivateThread,args=(q,))
+
+    # 启动线程
+    thread1.start()
+    thread2.start()
+
+    # 等待队列中的所有数据被处理完毕
+    q.join()
+
+    # 所有数据已处理完毕，退出程序
+    print("All items processed. Exiting...")
