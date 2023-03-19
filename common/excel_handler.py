@@ -6,12 +6,16 @@ import xlwings
 class ExcelHepler:
 
 
-    def __init__(self , filePath):
+    def __init__(self , filePath=None):
 
         self.app = xlwings.App(visible=False,add_book=False)
         self.app.display_alerts = False
         self.app.screen_updating = False
-        self.wb = self.app.books.open(filePath)
+        self.wb = None
+        if filePath is not None:
+            self.wb = self.app.books.open(filePath)
+        else:
+            self.wb = self.app.books.add()
 
         pass
 
@@ -21,7 +25,7 @@ class ExcelHepler:
 
     def newExcel(self, sheetName="Sheet1", templateStyle=None):
 
-        self.wb = self.app.books.add()
+        # self.wb = self.app.books.add()
 
         if sheetName != "Sheet1":
             self.wb.sheets.add(sheetName)
@@ -56,7 +60,7 @@ class ExcelHepler:
 
         if savePath is None:
             savePath = self.filePath
-
+        print(savePath)
         # 保存
         self.wb.save(savePath)
 

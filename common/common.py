@@ -89,7 +89,7 @@ class CommonClass:
 
     # 处理频繁请求
     @staticmethod
-    def execRequest(session, method, url,
+    def execRequest(session, method, url,sleepTime=0.1,
             params=None, data=None, headers=None, cookies=None, files=None,
             auth=None, timeout=None, allow_redirects=True, proxies=None,
             hooks=None, stream=None, verify=None, cert=None, json=None):
@@ -104,7 +104,7 @@ class CommonClass:
                 return res
             except Exception as e:
                 print(str(e))
-                time.sleep(0.1)
+                time.sleep(sleepTime)
 
 
 

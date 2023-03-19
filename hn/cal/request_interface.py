@@ -1,9 +1,12 @@
+import os
+
 import requests
 
 from common.common import CommonClass
 from hn.cal.generate_data import *
 
-yamlPath = r"D:\code\python\calCase\hn\config\hn_interface.yaml"
+# yamlPath = r"D:\code\python\calCase\hn\config\hn_interface.yaml"
+yamlPath = r"D:\code\pyhton\calCase\hn\config\hn_interface.yaml"
 
 
 
@@ -78,6 +81,45 @@ class Henan:
 
         pass
 
+
+    def importPrivate(self):
+
+        url = self.domain + "/hnfire/api/hn/data/import/private/multi"
+        method = "POST"
+
+        # proxy = "106.14.255.124:80"
+        # proxies = {
+        #     "http": proxy,
+        #     "https": proxy,
+        # }
+
+        self.session.keep_alive = False
+
+        for root,dirs,files in os.walk(hn_out_path):
+            print(root)
+            print(dirs)
+            print(files)
+            for file in files:
+                # data = {
+                #    "date": "2023-03-18",
+                #    "fileNames":   file,
+                # }
+                # fileParam = {"files":open(CommonClass.mkDir(root,file,isGetStr=True),"rb")}
+
+                importDatas = [
+                    ("date", (None, "2023-03-18")),
+                    ("fileNames", (None, file)),
+                    ("files", (file, open(CommonClass.mkDir(root,file,isGetStr=True),"rb")))
+                ]
+
+                print(file)
+            #
+                res = CommonClass.execRequest(self.session,sleepTime=2, method=method, url=url,files=importDatas).json()
+                print(res)
+        pass
+
+
+
 if __name__ == '__main__':
     testSession = requests.Session()
 
@@ -87,6 +129,10 @@ if __name__ == '__main__':
 
     hn_test.login()
 
-    hn_test.createUnit(generateUnit(4,"华苏"))
-    # hn_test.getFireUnit()
-    hn_test.deleteUnit(filterUnits=['开封#1','开封#2','开封#3'])
+    # hn_test.createUnit(generateUnit(4,"华苏"))
+    unitsInfo = hn_test.getFireUnit()
+    # hn_test.deleteUnit(filterUnits=['开封#1','开封#2','开封#3'])
+
+    templateInfo = ["实时出清结果","日前出清结果","电厂实际上网电量"]
+    outputPrivateData("2023-01-01", 120, unitsInfo, templateInfo)
+    hn_test.importPrivate()

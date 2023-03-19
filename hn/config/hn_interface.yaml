@@ -6,8 +6,8 @@ logininfo:
   test_info:
     publicKey_url:
     login_url: /usercenter/web/login
-    switch_url: /usercenter/web/switchTenant?tenantId=e4dc742184ac6fe3018584ad84043154
-    username: hn_zhanzw_test01
+    switch_url: /usercenter/web/switchTenant?tenantId=e4dc742184ac6fe30185392e8d48121b
+    username: zhanzw
     password: passwd123@
     loginMode: 2
   tcloud_info:
