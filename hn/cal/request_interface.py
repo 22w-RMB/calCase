@@ -7,7 +7,7 @@ import requests
 from common.common import CommonClass
 from hn.cal.generate_data import *
 
-# yamlPath = r"D:\code\python\calCase\hn\config\hn_interface.yaml"
+# yamlPath = r"D:\code\python\calCase\hn\config\jx_interface.yaml"
 yamlPath = r"D:\code\pyhton\calCase\hn\config\hn_interface.yaml"
 
 
