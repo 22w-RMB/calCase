@@ -1,7 +1,7 @@
 url_domain:
   test_domain: https://adssx-test-gzdevops3.tsintergy.com
   tcloud_domain:
-  hn_domain:
+  hn_domain: https://xhxt.chng.com.cn
 logininfo:
   test_info:
     publicKey_url:
@@ -20,7 +20,7 @@ logininfo:
   hn_info:
     publicKey_url: /usercenter/web/pf/login/info/publicKey
     login_url: /usercenter/web/login
-    switch_url: /usercenter/web/switchTenant?tenantId=
+    switch_url: /usercenter/web/switchTenant?tenantId=tsintergy
     username: zhanzw
     password: huaneng123@
     loginMode: 2

@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    jx_test = Jx(testSession,yamlData,"test")
+    jx_test = Jx(testSession,yamlData,"hn")
 
     jx_test.login()
 

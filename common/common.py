@@ -57,6 +57,7 @@ class CommonClass:
         password = loginInfo['password']
         if loginInfo['publicKey_url'] is not None:
             publicKeyUrl = domain + loginInfo['publicKey_url']
+
             key = session1.request(method="GET", url=publicKeyUrl ).json()['data']
             password = CommonClass.encrpt(loginInfo['password'], key)
 
