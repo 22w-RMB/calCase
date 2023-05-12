@@ -94,7 +94,7 @@ if __name__ == '__main__':
     mx_test.login()
 
     print(mx_test.getFireUnit())
-    d = generateUnit(4,"蒙西")
+    d = generateUnit(10,"蒙西")
     mx_test.createUnit(d)
 
     print(mx_test.getFireUnit())
