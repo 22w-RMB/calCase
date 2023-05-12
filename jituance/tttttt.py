@@ -7,10 +7,9 @@ from common.common import CommonClass
 yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
 
 
-
 class Jituance:
 
-    def __init__(self,session, yamlData, type):
+    def __init__(self, session, yamlData, type):
         self.domain = None
         self.loginInfo = None
         self.session = session
@@ -25,10 +24,8 @@ class Jituance:
             self.domain = yamlData['url_domain']['hn_domain']
             self.loginInfo = yamlData['logininfo']['hn_info']
 
-
     def login(self):
         CommonClass.login(self.session, self.domain, self.loginInfo)
-
 
     # 获取省份下所有企业的所有机组
     def getUnitId(self, url):
@@ -45,25 +42,25 @@ class Jituance:
             return terminalList
 
         for d in resJson['data']:
-            terminalName = d['ownerName']
+            terminalName = d['ownerId']
             unitsList = []
 
             for unit in d['children']:
                 unitsList.append(
                     {
-                        "unitId" : unit['unitId'],
-                        "unitName" : unit['unitName'],
+                        "unitId": unit['unitId'],
+                        "unitName": unit['unitName'],
                     }
                 )
 
-            terminalList.append([terminalName,unitsList])
+            terminalList.append([terminalName, unitsList])
 
         return terminalList
 
     # 请求省间的私有数据
-    def resquestPrivateData(self, url ,terminalList,privteDataUpload):
+    def resquestPrivateData(self, url, terminalList, privteDataUpload):
 
-        #设置开始日期、结束日期
+        # 设置开始日期、结束日期
         # startDate = "2023-04-21"
         # endDate = "2023-05-03"
 
@@ -77,7 +74,7 @@ class Jituance:
         terminalDict = {}
         '''
         terminalDict  用于记录所有该省份所有企业的所有机组的上传情况, 格式如下
-        
+
             {
               “企业”：{
                     “机组”：{
@@ -90,15 +87,13 @@ class Jituance:
                         }
                 }
             }
-        
-        '''
 
+        '''
 
         for terminal in terminalList:
 
             # 用于记录单个企业下所有机组的数据
             unitsDict = {}
-
 
             privteDataUpload[terminal[0]] = {}
             '''
@@ -134,7 +129,7 @@ class Jituance:
                 # unit['unitName'] 为机组名，以列表形式存储每一天、每种类型数据上传情况
                 privteDataUpload[terminal[0]][unit['unitName']] = []
 
-                for r in res['data'] :
+                for r in res['data']:
 
                     # 截取日期，截取后的格式： YYYY-MM-DD
                     datestr = r['date'][0:10]
@@ -147,19 +142,17 @@ class Jituance:
                     typeName = r['marketType']
 
                     # 获取电量
-                    datesDict[datestr][ typeName+ "Ele"] = r['ele']['data']
+                    datesDict[datestr][typeName + "Ele"] = r['ele']['data']
                     # 获取电价
-                    datesDict[datestr][ typeName+ "price"] = r['price']['data']
+                    datesDict[datestr][typeName + "price"] = r['price']['data']
 
-                    typeStr = "日前" if typeName=="DA" else "日内"
+                    typeStr = "日前" if typeName == "DA" else "日内"
 
                     # 记录每种类型的数据上传情况
                     if len(r['ele']['data']) == 0:
-                        privteDataUpload[terminal[0]][unit['unitName']].append( datestr +" "+typeStr + "电量未上传")
+                        privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " " + typeStr + "电量未上传")
                     if len(r['price']['data']) == 0:
                         privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " " + typeStr + "电价未上传")
-
-
 
                 unitsDict[unit['unitName']] = datesDict
 
@@ -167,8 +160,7 @@ class Jituance:
 
         return terminalDict
 
-
-    def getHuanengOuputData(self, startDate ,endDate , provinceIds):
+    def getHuanengOuputData(self, startDate, endDate, provinceIds):
 
         resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
 
@@ -184,31 +176,29 @@ class Jituance:
 
         terminalDict = {}
         for r in res['data'][0]['newProvinceTradeDOS']:
-            if r['orgName'] not in terminalDict:
-                terminalDict[ r['orgName'] ] = {}
+            if r['orgId'] not in terminalDict:
+                terminalDict[r['orgId']] = {}
 
             datestr = r['date'][0:10]
 
             for d in r['dataTradeDOS']:
-                if d['unitName'] not in terminalDict[r['orgName'] ]:
-                    terminalDict[r['orgName']][d['unitName']] = {}
+                if d['unitName'] not in terminalDict[r['orgId']]:
+                    terminalDict[r['orgId']][d['unitName']] = {}
 
-                terminalDict[r['orgName']][d['unitName']].update(
+                terminalDict[r['orgId']][d['unitName']].update(
                     {
-                        datestr:{
-                            "DAEle":   d['daClearEle']   ,
-                            "DAPrice": d['daClearPrice']   ,
-                            "INEle":   d['rtClearEle']   ,
-                            "INPrice": d['rtClearPrice']   ,
+                        datestr: {
+                            "DAEle": d['daClearEle'],
+                            "DAPrice": d['daClearPrice'],
+                            "INEle": d['rtClearEle'],
+                            "INPrice": d['rtClearPrice'],
                         }
                     }
                 )
 
         return terminalDict
 
-
-
-    def execProvinceInfo(self,provinceInfo):
+    def execProvinceInfo(self, provinceInfo):
 
         # 记录所有省份的上传情况
         allProvinceDataUploadStatus = []
@@ -236,7 +226,8 @@ class Jituance:
 
             provincePrivteDataUpload = {}
 
-            terminalDataDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, provincePrivteDataUpload)
+            terminalDataDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList,
+                                                          provincePrivteDataUpload)
 
             allProvinceDataUploadStatus.append(
                 {
@@ -248,34 +239,31 @@ class Jituance:
         print(allProvinceDataUploadStatus)
 
 
-
 if __name__ == '__main__':
     testSession = requests.Session()
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    jtc_hn = Jituance(testSession,yamlData,"hn")
+    jtc_hn = Jituance(testSession, yamlData, "hn")
 
     jtc_hn.login()
 
-
     provinceInfo = [
 
-        { "provinceName": "青海" , "url" : "/qinghaigroup", "provinceIds" :63,  },
-        { "provinceName": "四川" ,"url": "/sichuangroup","provinceIds": 51,  },
-        { "provinceName": "西藏", "url": "/xizanggroup","provinceIds": 54,  },
-        { "provinceName": "天津", "url": "/tianjingroup","provinceIds": 12,  },
-        { "provinceName": "蒙东", "url": "/mengdonggroup","provinceIds": 150,  },
-        { "provinceName": "宁夏", "url": "/ningxiagroup","provinceIds": 64,  },
-        { "provinceName": "新疆", "url": "/xinjianggroup","provinceIds": 65,  },
-        { "provinceName": "蒙西", "url": "/mengxigroup","provinceIds": 15,  },
+        {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, },
+        {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51, },
+        {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, },
+        {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, },
+        {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150, },
+        {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, },
+        {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65, },
+        {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15, },
 
     ]
 
     # jtc_hn.execProvinceInfo(provinceInfo)
 
-
-    res = jtc_hn.getHuanengOuputData("2023-05-01","2023-05-02",63)
+    res = jtc_hn.getHuanengOuputData("2023-05-01", "2023-05-02", 63)
     print(res)
 
     getUintUrl = "/qinghaigroup/api/org/org/tree"
@@ -287,7 +275,7 @@ if __name__ == '__main__':
     resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
     privteDataUpload = {}
 
-    terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl,terminalList, privteDataUpload)
+    terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, privteDataUpload)
 
     print(terminalDict)
     print(privteDataUpload)
