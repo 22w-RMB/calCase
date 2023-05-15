@@ -77,6 +77,13 @@ class CommonClass:
         r2 = session1.request(method="GET", url=switchUrl)
         print(r2.json())
 
+    @staticmethod
+    def switchTenantId(session1: requests.Session, domain , tenantId):
+        switchUrl = domain + "/usercenter/web/switchTenant?tenantId=" + tenantId
+        r2 = session1.request(method="GET", url=switchUrl)
+        print(r2.json())
+
+
     # 读取yaml文件
     @staticmethod
     def readYaml(yamlFilePath):

@@ -168,6 +168,8 @@ class Jituance:
         return terminalDict
 
 
+
+
     def getHuanengOuputData(self, startDate ,endDate , provinceIds):
 
         resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
