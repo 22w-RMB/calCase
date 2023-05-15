@@ -61,7 +61,7 @@ class Jituance:
         return terminalList
 
     # 请求省间的私有数据
-    def resquestPrivateData(self, url, terminalList, privteDataUpload):
+    def resquestPrivateData(self, url, terminalList):
 
         # 设置开始日期、结束日期
         # startDate = "2023-04-21"
@@ -73,6 +73,7 @@ class Jituance:
 
         # 请求url
         resquestUrl = self.domain + url
+        privteDataUpload = {}
 
         terminalDict = {}
         '''
@@ -92,6 +93,13 @@ class Jituance:
             }
 
         '''
+
+        if len(terminalList) == 0:
+            privteDataUpload
+            return {
+                "privteDataUpload" : "该省份没有场站",
+                "terminalDict" : terminalDict,
+            }
 
         for terminal in terminalList:
 
@@ -171,10 +179,13 @@ class Jituance:
 
             # terminalDict[terminal[0]] = unitsDict
 
-        return terminalDict
+        return {
+                "privteDataUpload" : privteDataUpload,
+                "terminalDict" : terminalDict,
+            }
 
 
-
+    # 当省间私有数据返回为空时，构建数据
     def createData(self, startDate, endDate, terminal, unit):
 
         sd = datetime.strptime(startDate, "%Y-%m-%d")
@@ -209,8 +220,7 @@ class Jituance:
         }
 
 
-
-
+    # 输出省间私有数据上传状态到文件
     def outPrivateStatus(self,provinceName,privteDataUpload):
 
         e = ExcelHepler()
@@ -223,7 +233,7 @@ class Jituance:
         pass
 
 
-
+    # 获取华能交易数据导出
     def getHuanengOuputData(self, startDate, endDate, provinceIds):
 
         CommonClass.switchTenantId(self.session,self.domain,"tsintergy")
@@ -291,27 +301,18 @@ class Jituance:
             terminalList = jtc_hn.getUnitId(getUintUrl)
             # print(terminalList)
 
-            # 记录该省份上传的情况
-            provincePrivteDataUpload = {}
 
-            #
-            terminalDataDict = {}
-
-
-            # 判断获取机组的接口是否返回为空
-            if len(terminalList) == 0:
-
-                provincePrivteDataUpload = "该省份没有场站"
-
-
-            else:
             # 每个省份的获取私有数据的url
-                resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
+            resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
 
+            # 获取私有数据
+            responsePrivateData = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList)
 
+            # 记录省间私有数据，如果没有数据则为{}
+            provincePrivteDataDict = responsePrivateData['terminalDict']
 
-                terminalDataDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList,
-                                                              provincePrivteDataUpload)
+            # 记录该省份上传的情况
+            provincePrivteDataUpload = responsePrivateData['privteDataUpload']
 
 
             allProvinceDataUploadStatus.append(
@@ -350,24 +351,24 @@ if __name__ == '__main__':
 
     ]
 
-    # jtc_hn.execProvinceInfo(provinceInfo)
+    jtc_hn.execProvinceInfo(provinceInfo)
 
     # res = jtc_hn.getHuanengOuputData("2023-06-01", "2023-06-02", 63)
     # print(res)
 
-    getUintUrl = "/qinghaigroup/api/org/org/tree"
-
-    terminalList = jtc_hn.getUnitId(getUintUrl)
+    # getUintUrl = "/qinghaigroup/api/org/org/tree"
+    #
+    # terminalList = jtc_hn.getUnitId(getUintUrl)
 
     # print(terminalList)
 
-    resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
-    privteDataUpload = {}
-
-    terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, privteDataUpload)
-
-    print(terminalDict)
-    print(privteDataUpload)
+    # resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
+    # privteDataUpload = {}
+    #
+    # terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, privteDataUpload)
+    #
+    # print(terminalDict)
+    # print(privteDataUpload)
 
 
     # jtc_hn.outPrivateStatus("青海",privteDataUpload)
