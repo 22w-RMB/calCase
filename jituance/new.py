@@ -64,11 +64,11 @@ class Jituance:
     def resquestPrivateData(self, url, terminalList, privteDataUpload):
 
         # 设置开始日期、结束日期
-        startDate = "2023-04-21"
-        endDate = "2023-05-03"
+        # startDate = "2023-04-21"
+        # endDate = "2023-05-03"
 
-        # startDate = "2023-05-01"
-        # endDate = "2023-05-02"
+        startDate = "2023-06-01"
+        endDate = "2023-06-02"
         method = "GET"
 
         # 请求url
@@ -183,7 +183,7 @@ class Jituance:
         dataDict = {}
 
         while sd <= ed:
-            dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+            dateStr = datetime.strftime(sd, "%Y-%m-%d")
             dataDict[dateStr] = {}
 
             dataDict[dateStr]["DAEle"] = []
@@ -193,7 +193,7 @@ class Jituance:
 
 
             # 日期 +1
-            sd += datetime.timedelta(days=1)
+            sd += timedelta(days=1)
 
         dataDict.update(
             {
@@ -202,7 +202,11 @@ class Jituance:
             }
         )
 
-        return dataDict
+        # print(dataDict)
+
+        return {
+            unit['unitId'] : dataDict
+        }
 
 
 
@@ -348,22 +352,22 @@ if __name__ == '__main__':
 
     # jtc_hn.execProvinceInfo(provinceInfo)
 
-    res = jtc_hn.getHuanengOuputData("2023-05-01", "2023-05-02", 63)
-    print(res)
+    # res = jtc_hn.getHuanengOuputData("2023-06-01", "2023-06-02", 63)
+    # print(res)
 
-    # getUintUrl = "/qinghaigroup/api/org/org/tree"
-    #
-    # terminalList = jtc_hn.getUnitId(getUintUrl)
-    #
-    # # print(terminalList)
-    #
-    # resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
-    # privteDataUpload = {}
-    #
-    # terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, privteDataUpload)
-    #
-    # print(terminalDict)
-    # print(privteDataUpload)
-    #
-    #
+    getUintUrl = "/qinghaigroup/api/org/org/tree"
+
+    terminalList = jtc_hn.getUnitId(getUintUrl)
+
+    # print(terminalList)
+
+    resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
+    privteDataUpload = {}
+
+    terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, privteDataUpload)
+
+    print(terminalDict)
+    print(privteDataUpload)
+
+
     # jtc_hn.outPrivateStatus("青海",privteDataUpload)
