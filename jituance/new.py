@@ -1,11 +1,13 @@
 import datetime
 
 import requests
+from datetime import datetime,timedelta
 
 from common.common import CommonClass
 from excel_handler import ExcelHepler
 
-yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
+# yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
+yamlPath = r"D:\code\pyhton\calCase\jituance\config\mx_interface.yaml"
 
 
 class Jituance:
@@ -78,7 +80,8 @@ class Jituance:
 
             {
                 “机组id”：{
-                        "unitName":  unitName  ,
+                        "机组名":  unitName  ,
+                        "企业名":  terminalName  ,
                         “日期”：{
                             "DAEle":[],
                             "DAPrice":[],
@@ -123,6 +126,9 @@ class Jituance:
                 # 如果日期范围内都没有数据， 接口会返回 [] ，即长度为0 ，此时跳过
                 if len(res['data']) == 0:
                     privteDataUpload[terminal[0]][unit['unitName']] = startDate + " 到 " + endDate + " 这段时间没有导入数据"
+
+                    terminalDict.update( self.createData(startDate,endDate,terminal,unit) )
+
                     continue
 
                 # datesDict  记录单个机组每一天的私有数据
@@ -146,7 +152,7 @@ class Jituance:
                     # 获取电量
                     datesDict[datestr][typeName + "Ele"] = r['ele']['data']
                     # 获取电价
-                    datesDict[datestr][typeName + "price"] = r['price']['data']
+                    datesDict[datestr][typeName + "Price"] = r['price']['data']
 
                     typeStr = "日前" if typeName == "DA" else "日内"
 
@@ -158,12 +164,48 @@ class Jituance:
 
                 terminalDict[unit['unitId']] = datesDict
                 terminalDict[unit['unitId']].update(
-                    { "unitName" : unit['unitName'] }
+                    { "unitName" : unit['unitName'] ,
+                      "terminalName":terminal[0]
+                      }
                 )
 
             # terminalDict[terminal[0]] = unitsDict
 
         return terminalDict
+
+
+
+    def createData(self, startDate, endDate, terminal, unit):
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        dataDict = {}
+
+        while sd <= ed:
+            dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+            dataDict[dateStr] = {}
+
+            dataDict[dateStr]["DAEle"] = []
+            dataDict[dateStr]["DAPrice"] = []
+            dataDict[dateStr]["INEle"] = []
+            dataDict[dateStr]["INPrice"] = []
+
+
+            # 日期 +1
+            sd += datetime.timedelta(days=1)
+
+        dataDict.update(
+            {
+                "unitName": unit['unitName'],
+                "terminalName": terminal[0]
+            }
+        )
+
+        return dataDict
+
+
+
 
     def outPrivateStatus(self,provinceName,privteDataUpload):
 
@@ -180,6 +222,8 @@ class Jituance:
 
     def getHuanengOuputData(self, startDate, endDate, provinceIds):
 
+        CommonClass.switchTenantId(self.session,self.domain,"tsintergy")
+
         resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
 
         method = "GET"
@@ -193,22 +237,35 @@ class Jituance:
         res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
 
         terminalDict = {}
-        for npt in res['data'][0]['newProvinceTradeDOS']:
 
-            datestr = npt['date'][0:10]
+        responseData = []
+        # 省间新能源
+        responseData.extend(res['data'][0]['newProvinceTradeDOS'])
+        # 省间其他类型
+        responseData.extend(res['data'][0]['provinceTradeDOS'])
 
-            for dtd in npt['dataTradeDOS']:
-                if dtd['unitName'] not in terminalDict:
-                    terminalDict[dtd['unitName']] = {}
 
-                terminalDict[dtd['unitName']].update(
+        for rd in responseData:
+
+            datestr = rd['date'][0:10]
+
+            for dtd in rd['dataTradeDOS']:
+                if dtd['id'] not in terminalDict:
+                    terminalDict[dtd['id']] = {}
+
+
+                terminalDict[dtd['id']].update(
                     {
                         datestr: {
                             "DAEle": dtd['daClearEle'],
                             "DAPrice": dtd['daClearPrice'],
                             "INEle": dtd['rtClearEle'],
                             "INPrice": dtd['rtClearPrice'],
-                        }
+                        },
+
+                        "unitName": dtd['unitName'],
+
+                        "terminalName": rd['orgName']
                     }
                 )
 
@@ -226,10 +283,16 @@ class Jituance:
             # 每个省份的获取机组的url
             getUintUrl = province["url"] + "/api/org/org/tree"
 
+            # 获取该省份省间的机组信息
             terminalList = jtc_hn.getUnitId(getUintUrl)
             # print(terminalList)
 
+            # 记录该省份上传的情况
             provincePrivteDataUpload = {}
+
+            #
+            terminalDataDict = {}
+
 
             # 判断获取机组的接口是否返回为空
             if len(terminalList) == 0:
@@ -240,6 +303,7 @@ class Jituance:
             else:
             # 每个省份的获取私有数据的url
                 resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
+
 
 
                 terminalDataDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList,
@@ -256,6 +320,8 @@ class Jituance:
 
             # print(terminalDataDict)
         # print(allProvinceDataUploadStatus)
+
+
 
 
 if __name__ == '__main__':
@@ -280,10 +346,10 @@ if __name__ == '__main__':
 
     ]
 
-    jtc_hn.execProvinceInfo(provinceInfo)
+    # jtc_hn.execProvinceInfo(provinceInfo)
 
-    # res = jtc_hn.getHuanengOuputData("2023-05-01", "2023-05-02", 63)
-    # print(res)
+    res = jtc_hn.getHuanengOuputData("2023-05-01", "2023-05-02", 63)
+    print(res)
 
     # getUintUrl = "/qinghaigroup/api/org/org/tree"
     #
