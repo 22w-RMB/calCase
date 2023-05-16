@@ -20,7 +20,7 @@ class ExcelHepler:
         pass
 
 
-    def newExcel(self,provinceName,privteDataUpload):
+    def outPrivateDataStatus(self,privteDataUpload):
 
         if type(privteDataUpload) == str:
             self.wb.sheets["Sheet1"].range(1,2).value = privteDataUpload
@@ -60,9 +60,52 @@ class ExcelHepler:
 
                 col += 1
 
-        # savePath = "D:\code\python\calCase\jituance\output\上传状态导出\\" + provinceName + ".xlsx"
-        # self.saveFile(savePath)
-        # self.close()
+    def outCompareStatus(self, compareStatus):
+
+        enum = {
+            "provinceUnit": "省间是否有机组",
+            "unitMiss": "机组缺失表",
+            "nameCompare": "机组和企业名称比较表",
+            "dataCompare": "数据比较表",
+            "info": "比较结果",
+            "unitId": "机组ID",
+            "provinceUnitName": "在省间系统的机组名称",
+            "provinceTerminalName": "在省间系统的企业名称",
+            "huanengUnitName": "在华能集团侧的机组名称",
+            "huanengTerminalName": "在华能集团侧的企业名称",
+            "date": "数据日期",
+            "type": "数据项",
+            "num": "第几个时刻点，从1开始",
+        }
+
+
+        for cs in compareStatus:
+            self.wb.sheets.add(enum[cs])
+
+            if compareStatus[cs] == []:
+
+                continue
+
+            ws = self.wb.sheets[enum[cs]]
+
+            i = 2
+            for item in compareStatus[cs] :
+
+                if i == 2:
+                    head = [ enum[key] for key in item]
+                    ws.range((1, 2), (1, 10)).value = head
+
+                data = [ item[key] for key in item ]
+
+                ws.range((i, 2), (i, 10)).value = data
+
+                i += 1
+
+                # status = [[status] for status in terminalDict[unit]]
+
+
+        pass
+
 
 
     def saveFile(self, savePath = None):

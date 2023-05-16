@@ -1,4 +1,5 @@
 import datetime
+import time
 
 import requests
 import json
@@ -224,7 +225,7 @@ class Jituance:
     def outPrivateStatus(self,provinceName,privteDataUpload):
 
         e = ExcelHepler()
-        e.newExcel(provinceName,privteDataUpload)
+        e.outPrivateDataStatus(privteDataUpload)
         savePath = "D:\code\python\calCase\jituance\output\上传状态导出\\" + provinceName + ".xlsx"
 
         e.saveFile(savePath)
@@ -235,7 +236,7 @@ class Jituance:
 
     # 获取华能交易数据导出
     def getHuanengOuputData(self, startDate, endDate, provinceIds):
-
+        time.sleep(2)
         CommonClass.switchTenantId(self.session,self.domain,"tsintergy")
 
         resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
@@ -257,7 +258,7 @@ class Jituance:
         responseData.extend(res['data'][0]['newProvinceTradeDOS'])
         # 省间其他类型
         responseData.extend(res['data'][0]['provinceTradeDOS'])
-
+        # print(responseData)
 
         for rd in responseData:
 
@@ -295,6 +296,9 @@ class Jituance:
         # 记录所有省份的上传情况
         allProvinceDataUploadStatus = []
 
+        # 记录所有省份的比较结果
+        allProvinceCompareStatus = {}
+
         for province in provinceInfo:
 
             CommonClass.switchTenantId(self.session,self.domain,province['tenantId'])
@@ -327,16 +331,35 @@ class Jituance:
                 "unitMiss" :[] ,
                 "nameCompare" : [],
                 "dataCompare" : [],
-                # "shibai" : []
             }
+
+
+            # print(provincePrivteData)
+            # print(huanengOutputData)
+
             self.compare(provincePrivteData,huanengOutputData, compareStatus)
 
-            print(compareStatus['unitMiss'])
+            allProvinceCompareStatus[province["provinceName"]] = compareStatus
 
-            # self.outPrivateStatus( province['provinceName'],provincePrivteDataUpload)
+            # print(json.dumps(compareStatus['unitMiss'],indent=4,ensure_ascii=False))
+
+            self.outPrivateStatus( province['provinceName'],provincePrivteDataUpload)
+            self.outCompareStatus( province['provinceName'],compareStatus)
 
             # print(terminalDataDict)
-        # print(allProvinceDataUploadStatus)
+        # print(allProvinceCompareStatus)
+
+    def outCompareStatus(self, provinceName, compareStatus):
+
+        e = ExcelHepler()
+        e.outCompareStatus(compareStatus)
+        savePath = "D:\code\python\calCase\jituance\output\比较情况导出\\" + provinceName + ".xlsx"
+
+        e.saveFile(savePath)
+        e.close()
+
+        # pass
+
 
     def compare(self, provincePrivteData, huanengOutputData, compareStatus):
 
@@ -349,12 +372,18 @@ class Jituance:
 
         # 省间系统无场站时，即 provincePrivteData = {}
         if provincePrivteData == {} :
-            compareStatus['provinceUnit'] .append( "省间系统无场站")
+            compareStatus['provinceUnit'] .append(
+                {
+                    "info" : "省间系统无场站"
+                }
+            )
 
         for p in provincePrivteData:
 
             # 判断华能有没有该机组
             if p not in huanengOutputData:
+
+                print("=================华能没有该机组"+ p)
                 compareStatus['unitMiss'].append( {
                     "info" : "该机组只有省间系统有，集团侧没有找到该机组" ,
                     "unitId" : p,
@@ -469,20 +498,41 @@ class Jituance:
 
 
         # 判断华能集团侧的机组在省间有没有
-        for h in provincePrivteData:
+        for h in huanengOutputData:
 
-            if h not in huanengOutputData:
+            if h not in provincePrivteData:
+
+                haveData = False
+
+                huanengDateDatas = huanengOutputData[h]['dateData']
+
+                # 判断带该机组在华能集团侧有没有数据
+                for date in huanengDateDatas:
+                    huanengOneDateData = huanengDateDatas[date]
+
+                    for item in huanengOneDateData:
+
+                        if len(huanengOneDateData[item]) == 0:
+                            continue
+
+                        haveData = True
+                        break
+
+                haveDataInfo = "=====且集团侧有数据" if haveData else "集团侧没有数据"
 
                 compareStatus['unitMiss'].append({
-                    "info": "该机组只有集团侧有，省间系统没有找到该机组",
-                    "unitId": p,
-                    "huanengUnitName": provincePrivteData[p]["unitName"],
-                    "huanengTerminalName": provincePrivteData[p]["terminalName"]
+                    "info": "该机组只有集团侧有，省间系统没有找到该机组。" + haveDataInfo,
+                    "unitId": h,
+                    "huanengUnitName": huanengOutputData[h]["unitName"],
+                    "huanengTerminalName": huanengOutputData[h]["terminalName"]
                 })
 
 
 
+
         pass
+
+
 
 
 if __name__ == '__main__':
@@ -519,7 +569,7 @@ if __name__ == '__main__':
 
     jtc_hn.execProvinceInfo(startDate,endDate,provinceInfo)
 
-    # res = jtc_hn.getHuanengOuputData("2023-06-01", "2023-06-02", 63)
+    # res = jtc_hn.getHuanengOuputData("2023-04-27", "2023-04-27", 63)
     # print(res)
 
     # getUintUrl = "/qinghaigroup/api/org/org/tree"
