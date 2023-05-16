@@ -55,9 +55,9 @@ class ExcelHepler:
                     l.append([terminalDict[unit]])
 
 
-                print("=================", l)
+                # print("=================", l)
                 ws.range((1,col),(100000,col)).value = l
-
+                ws.range('A1:zz5000').columns.autofit()
                 col += 1
 
     def outCompareStatus(self, compareStatus):
@@ -98,7 +98,7 @@ class ExcelHepler:
                 data = [ item[key] for key in item ]
 
                 ws.range((i, 2), (i, 10)).value = data
-
+                ws.range('A1:zz5000').columns.autofit()
                 i += 1
 
                 # status = [[status] for status in terminalDict[unit]]

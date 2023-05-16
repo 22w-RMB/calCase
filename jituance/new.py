@@ -226,7 +226,7 @@ class Jituance:
 
         e = ExcelHepler()
         e.outPrivateDataStatus(privteDataUpload)
-        savePath = "D:\code\python\calCase\jituance\output\上传状态导出\\" + provinceName + ".xlsx"
+        savePath = "D:\code\python\calCase\jituance\output\上传状态导出\\" + provinceName + "-省间数据上传情况.xlsx"
 
         e.saveFile(savePath)
         e.close()
@@ -299,6 +299,9 @@ class Jituance:
         # 记录所有省份的比较结果
         allProvinceCompareStatus = {}
 
+        # 记录数据不一致的省份
+        errorProvince = []
+
         for province in provinceInfo:
 
             CommonClass.switchTenantId(self.session,self.domain,province['tenantId'])
@@ -309,6 +312,7 @@ class Jituance:
             # 获取该省份省间的机组信息
             terminalList = self.getUnitId(getUintUrl)
             # print(terminalList)
+            print("==========获取机组正常")
 
 
             # 每个省份的获取私有数据的url
@@ -317,14 +321,18 @@ class Jituance:
             # 获取私有数据
             responsePrivateData = self.resquestPrivateData(startDate,endDate,resquestPrivateDataUrl, terminalList)
 
+            print("==========获取私有数据正常")
+
             # 记录省间私有数据，如果没有数据则为{}
             provincePrivteData = responsePrivateData['terminalDict']
 
             # 记录该省份上传的情况
             provincePrivteDataUpload = responsePrivateData['privteDataUpload']
+            print("==========")
 
             # 记录华能集团返回的数据
             huanengOutputData = self.getHuanengOuputData(startDate,endDate, province["provinceIds"] )
+            print("==========获取华能数据正常")
 
             compareStatus = {
                 "provinceUnit" : [],
@@ -339,7 +347,10 @@ class Jituance:
 
             self.compare(provincePrivteData,huanengOutputData, compareStatus)
 
-            allProvinceCompareStatus[province["provinceName"]] = compareStatus
+            if len(compareStatus["dataCompare"]) != 0:
+                errorProvince.append(province['provinceName'])
+
+            # allProvinceCompareStatus[province["provinceName"]] = compareStatus
 
             # print(json.dumps(compareStatus['unitMiss'],indent=4,ensure_ascii=False))
 
@@ -347,13 +358,13 @@ class Jituance:
             self.outCompareStatus( province['provinceName'],compareStatus)
 
             # print(terminalDataDict)
-        # print(allProvinceCompareStatus)
+        print(errorProvince)
 
     def outCompareStatus(self, provinceName, compareStatus):
 
         e = ExcelHepler()
         e.outCompareStatus(compareStatus)
-        savePath = "D:\code\python\calCase\jituance\output\比较情况导出\\" + provinceName + ".xlsx"
+        savePath = "D:\code\python\calCase\jituance\output\比较情况导出\\" + provinceName + "-数据比对情况.xlsx"
 
         e.saveFile(savePath)
         e.close()
@@ -462,6 +473,8 @@ class Jituance:
                             })
                             pass
 
+                        continue
+
 
                     # 如果数据为空则打印出来
                     # if len(provinceOneDateData[item]) == 0 :
@@ -547,21 +560,32 @@ if __name__ == '__main__':
     provinceInfo = [
 
         {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
-        # {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
-        # {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
-        # {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
-        # {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
-        # {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
-        # {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
-        # {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
+        {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
+        {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
+        {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
+        {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
+        {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
+        {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
+        {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
+        #
+        {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
+        {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
+        {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,"tenantId":  "e4f8c059825cddf5018345b24f912483" , },
+        {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
+        {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
+        {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
+        {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
+        {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
+
+
 
     ]
 
-    # startDate = "2023-04-21"
-    # endDate = "2023-05-03"
+    startDate = "2023-04-21"
+    endDate = "2023-05-03"
 
-    startDate = "2023-04-27"
-    endDate = "2023-04-27"
+    # startDate = "2023-04-21"
+    # endDate = "2023-04-22"
 
     # startDate = "2023-06-01"
     # endDate = "2023-06-01"
