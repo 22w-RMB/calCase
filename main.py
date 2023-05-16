@@ -16,7 +16,7 @@
 # # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 
 a = {
-
+    "x":1
 }
 
 
@@ -26,4 +26,4 @@ b = {
 
 c = {}
 
-print(c.update(a))
+print( isinstance(1,int))
