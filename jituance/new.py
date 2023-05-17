@@ -350,13 +350,14 @@ class Jituance:
             if len(compareStatus["dataCompare"]) != 0:
                 errorProvince.append(province['provinceName'])
 
-            # allProvinceCompareStatus[province["provinceName"]] = compareStatus
+            allProvinceCompareStatus[province["provinceName"]] = compareStatus
 
             # print(json.dumps(compareStatus['unitMiss'],indent=4,ensure_ascii=False))
 
             self.outPrivateStatus( province['provinceName'],provincePrivteDataUpload)
-            self.outCompareStatus( province['provinceName'],compareStatus)
+            # self.outCompareStatus( province['provinceName'],compareStatus)
 
+        self.outAllCompareStatus(allProvinceCompareStatus)
             # print(terminalDataDict)
         print(errorProvince)
 
@@ -368,6 +369,63 @@ class Jituance:
 
         e.saveFile(savePath)
         e.close()
+
+    def outAllCompareStatus(self, allProvinceCompareStatus):
+        enum = {
+            "dataCompare": "数据比较表",
+            "unitMiss": "机组缺失表",
+            "nameCompare": "机组和企业名称比较表",
+            "provinceUnit": "省间是否有机组",
+        }
+
+
+        a = {
+            "head" : ["省份","数据错误机组个数","机组缺失个数","机组和企业名称不一致个数","省间是否有机组",]
+
+        }
+
+        for type in enum:
+
+            compareStatus = {}
+
+            for province in allProvinceCompareStatus:
+
+                if province not in a:
+                    a[province] = []
+                    a[province].append(province)
+
+                compareStatus[province] = allProvinceCompareStatus[province][type]
+
+
+                if type == "dataCompare" :
+                    unitids = []
+                    for i in allProvinceCompareStatus[province][type]:
+                        unitids.append(i['unitId'])
+
+                    a[province].append( len(set(unitids)))
+                elif type == "provinceUnit":
+                    if len(allProvinceCompareStatus[province][type]) > 0:
+                        a[province].append("省间系统没有机组")
+                    else:
+                        a[province].append("有")
+
+                else:
+                    a[province].append(len(allProvinceCompareStatus[province][type]))
+
+
+            e = ExcelHepler()
+            e.outAllCompareStatus(compareStatus)
+            savePath = "D:\code\python\calCase\jituance\output\比较情况导出\\" + enum[type] + ".xlsx"
+            e.saveFile(savePath)
+            e.close()
+
+        e = ExcelHepler()
+        e.outALL(a)
+        savePath = "D:\code\python\calCase\jituance\output\比较情况导出\汇总.xlsx"
+        e.saveFile(savePath)
+        e.close()
+
+        pass
 
         # pass
 
@@ -400,6 +458,8 @@ class Jituance:
                     "unitId" : p,
                     "provinceUnitName" : provincePrivteData[p]["unitName"],
                     "provinceTerminalName" : provincePrivteData[p]["terminalName"],
+                    "huanengUnitName" : "",
+                    "huanengTerminalName" : "",
                 } )
 
                 continue
@@ -451,6 +511,7 @@ class Jituance:
                                 "unitId": p,
                                 "date": date,
                                 "type": enum[item],
+                                "num": "无",
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
                                 "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -466,6 +527,7 @@ class Jituance:
                                 "unitId": p,
                                 "date": date,
                                 "type": enum[item],
+                                "num": "无",
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
                                 "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -536,6 +598,8 @@ class Jituance:
                 compareStatus['unitMiss'].append({
                     "info": "该机组只有集团侧有，省间系统没有找到该机组。" + haveDataInfo,
                     "unitId": h,
+                    "provinceUnitName": "",
+                    "provinceTerminalName": "",
                     "huanengUnitName": huanengOutputData[h]["unitName"],
                     "huanengTerminalName": huanengOutputData[h]["terminalName"]
                 })
@@ -559,24 +623,24 @@ if __name__ == '__main__':
 
     provinceInfo = [
 
-        {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
-        {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
-        {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
-        {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
-        {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
-        {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
-        {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
-        {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
-        #
-        {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
-        {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
+        # {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
+        # {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
+        # {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
+        # {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
+        # {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
+        # {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
+        # {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
+        # {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
+        # #
+        # {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
+        # {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
         {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,"tenantId":  "e4f8c059825cddf5018345b24f912483" , },
-        {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
-        {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
-        {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
-        {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
-        {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
-
+        # {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
+        # {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
+        # {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
+        # {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
+        # {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
+        #
 
 
     ]

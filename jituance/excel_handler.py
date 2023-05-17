@@ -106,6 +106,59 @@ class ExcelHepler:
 
         pass
 
+    def outAllCompareStatus(self, compareStatus):
+
+        enum = {
+            "info": "比较结果",
+            "unitId": "机组ID",
+            "provinceUnitName": "在省间系统的机组名称",
+            "provinceTerminalName": "在省间系统的企业名称",
+            "huanengUnitName": "在华能集团侧的机组名称",
+            "huanengTerminalName": "在华能集团侧的企业名称",
+            "date": "数据日期",
+            "type": "数据项",
+            "num": "第几个时刻点，从1开始",
+        }
+
+        self.wb.sheets.add("汇总")
+
+        all = [
+            ["省份", "机组个数" ,""]
+        ]
+
+        for province in compareStatus:
+            self.wb.sheets.add(province)
+
+            if compareStatus[province] == []:
+
+                continue
+
+            ws = self.wb.sheets[province]
+
+            i = 2
+            for item in compareStatus[province] :
+
+                if i == 2:
+                    head = [ enum[key] for key in item]
+                    ws.range((1, 2), (1, 10)).value = head
+
+                data = [ item[key] for key in item ]
+
+                ws.range((i, 2), (i, 10)).value = data
+                ws.range('A1:zz5000').columns.autofit()
+                i += 1
+
+                # status = [[status] for status in terminalDict[unit]]
+
+
+
+    def outALL(self, a):
+        i = 1
+        for key in a :
+            ws = self.wb.sheets["Sheet1"]
+            ws.range((i, 2), (i, 10)).value = a[key]
+            i += 1
+        ws.range('A1:zz5000').columns.autofit()
 
 
     def saveFile(self, savePath = None):
