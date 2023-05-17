@@ -120,7 +120,7 @@ class ExcelHepler:
             "num": "第几个时刻点，从1开始",
         }
 
-        self.wb.sheets.add("汇总")
+        # self.wb.sheets.add("汇总")
 
         all = [
             ["省份", "机组个数" ,""]

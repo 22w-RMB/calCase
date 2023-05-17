@@ -242,23 +242,41 @@ class Jituance:
         resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
 
         method = "GET"
+        responseData = []
 
-        param = {
-            "startDate": startDate,
-            "endDate": endDate,
-            "provinceIds": provinceIds,
-        }
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
 
-        res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
+
+        while sd <= ed:
+            d1Str = datetime.strftime(sd, "%Y-%m-%d")
+
+            d2 = sd + timedelta(days=20)
+
+            if d2 >= ed:
+                d2 = ed
+
+            d2Str = datetime.strftime(d2, "%Y-%m-%d")
+
+            param = {
+                "startDate": d1Str,
+                "endDate": d2Str,
+                "provinceIds": provinceIds,
+            }
+
+            res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
+
+
+            # 省间新能源
+            responseData.extend(res['data'][0]['newProvinceTradeDOS'])
+            # 省间其他类型
+            responseData.extend(res['data'][0]['provinceTradeDOS'])
+            # print(responseData)
+
+            sd = d2 + timedelta(days=1)
+
 
         terminalDict = {}
-
-        responseData = []
-        # 省间新能源
-        responseData.extend(res['data'][0]['newProvinceTradeDOS'])
-        # 省间其他类型
-        responseData.extend(res['data'][0]['provinceTradeDOS'])
-        # print(responseData)
 
         for rd in responseData:
 
@@ -641,33 +659,33 @@ if __name__ == '__main__':
 
     provinceInfo = [
 
-        {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
-        {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
-        {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
-        {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
-        {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
-        {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
-        {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
+        # {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
+        # {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
+        # {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
+        # {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
+        # {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
+        # {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
+        # {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
         {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
         #
-        {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
-        {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
-        {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,"tenantId":  "e4f8c059825cddf5018345b24f912483" , },
-        {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
-        {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
-        {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
-        {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
-        {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
+        # {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
+        # {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
+        # {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,"tenantId":  "e4f8c059825cddf5018345b24f912483" , },
+        # {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
+        # {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
+        # {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
+        # {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
+        # {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
         # #
 
 
     ]
 
-    # startDate = "2023-01-01"
-    # endDate = "2023-05-17"
+    startDate = "2023-01-01"
+    endDate = "2023-05-17"
 
-    startDate = "2023-04-21"
-    endDate = "2023-04-22"
+    # startDate = "2023-04-21"
+    # endDate = "2023-04-22"
 
     # startDate = "2023-06-01"
     # endDate = "2023-06-01"
