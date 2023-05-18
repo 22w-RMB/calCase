@@ -78,6 +78,28 @@ class CommonClass:
         print(r2.json())
 
     @staticmethod
+    def loginUseNameAndPass(session1: requests.Session, domain, loginInfo, username, password):
+
+        if loginInfo['publicKey_url'] is not None:
+            publicKeyUrl = domain + loginInfo['publicKey_url']
+
+            key = session1.request(method="GET", url=publicKeyUrl).json()['data']
+            pwd = CommonClass.encrpt(password, key)
+
+        loginData = {
+            "username": username,
+            "loginMode": loginInfo['loginMode'],
+            "password": pwd
+        }
+
+        # print(password)
+
+        loginUrl = domain + loginInfo['login_url']
+        r1 = session1.request(method="POST", url=loginUrl, params=loginData)
+        print(r1.json())
+
+
+    @staticmethod
     def switchTenantId(session1: requests.Session, domain , tenantId):
         switchUrl = domain + "/usercenter/web/switchTenant?tenantId=" + tenantId
         r2 = session1.request(method="GET", url=switchUrl)

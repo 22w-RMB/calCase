@@ -1,16 +1,20 @@
 import datetime
+import time
 
 import requests
+import json
+from datetime import datetime,timedelta
 
 from common.common import CommonClass
+from excel_handler import ExcelHepler
 
 yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
+# yamlPath = r"D:\code\pyhton\calCase\jituance\config\mx_interface.yaml"
 
 
+class Fire:
 
-class Jituance:
-
-    def __init__(self,session, yamlData, type):
+    def __init__(self, session, yamlData, type):
         self.domain = None
         self.loginInfo = None
         self.session = session
@@ -25,229 +29,179 @@ class Jituance:
             self.domain = yamlData['url_domain']['hn_domain']
             self.loginInfo = yamlData['logininfo']['hn_info']
 
+    def login(self,username,password):
 
-    def login(self):
-        CommonClass.login(self.session, self.domain, self.loginInfo)
+        # 登录
+        CommonClass.loginUseNameAndPass(self.session, self.domain, self.loginInfo,username,password)
 
+        # 获取所有企业
+        getApplicationUrl = self.domain + "/usercenter/web/pf/tenant/user/application"
 
-    # 获取省份下所有企业的所有机组
-    def getUnitId(self, url):
+        resJson = CommonClass.execRequest(session=self.session,method="GET",url=getApplicationUrl).json()
 
-        resquestUrl = self.domain + url
-        method = "GET"
+        resData = resJson['data']
 
-        resJson = CommonClass.execRequest(self.session, method=method, url=resquestUrl).json()
+        userTenant = []
 
-        print(resJson)
+        for d in resData:
 
-        terminalList = []
-        if len(resJson['data']) == 0:
-            return terminalList
+            tenantId = d['tenantId']
+            terminalName = d['name']
 
-        for d in resJson['data']:
-            terminalName = d['ownerName']
-            unitsList = []
+            resApp = d['applications']
 
-            for unit in d['children']:
-                unitsList.append(
-                    {
-                        "unitId" : unit['unitId'],
-                        "unitName" : unit['unitName'],
-                    }
-                )
+            for app in resApp:
+                if "公司交易辅助决策系统" in app['name']:
+                    print("===========", terminalName)
 
-            terminalList.append([terminalName,unitsList])
-
-        return terminalList
-
-    # 请求省间的私有数据
-    def resquestPrivateData(self, url ,terminalList,privteDataUpload):
-
-        #设置开始日期、结束日期
-        # startDate = "2023-04-21"
-        # endDate = "2023-05-03"
-
-        startDate = "2023-05-01"
-        endDate = "2023-05-02"
-        method = "GET"
-
-        # 请求url
-        resquestUrl = self.domain + url
-
-        terminalDict = {}
-        '''
-        terminalDict  用于记录所有该省份所有企业的所有机组的上传情况, 格式如下
-        
-            {
-              “企业”：{
-                    “机组”：{
-                            “日期”：{
-                                "DAEle":[],
-                                "DAPrice":[],
-                                "InEle":[],
-                                "InPrice":[],
-                            }
+                    userTenant.append(
+                        {
+                            "tenantId": tenantId,
+                            "terminalName": terminalName
                         }
-                }
-            }
-        
-        '''
+                    )
 
+                    break
 
-        for terminal in terminalList:
+        return userTenant
 
-            # 用于记录单个企业下所有机组的数据
-            unitsDict = {}
+    def getCost(self,userTenant,provinceUrl,startDate,endDate):
 
+        for ut in userTenant:
 
-            privteDataUpload[terminal[0]] = {}
-            '''
-                {
-                    "企业":{
-                        "机组": [ "02-01日前电价已上传", "02-01日前电量已上传",  .....]
-                    }
-                }
-            '''
+            CommonClass.switchTenantId(self.session,self.domain,ut['tenantId'])
 
-            for unit in terminal[1]:
-
-                param = {
-                    "startDate": startDate,
-                    "endDate": endDate,
-                    "unitIds": unit['unitId'],
-                }
-
-                # print(param)
-
-                # 发起请求
-                res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
-                # print(res)
-
-                # 如果日期范围内都没有数据， 接口会返回 [] ，即长度为0 ，此时跳过
-                if len(res['data']) == 0:
-                    privteDataUpload[terminal[0]][unit['unitName']] = startDate + " 到 " + endDate + " 这段时间没有导入数据"
-                    continue
-
-                # datesDict  记录单个机组每一天的私有数据
-                datesDict = {}
-
-                # unit['unitName'] 为机组名，以列表形式存储每一天、每种类型数据上传情况
-                privteDataUpload[terminal[0]][unit['unitName']] = []
-
-                for r in res['data'] :
-
-                    # 截取日期，截取后的格式： YYYY-MM-DD
-                    datestr = r['date'][0:10]
-
-                    # 如果字典不存在该日期的数据，则初始化
-                    if datestr not in datesDict:
-                        datesDict[datestr] = {}
-
-                    # 获取该条数据是日前还是日内的
-                    typeName = r['marketType']
-
-                    # 获取电量
-                    datesDict[datestr][ typeName+ "Ele"] = r['ele']['data']
-                    # 获取电价
-                    datesDict[datestr][ typeName+ "price"] = r['price']['data']
-
-                    typeStr = "日前" if typeName=="DA" else "日内"
-
-                    # 记录每种类型的数据上传情况
-                    if len(r['ele']['data']) == 0:
-                        privteDataUpload[terminal[0]][unit['unitName']].append( datestr +" "+typeStr + "电量未上传")
-                    if len(r['price']['data']) == 0:
-                        privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " " + typeStr + "电价未上传")
-
-
-
-                unitsDict[unit['unitName']] = datesDict
-
-            terminalDict[terminal[0]] = unitsDict
-
-        return terminalDict
-
-
-
-
-    def getHuanengOuputData(self, startDate ,endDate , provinceIds):
-
-        resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
-
-        method = "GET"
-
-        param = {
-            "startDate": startDate,
-            "endDate": endDate,
-            "provinceIds": provinceIds,
-        }
-
-        res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
-
-        terminalDict = {}
-        for r in res['data'][0]['newProvinceTradeDOS']:
-            if r['orgName'] not in terminalDict:
-                terminalDict[ r['orgName'] ] = {}
-
-            datestr = r['date'][0:10]
-
-            for d in r['dataTradeDOS']:
-                if d['unitName'] not in terminalDict[r['orgName'] ]:
-                    terminalDict[r['orgName']][d['unitName']] = {}
-
-                terminalDict[r['orgName']][d['unitName']].update(
-                    {
-                        datestr:{
-                            "DAEle":   d['daClearEle']   ,
-                            "DAPrice": d['daClearPrice']   ,
-                            "INEle":   d['rtClearEle']   ,
-                            "INPrice": d['rtClearPrice']   ,
-                        }
-                    }
+            unitsInfo = self.getFireUnitData(ut['terminalName'],provinceUrl)
+            res =[]
+            for unit in unitsInfo:
+                res.append(
+                    self.getFireCostData(provinceUrl, unit['unitId'], startDate, endDate)
                 )
 
-        return terminalDict
+            return res
 
+    def getFireUnitData(self,terminalName,provinceUrl):
+        # 发起机组请求
 
+        getUnitUrl = self.domain + provinceUrl +"/api/unit/list"
+        unitResJson = CommonClass.execRequest(self.session,method="GET",url=getUnitUrl).json()
 
-    def execProvinceInfo(self,provinceInfo):
+        unitInfo = []
 
-        # 记录所有省份的上传情况
-        allProvinceDataUploadStatus = []
+        for data in unitResJson['data']:
 
-        for province in provinceInfo:
-
-            # 每个省份的获取机组的url
-            getUintUrl = province["url"] + "/api/org/org/tree"
-
-            terminalList = jtc_hn.getUnitId(getUintUrl)
-            # print(terminalList)
-
-            # 判断获取机组的接口是否返回为空
-            if len(terminalList) == 0:
-                allProvinceDataUploadStatus.append(
-                    {
-                        province['provinceName']: "该省份没有场站"
-                    }
-                )
-
-                continue
-
-            # 每个省份的获取私有数据的url
-            resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
-
-            provincePrivteDataUpload = {}
-
-            terminalDataDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl, terminalList, provincePrivteDataUpload)
-
-            allProvinceDataUploadStatus.append(
+            unitInfo.append(
                 {
-                    province['provinceName']: provincePrivteDataUpload
+                    "unitId" : data["id"],
+                    "capacity" : data["capacity"],
+                    "capacity" : data["capacity"],
+                    "terminalName" : terminalName,
+                    "terminalName" : terminalName,
+                    "businessType" : data["businessType"]
                 }
             )
 
-            # print(terminalDataDict)
-        print(allProvinceDataUploadStatus)
+        print(unitInfo)
+        return unitInfo
+
+
+
+    def getFireCostData(self,provinceUrl,unitId,startDate,endDate):
+
+
+        getCostUrl = self.domain + provinceUrl +"/api/unit/cost/list"
+
+        param = {
+            "unitIds":[unitId],
+            "typeList": ["DYNAMIC_COST"]
+        }
+
+
+        costList = []
+
+        costResJson = CommonClass.execRequest(self.session,method="GET",url=getCostUrl,params=param).json()
+
+        print(costResJson)
+
+        for data in costResJson['data']:
+            unitVarCost = data['unitVarCost']
+            costType = unitVarCost['costType']
+
+            if costType == "DYNAMIC_COST":
+                costList.append(
+                    {
+                        "effectiveDate" : unitVarCost["effectiveDate"]  ,
+                        "value": unitVarCost["value"]
+                    }
+                )
+            pass
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        resCostList = {}
+
+        while sd <= ed:
+
+            tmpDate = datetime.strptime("2000-01-01", "%Y-%m-%d")
+            d1Str = datetime.strftime(sd, "%Y-%m-%d")
+            resCostList[d1Str] = {}
+
+            tempCost = ""
+            for cost in costList:
+
+                d = datetime.strptime(cost['effectiveDate'],"%Y-%m-%d")
+                if d > sd:
+                    continue
+
+                if d >= tmpDate:
+                    tmpDate = d
+                    tempCost = cost['value']
+
+            dateCost = []
+            if tempCost != "":
+                dateCost = [float(tempCost) for i in range(0,96)]
+
+            resCostList[d1Str]['variableCost'] = dateCost
+
+
+            sd += timedelta(days=1)
+
+        return {
+            unitId : {
+                "dateData" : resCostList
+            }
+        }
+
+
+
+    def getLoginInfo(self):
+
+        '''
+           {
+                省份：{
+                    “username”:
+                    "password"
+                }
+           }
+
+        :return:
+        '''
+
+
+
+    def execProvinceInfo(self, startDate,endDate,provinceInfo):
+
+
+            userInfo = []
+            unitCostList = []
+
+            for user in userInfo:
+
+                userTenant = self.login(user['username'],user['password'])
+                unitCostList.extend(
+                    self.getCost(userTenant, provinceInfo['url'], startDate, endDate)
+                )
 
 
 
@@ -256,40 +210,13 @@ if __name__ == '__main__':
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    jtc_hn = Jituance(testSession,yamlData,"hn")
+    jtc_hn = Fire(testSession, yamlData, "hn")
 
-    jtc_hn.login()
+    username = "15110610129"
+    pasword = "huaneng123@"
 
-
-    provinceInfo = [
-
-        { "provinceName": "青海" , "url" : "/qinghaigroup", "provinceIds" :63,  },
-        { "provinceName": "四川" ,"url": "/sichuangroup","provinceIds": 51,  },
-        { "provinceName": "西藏", "url": "/xizanggroup","provinceIds": 54,  },
-        { "provinceName": "天津", "url": "/tianjingroup","provinceIds": 12,  },
-        { "provinceName": "蒙东", "url": "/mengdonggroup","provinceIds": 150,  },
-        { "provinceName": "宁夏", "url": "/ningxiagroup","provinceIds": 64,  },
-        { "provinceName": "新疆", "url": "/xinjianggroup","provinceIds": 65,  },
-        { "provinceName": "蒙西", "url": "/mengxigroup","provinceIds": 15,  },
-
-    ]
-
-    # jtc_hn.execProvinceInfo(provinceInfo)
+    jtc_hn.login(username,pasword)
 
 
-    res = jtc_hn.getHuanengOuputData("2023-05-01","2023-05-02",63)
-    print(res)
 
-    getUintUrl = "/qinghaigroup/api/org/org/tree"
-
-    terminalList = jtc_hn.getUnitId(getUintUrl)
-
-    # print(terminalList)
-
-    resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
-    privteDataUpload = {}
-
-    terminalDict = jtc_hn.resquestPrivateData(resquestPrivateDataUrl,terminalList, privteDataUpload)
-
-    print(terminalDict)
-    print(privteDataUpload)
+    # jtc_hn.execProvinceInfo(startDate,endDate,provinceInfo)
