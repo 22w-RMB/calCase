@@ -633,9 +633,10 @@ class ProvinceIn:
 
                             pass
                         else:
-                            pDecimalData = Decimal(str(provinceOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+                            pDecimalData = Decimal(str(provinceOneDateData[item][i]))
                             if "Ele" in item:
-                                pDecimalData = (pDecimalData/Decimal("4")).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+                                pDecimalData = (pDecimalData/Decimal("4"))
+                            pDecimalData = pDecimalData.quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
 
                             hDecimalData = Decimal(str(huanengOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
 
@@ -720,7 +721,7 @@ if __name__ == '__main__':
     ]
 
     startDate = "2023-04-21"
-    endDate = "2023-05-03"
+    endDate = "2023-04-21"
 
 
 
