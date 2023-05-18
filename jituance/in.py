@@ -1,5 +1,7 @@
 import datetime
+import decimal
 import time
+from decimal import Decimal
 
 import requests
 import json
@@ -12,7 +14,7 @@ yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
 # yamlPath = r"D:\code\pyhton\calCase\jituance\config\mx_interface.yaml"
 
 
-class Jituance:
+class ProvinceIn:
 
     def __init__(self, session, yamlData, type):
         self.domain = None
@@ -55,6 +57,8 @@ class Jituance:
                     {
                         "unitId": unit['unitId'],
                         "unitName": unit['unitName'],
+                        "capacity": unit['capacity'],
+                        "businessType": unit['businessType'],
                     }
                 )
 
@@ -62,8 +66,8 @@ class Jituance:
 
         return terminalList
 
-    # 请求省间的私有数据
-    def resquestPrivateData(self,startDate,endDate, url, terminalList):
+    # 请求省内的私有数据
+    def resquestPrivateInData(self,startDate,endDate, url, terminalList):
 
         # 设置开始日期、结束日期
         # startDate = "2023-04-21"
@@ -72,6 +76,15 @@ class Jituance:
         # startDate = "2023-06-01"
         # endDate = "2023-06-02"
         method = "GET"
+
+        enum = {
+            "fittingPower" : ["中长期合同电力", "mltContractEle"],
+            "dayAheadClearingPower" : ["日前出清电力","daClearEle"],
+            "realTimeClearingPower" : ["实时出清电力","rtClearEle"],
+            "actualMeasuredPower" : ["实际计量电力","rtPowerEle"],
+            "fittingPrice" : ["中长期合同电价","mltContractPrice"],
+            "realTimeClearingPrice" : ["实时出清电价","rtClearPrice"],
+        }
 
         # 请求url
         resquestUrl = self.domain + url
@@ -122,12 +135,10 @@ class Jituance:
                 param = {
                     "startDate": startDate,
                     "endDate": endDate,
-                    "unitIds": unit['unitId'],
+                    "deviceId": unit['unitId'],
+                    "businessType": unit['businessType'],
                 }
 
-                # terminalDict["unitName"] = unit['unitName']
-
-                # print(param)
 
                 # 发起请求
                 res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
@@ -158,21 +169,43 @@ class Jituance:
                     if datestr not in datesDict:
                         datesDict[datestr] = {}
 
-                    # 获取该条数据是日前还是日内的
-                    typeName = r['marketType']
+                    # print()
 
-                    # 获取电量
-                    datesDict[datestr][typeName + "Ele"] = r['ele']['data']
-                    # 获取电价
-                    datesDict[datestr][typeName + "Price"] = r['price']['data']
+                    for key in enum:
+                        # if "电力" in enum[key][0]:
+                        #     datesDict[datestr][enum[key][1]] = [ d/4  for d in r[key]]
+                        # else:
+                        #     datesDict[datestr][enum[key][1]] = [ d  for d in r[key]]
+                        datesDict[datestr][enum[key][1]] =  r[key]
 
-                    typeStr = "日前" if typeName == "DA" else "日内"
+                        if r[key] == []:
+                            privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " 【" + enum[key][0] + "】 未上传")
 
-                    # 记录每种类型的数据上传情况
-                    if len(r['ele']['data']) == 0:
-                        privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " " + typeStr + "电量未上传")
-                    if len(r['price']['data']) == 0:
-                        privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " " + typeStr + "电价未上传")
+                    datesDict[datestr]["runCapacity"] = []
+
+                    calRunCapPower = []
+                    # 判断运行容量
+                    if unit["capacity"] is not None :
+
+                        if r["actualMeasuredPower"] != []:
+                            calRunCapPower = r["actualMeasuredPower"]
+
+                        elif r["realTimeClearingPower"] != []:
+                            calRunCapPower = r["realTimeClearingPower"]
+
+                    if calRunCapPower != [] :
+
+                        for power in calRunCapPower:
+                            resPower = None
+                            if power is not None:
+                                if power >= (unit['capacity'] * 0.05):
+                                    resPower = unit['capacity']
+                                else:
+                                    resPower = 0
+
+                            datesDict[datestr]["runCapacity"].append(resPower)
+
+
 
                 terminalDict[unit['unitId']]["dateData"] = datesDict
                 terminalDict[unit['unitId']].update(
@@ -189,7 +222,7 @@ class Jituance:
             }
 
 
-    # 当省间私有数据返回为空时，构建数据
+    # 当省内私有数据返回为空时，构建数据
     def createData(self, startDate, endDate, terminal, unit):
 
         sd = datetime.strptime(startDate, "%Y-%m-%d")
@@ -221,12 +254,12 @@ class Jituance:
         }
 
 
-    # 输出省间私有数据上传状态到文件
+    # 输出省内私有数据上传状态到文件
     def outPrivateStatus(self,provinceName,privteDataUpload):
 
         e = ExcelHepler()
         e.outPrivateDataStatus(privteDataUpload)
-        savePath = "D:\code\python\calCase\jituance\output\上传状态导出\\" + provinceName + "-省间数据上传情况.xlsx"
+        savePath = "D:\code\python\calCase\jituance\output\蒙西省内\\" + provinceName + "-省内数据上传情况.xlsx"
 
         e.saveFile(savePath)
         e.close()
@@ -234,9 +267,22 @@ class Jituance:
         pass
 
 
+
+
     # 获取华能交易数据导出
     def getHuanengOuputData(self, startDate, endDate, provinceIds):
-        time.sleep(2)
+
+        enum = {
+            "mltContractEle" : ["中长期合同电力", "mltContractEle"],
+            "daClearEle" : ["日前出清电力","daClearEle"],
+            "rtClearEle" : ["实时出清电力","rtClearEle"],
+            "rtPowerEle" : ["实际计量电力","rtPowerEle"],
+            "mltContractPrice" : ["中长期合同电价","mltContractPrice"],
+            "rtClearPrice" : ["实时出清电价","rtClearPrice"],
+            "runCapacity" : ["运行容量","runCapacity"],
+        }
+
+
         CommonClass.switchTenantId(self.session,self.domain,"tsintergy")
 
         resquestUrl = self.domain + "/huaneng/group/api/group/private/data/query/spot/data"
@@ -264,19 +310,16 @@ class Jituance:
                 "provinceIds": provinceIds,
             }
 
-            time.sleep(1)
-
             res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
 
 
-            # 省间新能源
-            responseData.extend(res['data'][0]['newProvinceTradeDOS'])
-            # 省间其他类型
-            responseData.extend(res['data'][0]['provinceTradeDOS'])
+            # 省内新能源
+            responseData.extend(res['data'][0]['inNewProvinceTradeDOS'])
+            # 省内其他类型
+            responseData.extend(res['data'][0]['inProvinceTradeDOS'])
             # print(responseData)
 
             sd = d2 + timedelta(days=1)
-
 
         terminalDict = {}
 
@@ -289,15 +332,16 @@ class Jituance:
                     terminalDict[dtd['id']] = {}
                     terminalDict[dtd['id']]['dateData'] = {}
 
+                tempDict = {}
+
+                for key in enum:
+                    tempDict[key] = dtd[key]
+
+
                 # 记录日期数据
                 terminalDict[dtd['id']]['dateData'].update(
                     {
-                        datestr: {
-                            "DAEle": dtd['daClearEle'],
-                            "DAPrice": dtd['daClearPrice'],
-                            "INEle": dtd['rtClearEle'],
-                            "INPrice": dtd['rtClearPrice'],
-                        },
+                        datestr: tempDict,
                     }
                 )
 
@@ -327,7 +371,7 @@ class Jituance:
             CommonClass.switchTenantId(self.session,self.domain,province['tenantId'])
 
             # 每个省份的获取机组的url
-            getUintUrl = province["url"] + "/api/org/org/tree"
+            getUintUrl = province["url"] + "/fire/api/org/org/tree"
 
             # 获取该省份省间的机组信息
             terminalList = self.getUnitId(getUintUrl)
@@ -336,19 +380,21 @@ class Jituance:
 
 
             # 每个省份的获取私有数据的url
-            resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
+            resquestPrivateDataUrl = province["url"] + "/fire/api/mx/data/analysis/clearing"
 
             # 获取私有数据
-            responsePrivateData = self.resquestPrivateData(startDate,endDate,resquestPrivateDataUrl, terminalList)
+            responsePrivateData = self.resquestPrivateInData(startDate,endDate,resquestPrivateDataUrl, terminalList)
 
             print("==========获取私有数据正常")
 
-            # 记录省间私有数据，如果没有数据则为{}
+            # 记录省内私有数据，如果没有数据则为{}
             provincePrivteData = responsePrivateData['terminalDict']
+            # print(provincePrivteData)
 
             # 记录该省份上传的情况
             provincePrivteDataUpload = responsePrivateData['privteDataUpload']
             print("==========")
+
 
             # 记录华能集团返回的数据
             huanengOutputData = self.getHuanengOuputData(startDate,endDate, province["provinceIds"] )
@@ -362,8 +408,8 @@ class Jituance:
             }
 
 
-            # print(provincePrivteData)
-            # print(huanengOutputData)
+        #     # print(provincePrivteData)
+        #     # print(huanengOutputData)
 
             self.compare(provincePrivteData,huanengOutputData, compareStatus)
 
@@ -372,23 +418,13 @@ class Jituance:
 
             allProvinceCompareStatus[province["provinceName"]] = compareStatus
 
-            # print(json.dumps(compareStatus['unitMiss'],indent=4,ensure_ascii=False))
-
-            # self.outPrivateStatus( province['provinceName'],provincePrivteDataUpload)
-            # self.outCompareStatus( province['provinceName'],compareStatus)
+            self.outPrivateStatus( province['provinceName'],provincePrivteDataUpload)
 
         self.outAllCompareStatus(allProvinceCompareStatus)
             # print(terminalDataDict)
         print(errorProvince)
 
-    def outCompareStatus(self, provinceName, compareStatus):
 
-        e = ExcelHepler()
-        e.outCompareStatus(compareStatus)
-        savePath = "D:\code\python\calCase\jituance\output\比较情况导出\\" + provinceName + "-数据比对情况.xlsx"
-
-        e.saveFile(savePath)
-        e.close()
 
     def outAllCompareStatus(self, allProvinceCompareStatus):
         enum = {
@@ -435,13 +471,13 @@ class Jituance:
 
             e = ExcelHepler()
             e.outAllCompareStatus(compareStatus)
-            savePath = "D:\code\python\calCase\jituance\output\比较情况导出\\" + enum[type] + ".xlsx"
+            savePath = "D:\code\python\calCase\jituance\output\蒙西省内\\" + enum[type] + ".xlsx"
             e.saveFile(savePath)
             e.close()
 
         e = ExcelHepler()
         e.outALL(a)
-        savePath = "D:\code\python\calCase\jituance\output\比较情况导出\汇总.xlsx"
+        savePath = "D:\code\python\calCase\jituance\output\蒙西省内\汇总.xlsx"
         e.saveFile(savePath)
         e.close()
 
@@ -453,10 +489,13 @@ class Jituance:
     def compare(self, provincePrivteData, huanengOutputData, compareStatus):
 
         enum = {
-            "DAEle" : "日前电量",
-            "DAPrice" : "日前电价",
-            "INEle" : "日内电量",
-            "INPrice" : "日内电价",
+            "mltContractEle" : "中长期合同电量",
+            "daClearEle" : "日前出清电量",
+            "rtClearEle" : "实时出清电量",
+            "rtPowerEle" : "实际计量电量",
+            "mltContractPrice" : "中长期合同电价",
+            "rtClearPrice" : "实时出清电价",
+            "runCapacity" : "运行容量",
         }
 
         # 省间系统无场站时，即 provincePrivteData = {}
@@ -542,14 +581,16 @@ class Jituance:
                     # 判断数组长度是否一致
                     if len(provinceOneDateData[item]) != len(huanengOneDateData[item]):
 
+                        # 省内为空，集团侧不为空
                         if len(provinceOneDateData[item]) == 0 :
-                            # 省间为空，集团侧不为空
                             compareStatus['dataCompare'].append({
                                 "info": "该机组的 【"+enum[item] +"】 省间数据为空，集团侧数据不为空",
                                 "unitId": p,
                                 "date": date,
                                 "type": enum[item],
                                 "num": "无",
+                                "provinceData": "",
+                                "huanengData": "",
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
                                 "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -558,14 +599,16 @@ class Jituance:
 
                             pass
 
+                        # 集团侧为空，省间不为空
                         if len(huanengOneDateData[item]) == 0:
-                            # 集团侧为空，省间不为空
                             compareStatus['dataCompare'].append({
                                 "info": "该机组的 【"+enum[item] +"】 集团侧数据为空，省间数据不为空",
                                 "unitId": p,
                                 "date": date,
                                 "type": enum[item],
                                 "num": "无",
+                                "provinceData": "",
+                                "huanengData": "",
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
                                 "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -588,7 +631,13 @@ class Jituance:
                     for i in range(0,len(provinceOneDateData[item])):
 
                         # 如果时刻点的数据一样则跳过
-                        if provinceOneDateData[item][i]  ==  huanengOneDateData[item][i]:
+                        pDecimalData = Decimal(str(provinceOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+                        if "Ele" in item:
+                            pDecimalData = (pDecimalData/Decimal("4")).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+
+                        hDecimalData = Decimal(str(huanengOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+
+                        if pDecimalData  ==  hDecimalData:
                             # print("数据正确。日期：" + date + "。 机组：" +  provincePrivteData[p]["unitName"] + "。类型 " + enum[item])
                             continue
 
@@ -601,6 +650,8 @@ class Jituance:
                             "date" : date,
                             "type" : enum[item],
                             "num" : i+1,
+                            "provinceData": str(pDecimalData),
+                            "huanengData": str(hDecimalData),
                             "provinceUnitName": provincePrivteData[p]["unitName"],
                             "huanengUnitName": huanengOutputData[p]['unitName'],
                             "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -655,62 +706,22 @@ if __name__ == '__main__':
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    jtc_hn = Jituance(testSession, yamlData, "hn")
+    jtc_hn = ProvinceIn(testSession, yamlData, "hn")
 
     jtc_hn.login()
 
     provinceInfo = [
 
-        # {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
-        # {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
-        # {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
-        # {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
-        # {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
-        # {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
-        # {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
-        {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
-        #
-        # {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
-        # {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
-        # {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,"tenantId":  "e4f8c059825cddf5018345b24f912483" , },
-        # {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
-        # {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
-        # {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
-        # {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
-        # {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
-        # #
-
+        {"provinceName": "蒙西", "url": "/mxgroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
 
     ]
 
     startDate = "2023-01-01"
-    endDate = "2023-05-17"
+    endDate = "2023-01-01"
 
-    # startDate = "2023-04-21"
-    # endDate = "2023-04-22"
 
-    # startDate = "2023-06-01"
-    # endDate = "2023-06-01"
 
 
     jtc_hn.execProvinceInfo(startDate,endDate,provinceInfo)
 
-    # res = jtc_hn.getHuanengOuputData("2023-04-27", "2023-04-27", 63)
-    # print(res)
-
-    # getUintUrl = "/qinghaigroup/api/org/org/tree"
-    #
-    # terminalList = jtc_hn.getUnitId(getUintUrl)
-    #
-    # print(terminalList)
-    #
-    # resquestPrivateDataUrl = "/qinghaigroup/api/province/clearing/result/list"
-    # privteDataUpload = {}
-    #
-    # terminalDict = jtc_hn.resquestPrivateData("2023-06-01", "2023-06-02",resquestPrivateDataUrl, terminalList)
-    #
-    # print(terminalDict["terminalDict"])
-    # print(privteDataUpload)
-
-
-    # jtc_hn.outPrivateStatus("青海",privteDataUpload)
+    # print(jtc_hn.getHuanengOuputData(startDate, endDate, 15))

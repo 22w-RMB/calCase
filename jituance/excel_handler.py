@@ -118,6 +118,8 @@ class ExcelHepler:
             "date": "数据日期",
             "type": "数据项",
             "num": "第几个时刻点，从1开始",
+            "provinceData": "在省内的数据",
+            "huanengData": "在华能集团侧的数据",
         }
 
         # self.wb.sheets.add("汇总")
