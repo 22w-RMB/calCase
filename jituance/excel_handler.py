@@ -122,11 +122,6 @@ class ExcelHepler:
             "huanengData": "在华能集团侧的数据",
         }
 
-        # self.wb.sheets.add("汇总")
-
-        all = [
-            ["省份", "机组个数" ,""]
-        ]
 
         for province in compareStatus:
             self.wb.sheets.add(province)
@@ -149,9 +144,6 @@ class ExcelHepler:
                 ws.range((i, 2), (i, 10)).value = data
                 ws.range('A1:zz5000').columns.autofit()
                 i += 1
-
-                # status = [[status] for status in terminalDict[unit]]
-
 
 
     def outALL(self, a):

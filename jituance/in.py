@@ -172,10 +172,7 @@ class ProvinceIn:
                     # print()
 
                     for key in enum:
-                        # if "电力" in enum[key][0]:
-                        #     datesDict[datestr][enum[key][1]] = [ d/4  for d in r[key]]
-                        # else:
-                        #     datesDict[datestr][enum[key][1]] = [ d  for d in r[key]]
+
                         datesDict[datestr][enum[key][1]] =  r[key]
 
                         if r[key] == []:
@@ -310,6 +307,7 @@ class ProvinceIn:
                 "provinceIds": provinceIds,
             }
 
+            time.sleep(1)
             res = CommonClass.execRequest(self.session, method=method, url=resquestUrl, params=param).json()
 
 
@@ -590,7 +588,7 @@ class ProvinceIn:
                                 "type": enum[item],
                                 "num": "无",
                                 "provinceData": "",
-                                "huanengData": "",
+                                "huanengData": str(huanengOneDateData[item]),
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
                                 "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -607,7 +605,7 @@ class ProvinceIn:
                                 "date": date,
                                 "type": enum[item],
                                 "num": "无",
-                                "provinceData": "",
+                                "provinceData": str(provinceOneDateData[item]),
                                 "huanengData": "",
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
@@ -721,9 +719,8 @@ if __name__ == '__main__':
 
     ]
 
-    startDate = "2023-01-01"
-    endDate = "2023-05-01"
-
+    startDate = "2023-04-21"
+    endDate = "2023-05-03"
 
 
 
