@@ -629,14 +629,19 @@ class ProvinceIn:
 
                     # 判断每个时刻点数据是否一致
                     for i in range(0,len(provinceOneDateData[item])):
+                        pDecimalData = provinceOneDateData[item][i]
+                        hDecimalData = huanengOneDateData[item][i]
+                        if ( pDecimalData is None )or (hDecimalData is None):
+
+                            pass
+                        else:
+                            pDecimalData = Decimal(str(provinceOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+                            if "Ele" in item:
+                                pDecimalData = (pDecimalData/Decimal("4")).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
+
+                            hDecimalData = Decimal(str(huanengOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
 
                         # 如果时刻点的数据一样则跳过
-                        pDecimalData = Decimal(str(provinceOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
-                        if "Ele" in item:
-                            pDecimalData = (pDecimalData/Decimal("4")).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
-
-                        hDecimalData = Decimal(str(huanengOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
-
                         if pDecimalData  ==  hDecimalData:
                             # print("数据正确。日期：" + date + "。 机组：" +  provincePrivteData[p]["unitName"] + "。类型 " + enum[item])
                             continue
@@ -717,7 +722,7 @@ if __name__ == '__main__':
     ]
 
     startDate = "2023-01-01"
-    endDate = "2023-01-01"
+    endDate = "2023-05-01"
 
 
 
