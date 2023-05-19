@@ -184,10 +184,7 @@ class ProvinceIn:
                     # 判断运行容量
                     if unit["capacity"] is not None :
 
-                        if r["actualMeasuredPower"] != []:
-                            calRunCapPower = r["actualMeasuredPower"]
-
-                        elif r["realTimeClearingPower"] != []:
+                        if  r["realTimeClearingPower"] != []:
                             calRunCapPower = r["realTimeClearingPower"]
 
                     if calRunCapPower != [] :
@@ -641,7 +638,7 @@ class ProvinceIn:
                             hDecimalData = Decimal(str(huanengOneDateData[item][i])).quantize(Decimal("0.00"), rounding="ROUND_HALF_UP")
 
                         # 如果时刻点的数据一样则跳过
-                        if pDecimalData  ==  hDecimalData:
+                        if (pDecimalData  -  hDecimalData).copy_abs() <= Decimal("0.01"):
                             # print("数据正确。日期：" + date + "。 机组：" +  provincePrivteData[p]["unitName"] + "。类型 " + enum[item])
                             continue
 
