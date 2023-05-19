@@ -67,18 +67,19 @@ class Fire:
 
     def getCost(self,userTenant,provinceUrl,startDate,endDate):
 
+        res = {}
         for ut in userTenant:
 
             CommonClass.switchTenantId(self.session,self.domain,ut['tenantId'])
 
             unitsInfo = self.getFireUnitData(ut['terminalName'],provinceUrl)
-            res =[]
             for unit in unitsInfo:
-                res.append(
-                    self.getFireCostData(provinceUrl, unit['unitId'], startDate, endDate)
-                )
+                if unit["businessType"]  == "FIRE":
+                    res.update(
+                        self.getFireCostData(provinceUrl, unit['unitId'], startDate, endDate)
+                    )
 
-            return res
+        return res
 
     def getFireUnitData(self,terminalName,provinceUrl):
         # 发起机组请求
@@ -93,15 +94,14 @@ class Fire:
             unitInfo.append(
                 {
                     "unitId" : data["id"],
+                    "unitName" : data["unitName"],
                     "capacity" : data["capacity"],
-                    "capacity" : data["capacity"],
-                    "terminalName" : terminalName,
                     "terminalName" : terminalName,
                     "businessType" : data["businessType"]
                 }
             )
 
-        print(unitInfo)
+        # print(unitInfo)
         return unitInfo
 
 
@@ -121,7 +121,7 @@ class Fire:
 
         costResJson = CommonClass.execRequest(self.session,method="GET",url=getCostUrl,params=param).json()
 
-        print(costResJson)
+        # print(costResJson)
 
         for data in costResJson['data']:
             unitVarCost = data['unitVarCost']
@@ -190,19 +190,25 @@ class Fire:
 
 
 
-    def execProvinceInfo(self, startDate,endDate,provinceInfo):
+    def execProvinceInfo(self, startDate,endDate,fireUrl,userInfo):
 
 
-            userInfo = []
-            unitCostList = []
+            userInfo = [
+                {
+                    "username": "mx-test",
+                    "password": "qinghua123@"
+                }
+            ]
+            unitCostList = {}
 
             for user in userInfo:
 
                 userTenant = self.login(user['username'],user['password'])
-                unitCostList.extend(
-                    self.getCost(userTenant, provinceInfo['url'], startDate, endDate)
+                unitCostList.update(
+                    self.getCost(userTenant, fireUrl, startDate, endDate)
                 )
 
+            return unitCostList
 
 
 if __name__ == '__main__':
@@ -212,11 +218,11 @@ if __name__ == '__main__':
 
     jtc_hn = Fire(testSession, yamlData, "hn")
 
-    username = "15110610129"
-    pasword = "huaneng123@"
+    startDate = "2023-04-21"
+    endDate = "2023-04-21"
 
-    jtc_hn.login(username,pasword)
-
+    res = jtc_hn.execProvinceInfo(startDate,endDate,"/mxfire",[])
+    print(res)
 
 
     # jtc_hn.execProvinceInfo(startDate,endDate,provinceInfo)

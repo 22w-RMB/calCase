@@ -136,6 +136,17 @@ class CommonClass:
                 print(str(e))
                 time.sleep(sleepTime)
 
+    @staticmethod
+    def updateKey(l, r, key):
+
+        for k in r:
+
+            if key in r:
+                l[key] = r[key]
+                return
+
+            if k in l:
+                CommonClass.updateKey(l[k], r[k], key)
 
 
 if __name__ == '__main__':

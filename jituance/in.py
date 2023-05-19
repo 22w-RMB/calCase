@@ -9,6 +9,7 @@ from datetime import datetime,timedelta
 
 from common.common import CommonClass
 from excel_handler import ExcelHepler
+from jituance.getCost import Fire
 
 yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
 # yamlPath = r"D:\code\pyhton\calCase\jituance\config\mx_interface.yaml"
@@ -20,6 +21,7 @@ class ProvinceIn:
         self.domain = None
         self.loginInfo = None
         self.session = session
+        self.yamlData = yamlData
         # self.provinceId = "15"
         if type == "test":
             self.domain = yamlData['url_domain']['test_domain']
@@ -99,10 +101,7 @@ class ProvinceIn:
                         "机组名":  unitName  ,
                         "企业名":  terminalName  ,
                         “日期”：{
-                            "DAEle":[],
-                            "DAPrice":[],
-                            "InEle":[],
-                            "InPrice":[],
+                            
                         }
                     }
             }
@@ -178,7 +177,10 @@ class ProvinceIn:
                         if r[key] == []:
                             privteDataUpload[terminal[0]][unit['unitName']].append(datestr + " 【" + enum[key][0] + "】 未上传")
 
+                    # 运行容量
                     datesDict[datestr]["runCapacity"] = []
+                    # 变动成本
+                    datesDict[datestr]["variableCost"] = []
 
                     calRunCapPower = []
                     # 判断运行容量
@@ -223,16 +225,22 @@ class ProvinceIn:
         ed = datetime.strptime(endDate, "%Y-%m-%d")
 
         dataDict = {}
+        enum = {
+            "mltContractEle" : ["中长期合同电力", "mltContractEle"],
+            "daClearEle" : ["日前出清电力","daClearEle"],
+            "rtClearEle" : ["实时出清电力","rtClearEle"],
+            "rtPowerEle" : ["实际计量电力","rtPowerEle"],
+            "mltContractPrice" : ["中长期合同电价","mltContractPrice"],
+            "rtClearPrice" : ["实时出清电价","rtClearPrice"],
+            "runCapacity" : ["运行容量","runCapacity"],
+        }
 
         while sd <= ed:
             dateStr = datetime.strftime(sd, "%Y-%m-%d")
             dataDict[dateStr] = {}
 
-            dataDict[dateStr]["DAEle"] = []
-            dataDict[dateStr]["DAPrice"] = []
-            dataDict[dateStr]["INEle"] = []
-            dataDict[dateStr]["INPrice"] = []
-
+            for key in enum:
+                dataDict[dateStr][key] = []
 
             # 日期 +1
             sd += timedelta(days=1)
@@ -274,6 +282,7 @@ class ProvinceIn:
             "mltContractPrice" : ["中长期合同电价","mltContractPrice"],
             "rtClearPrice" : ["实时出清电价","rtClearPrice"],
             "runCapacity" : ["运行容量","runCapacity"],
+            "variableCost" : ["变动成本","variableCost"],
         }
 
 
@@ -363,6 +372,8 @@ class ProvinceIn:
 
         for province in provinceInfo:
 
+            cost = self.getCost(startDate,endDate,province['fireUrl'],[])
+
             CommonClass.switchTenantId(self.session,self.domain,province['tenantId'])
 
             # 每个省份的获取机组的url
@@ -386,6 +397,9 @@ class ProvinceIn:
             provincePrivteData = responsePrivateData['terminalDict']
             # print(provincePrivteData)
 
+
+            CommonClass.updateKey(provincePrivteData,cost,"variableCost")
+
             # 记录该省份上传的情况
             provincePrivteDataUpload = responsePrivateData['privteDataUpload']
             print("==========")
@@ -394,6 +408,7 @@ class ProvinceIn:
             # 记录华能集团返回的数据
             huanengOutputData = self.getHuanengOuputData(startDate,endDate, province["provinceIds"] )
             print("==========获取华能数据正常")
+            # print(huanengOutputData)
 
             compareStatus = {
                 "provinceUnit" : [],
@@ -491,6 +506,7 @@ class ProvinceIn:
             "mltContractPrice" : "中长期合同电价",
             "rtClearPrice" : "实时出清电价",
             "runCapacity" : "运行容量",
+            "variableCost" : "变动成本",
         }
 
         # 省间系统无场站时，即 provincePrivteData = {}
@@ -699,6 +715,17 @@ class ProvinceIn:
 
         pass
 
+    def getCost(self, startDate, endDate, fireUrl, userInfo):
+
+        session = requests.Session()
+
+        fire_hn = Fire(session, self.yamlData, "hn")
+
+        res = fire_hn.execProvinceInfo(startDate, endDate, fireUrl, userInfo)
+        # res = []
+        session.close()
+
+        return res
 
 
 
@@ -713,12 +740,12 @@ if __name__ == '__main__':
 
     provinceInfo = [
 
-        {"provinceName": "蒙西", "url": "/mxgroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
+        {"provinceName": "蒙西", "url": "/mxgroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" ,"fireUrl":"/mxfire" },
 
     ]
 
-    startDate = "2023-04-21"
-    endDate = "2023-04-21"
+    startDate = "2023-04-27"
+    endDate = "2023-05-03"
 
 
 
