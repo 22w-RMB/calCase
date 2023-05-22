@@ -142,7 +142,10 @@ class ExcelHepler:
                 data = [ item[key] for key in item ]
 
                 ws.range((i, 2), (i, 10)).value = data
-                ws.range('A1:zz5000').columns.autofit()
+                # ws.range('A1:zz5000').columns_width = 50
+                ws.range('A1:f5000').columns.autofit()
+                ws.range('g1:h5000').columns_width = 20
+                ws.range('i1:zz5000').columns.autofit()
                 i += 1
 
 

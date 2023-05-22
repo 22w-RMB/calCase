@@ -193,12 +193,11 @@ class Fire:
     def execProvinceInfo(self, startDate,endDate,fireUrl,userInfo):
 
 
-            userInfo = [
-                {
-                    "username": "mx-test",
-                    "password": "qinghua123@"
-                }
-            ]
+            # userInfo = [
+            #     {
+            #         "username": "mx-test","password": "qinghua123@"
+            #     }
+            # ]
             unitCostList = {}
 
             for user in userInfo:

@@ -8,6 +8,7 @@ from datetime import datetime,timedelta
 
 from common.common import CommonClass
 from excel_handler import ExcelHepler
+from jituance.getCost import Fire
 
 yamlPath = r"D:\code\python\calCase\jituance\config\mx_interface.yaml"
 # yamlPath = r"D:\code\pyhton\calCase\jituance\config\mx_interface.yaml"
@@ -18,6 +19,7 @@ class Jituance:
     def __init__(self, session, yamlData, type):
         self.domain = None
         self.loginInfo = None
+        self.yamlData = yamlData
         self.session = session
         # self.provinceId = "15"
         if type == "test":
@@ -194,6 +196,8 @@ class Jituance:
 
                                 datesDict[datestr]["runCapacity"].append(resPower)
 
+                    datesDict[datestr]["variableCost"] = []
+
 
                     typeStr = "日前" if typeName == "DA" else "日内"
 
@@ -235,6 +239,7 @@ class Jituance:
             dataDict[dateStr]["rtClearEle"] = []
             dataDict[dateStr]["rtClearPrice"] = []
             dataDict[dateStr]["runCapacity"] = []
+            dataDict[dateStr]["variableCost"] = []
 
 
             # 日期 +1
@@ -275,6 +280,7 @@ class Jituance:
             # "mltContractPrice" : ["中长期合同电价","mltContractPrice"],
             "rtClearPrice" : ["实时出清电价","rtClearPrice"],
             "runCapacity" : ["运行容量","runCapacity"],
+            "variableCost" : ["变动成本","variableCost"],
         }
 
 
@@ -364,6 +370,9 @@ class Jituance:
 
         for province in provinceInfo:
 
+            cost = self.getCost(startDate, endDate, province['fireUrl'], province['userInfo'])
+            print(cost)
+
             CommonClass.switchTenantId(self.session,self.domain,province['tenantId'])
             print("===========当前省份为：" ,province['provinceName'])
             # 每个省份的获取机组的url
@@ -387,6 +396,8 @@ class Jituance:
             # 记录省间私有数据，如果没有数据则为{}
             provincePrivteData = responsePrivateData['terminalDict']
             # print(provincePrivteData)
+
+            CommonClass.updateKey(provincePrivteData, cost, "variableCost")
 
             # 记录该省份上传的情况
             provincePrivteDataUpload = responsePrivateData['privteDataUpload']
@@ -503,6 +514,7 @@ class Jituance:
             "rtClearEle" : "实时电量",
             "rtClearPrice" : "实时电价",
             "runCapacity" : "运行容量",
+            "variableCost" : "变动成本",
         }
 
         # 省间系统无场站时，即 provincePrivteData = {}
@@ -596,7 +608,7 @@ class Jituance:
                                 "date": date,
                                 "type": enum[item],
                                 "num": "无",
-                                "provinceData": "",
+                                "provinceData": "无",
                                 "huanengData": str(huanengOneDateData[item]),
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
@@ -615,7 +627,7 @@ class Jituance:
                                 "type": enum[item],
                                 "num": "无",
                                 "provinceData": str(provinceOneDateData[item]),
-                                "huanengData": "",
+                                "huanengData": "无",
                                 "provinceUnitName": provincePrivteData[p]["unitName"],
                                 "huanengUnitName": huanengOutputData[p]['unitName'],
                                 "provinceTerminalName": provincePrivteData[p]["terminalName"],
@@ -650,7 +662,7 @@ class Jituance:
                             # print("数据正确。日期：" + date + "。 机组：" +  provincePrivteData[p]["unitName"] + "。类型 " + enum[item])
                             continue
 
-                        print("=======================================数据错误" )
+                        print("======================================= 【"+ enum[item] +"】 数据错误" )
 
                         # 如果时刻点的数据不一样，则记录错误
                         compareStatus['dataCompare'].append({
@@ -707,6 +719,21 @@ class Jituance:
 
         pass
 
+    def getCost(self, startDate, endDate, fireUrl, userInfo):
+
+        session = requests.Session()
+
+        fire_hn = Fire(session, self.yamlData, "hn")
+        # 如果没有火电应用
+        if fireUrl == "":
+            return  []
+
+        res = fire_hn.execProvinceInfo(startDate, endDate, fireUrl, userInfo)
+        # res = []
+        session.close()
+
+        return res
+
 
 
 if __name__ == '__main__':
@@ -720,29 +747,77 @@ if __name__ == '__main__':
 
     provinceInfo = [
 
-        {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63, "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , },
-        # {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,"tenantId":  "e4f8c059825cddf50183459ebc7223eb" , },
-        # {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54, "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  ,},
-        # {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12, "tenantId": "e4f8c059825cddf5018345ad48fc2451"  ,},
-        # {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,"tenantId":  "e4f8c059825cddf50183459e32ae23e9" , },
-        # {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64, "tenantId":  "e4f8c059825cddf5018345af600e2462" ,},
-        # {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,"tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , },
-        # {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,"tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , },
-        #
-        # {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,"tenantId":  "e4f8c059825cddf5018345a768bd2431" , },
-        # {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,"tenantId":  "e4f8c059825cddf50183630233c82afc" , },
-        # {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,"tenantId":  "e4f8c059825cddf5018345b24f912483" , },
-        # {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,"tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , },
-        # {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,"tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , },
-        # {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,"tenantId":  "e4f8c059825cddf50183459b042523e3" , },
-        # {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,"tenantId":  "e4f8c059825cddf5018345b0c5652472" , },
-        # {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,"tenantId":  "e4f8c059825cddf50183d52654403d29" , },
-        # #
+        {"provinceName": "青海", "url": "/qinghaigroup", "provinceIds": 63,
+         "tenantId":  "e4f35ef0861bd6020186a6938ab216dd" , "fireUrl" : "/qinghaifire" ,
+         "userInfo":[ {"username": "qh-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "四川", "url": "/sichuangroup", "provinceIds": 51,
+         "tenantId":  "e4f8c059825cddf50183459ebc7223eb" , "fireUrl" : "/sichuanfire",
+         "userInfo":[ {"username": "sc-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "西藏", "url": "/xizanggroup", "provinceIds": 54,
+         "tenantId": "e4f35ef0861bd6020186a6d3483718ba"  , "fireUrl" : "" ,
+         "userInfo":[ {"username": "","password": ""} ,]
+         },
+        {"provinceName": "天津", "url": "/tianjingroup", "provinceIds": 12,
+         "tenantId": "e4f8c059825cddf5018345ad48fc2451"  , "fireUrl" : "/tianjinfire" ,
+         "userInfo":[ {"username": "tj-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "蒙东", "url": "/mengdonggroup", "provinceIds": 150,
+         "tenantId":  "e4f8c059825cddf50183459e32ae23e9" , "fireUrl" : "/mengdongfire" ,
+         "userInfo":[ {"username": "md-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "宁夏", "url": "/ningxiagroup", "provinceIds": 64,
+         "tenantId":  "e4f8c059825cddf5018345af600e2462" , "fireUrl" : "/ningxiafire" ,
+         "userInfo":[ {"username": "nx-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "新疆", "url": "/xinjianggroup", "provinceIds": 65,
+         "tenantId":  "e4f35ef0861bd6020186a6c8bed0182d" , "fireUrl" : "/xinjiangfire" ,
+         "userInfo":[ {"username": "xj-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,
+         "tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , "fireUrl" : "/mxfire" ,
+         "userInfo":[ {"username": "mx-test","password": "qinghua123@"} ,]
+         },
+
+        {"provinceName": "河北", "url": "/hebeigroup", "provinceIds": 13,
+         "tenantId":  "e4f8c059825cddf5018345a768bd2431" , "fireUrl" : "/hebeifire" ,
+         "userInfo":[ {"username": "hb-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,
+         "tenantId":  "e4f8c059825cddf50183630233c82afc" , "fireUrl" : "/gansufire" ,
+         "userInfo":[ {"username": "gs-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,
+         "tenantId":  "e4f8c059825cddf5018345b24f912483" , "fireUrl" : "/lnfire" ,
+         "userInfo":[ {"username": "ln-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "吉林", "url": "/standardgroup", "provinceIds": 22,
+         "tenantId":  "e4f8c059825cddf50183459bd6aa23e6" , "fireUrl" : "/standardfire" ,
+         "userInfo":[ {"username": "jl-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "黑龙江", "url": "/heilongjianggroup", "provinceIds": 23,
+         "tenantId":  "e4f35ef0861bd6020186a6c6792c1824" , "fireUrl" : "/heilongjiangfire" ,
+         "userInfo":[ {"username": "hlj-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "陕西", "url": "/shan_xigroup", "provinceIds": 61,
+         "tenantId":  "e4f8c059825cddf50183459b042523e3" , "fireUrl" : "/shan_xifire" ,
+         "userInfo":[ {"username": "shanxi-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "山西", "url": "/shanxigroup", "provinceIds": 14,
+         "tenantId":  "e4f8c059825cddf5018345b0c5652472" , "fireUrl" : "/shanxifire" ,
+         "userInfo":[ {"username": "sx-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "福建", "url": "/fujiangroup", "provinceIds": 35,
+         "tenantId":  "e4f8c059825cddf50183d52654403d29" , "fireUrl" : "/fujianfire" ,
+         "userInfo":[ {"username": "fj-test","password": "qinghua123@"} ,]
+         },
+
 
 
     ]
 
-    startDate = "2023-04-21"
+    startDate = "2023-04-27"
     endDate = "2023-05-03"
 
     # startDate = "2023-04-27"
