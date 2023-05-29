@@ -111,14 +111,14 @@ class ExcelHepler:
         enum = {
             "info": "比较结果",
             "unitId": "机组ID",
-            "provinceUnitName": "在省间系统的机组名称",
-            "provinceTerminalName": "在省间系统的企业名称",
+            "provinceUnitName": "在省的系统的机组名称",
+            "provinceTerminalName": "在省的系统的企业名称",
             "huanengUnitName": "在华能集团侧的机组名称",
             "huanengTerminalName": "在华能集团侧的企业名称",
             "date": "数据日期",
             "type": "数据项",
             "num": "第几个时刻点，从1开始",
-            "provinceData": "在省内的数据",
+            "provinceData": "在省的数据",
             "huanengData": "在华能集团侧的数据",
         }
 

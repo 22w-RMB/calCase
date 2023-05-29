@@ -290,7 +290,8 @@ class Jituance:
                 "dateData" : dataDict,
                 "unitName": unit['unitName'],
                 "terminalName": terminal[0],
-                "capacity": unit['capacity']
+                "capacity": unit['capacity'],
+                "businessType": unit['businessType']
             }
         }
 
@@ -396,11 +397,34 @@ class Jituance:
         if provincePrivteData == {} :
             compareStatus['provinceUnit'] .append(
                 {
-                    "info" : "省间系统无场站"
+                    "info" : "省的系统无场站"
                 }
             )
 
         for p in provincePrivteData:
+
+            provinceDateDatass = provincePrivteData[p]['dateData']
+
+            for date in provinceDateDatass:
+                provinceOneDateData = provinceDateDatass[date]
+
+                for item in provinceOneDateData:
+
+                    if len(provinceOneDateData[item]) == 0:
+                        if (item == "variableCost") and (provincePrivteData[p]['businessType'] != "FIRE" ):
+                            continue
+
+                        compareStatus['uploadStatus'].append({
+                            "info": "该机组该日的的 【"+enum[item] +"】 数据未设置",
+                            "unitId": p,
+                            "date": date,
+                            "type": enum[item],
+                            "provinceUnitName": provincePrivteData[p]["unitName"],
+                            "provinceTerminalName": provincePrivteData[p]["terminalName"],
+                        })
+
+                        continue
+
 
             # 判断华能有没有该机组
             if p not in huanengOutputData:
@@ -421,11 +445,11 @@ class Jituance:
                         haveData = True
                         break
 
-                haveDataInfo = "=====且省间有数据" if haveData else "省间没有数据"
+                haveDataInfo = "=====且省有数据" if haveData else "省没有数据"
 
                 print("=================华能没有该机组"+ p)
                 compareStatus['unitMiss'].append( {
-                    "info" : "该机组只有省间系统有，集团侧没有找到该机组" + haveDataInfo,
+                    "info" : "该机组只有省系统有，集团侧没有找到该机组" + haveDataInfo,
                     "unitId" : p,
                     "provinceUnitName" : provincePrivteData[p]["unitName"],
                     "provinceTerminalName" : provincePrivteData[p]["terminalName"],
@@ -439,7 +463,7 @@ class Jituance:
             if provincePrivteData[p]['unitName'] != huanengOutputData[p]['unitName']:
                 compareStatus['nameCompare'].append(
                     {
-                        "info": "该机组的省间和华能集团侧的名称不一致",
+                        "info": "该机组的省系统和华能集团侧的名称不一致",
                         "unitId": p,
                         "provinceUnitName": provincePrivteData[p]["unitName"],
                         "huanengUnitName": huanengOutputData[p]['unitName'],
@@ -452,7 +476,7 @@ class Jituance:
             if provincePrivteData[p]['terminalName'] != huanengOutputData[p]['terminalName']:
                 compareStatus['nameCompare'].append(
                     {
-                        "info": "该机组所在的电厂的省间和华能集团侧的名称不一致",
+                        "info": "该机组所在的电厂的省的系统和华能集团侧的名称不一致",
                         "unitId": p,
                         "provinceUnitName": provincePrivteData[p]["unitName"],
                         "huanengUnitName": huanengOutputData[p]['unitName'],
@@ -478,7 +502,7 @@ class Jituance:
                         # 省内为空，集团侧不为空
                         if len(provinceOneDateData[item]) == 0 :
                             compareStatus['dataCompare'].append({
-                                "info": "该机组的 【"+enum[item] +"】 省间数据为空，集团侧数据不为空",
+                                "info": "该机组的 【"+enum[item] +"】 省的数据为空，集团侧数据不为空",
                                 "unitId": p,
                                 "date": date,
                                 "type": enum[item],
@@ -496,7 +520,7 @@ class Jituance:
                         # 集团侧为空，省间不为空
                         if len(huanengOneDateData[item]) == 0:
                             compareStatus['dataCompare'].append({
-                                "info": "该机组的 【"+enum[item] +"】 集团侧数据为空，省间数据不为空",
+                                "info": "该机组的 【"+enum[item] +"】 集团侧数据为空，省的数据不为空",
                                 "unitId": p,
                                 "date": date,
                                 "type": enum[item],
@@ -580,7 +604,7 @@ class Jituance:
                 haveDataInfo = "=====且集团侧有数据" if haveData else "集团侧没有数据"
 
                 compareStatus['unitMiss'].append({
-                    "info": "该机组只有集团侧有，省间系统没有找到该机组。" + haveDataInfo,
+                    "info": "该机组只有集团侧有，省的系统没有找到该机组。" + haveDataInfo,
                     "unitId": h,
                     "provinceUnitName": "",
                     "provinceTerminalName": "",
@@ -600,6 +624,7 @@ class Jituance:
             "unitMiss": "机组缺失表",
             "nameCompare": "机组和企业名称比较表",
             "provinceUnit": "是否有机组",
+            "uploadStatus": "上传情况表",
         }
 
         a = {
@@ -664,8 +689,8 @@ class Jituance:
 
             for province in provinceInfo:
 
-                # cost = self.getCost(startDate, endDate, province['fireUrl'], province['userInfo'])
-                cost = []
+                cost = self.getCost(startDate, endDate, province['fireUrl'], province['userInfo'])
+                # cost = []
                 # print(cost)
                 print("==========获取变动成本正常")
 
@@ -710,6 +735,7 @@ class Jituance:
                     "unitMiss" :[] ,
                     "nameCompare" : [],
                     "dataCompare" : [],
+                    "uploadStatus" : [],
                 }
 
                 self.compare(privteData,huanengOutputData, compareStatus)
@@ -815,15 +841,15 @@ if __name__ == '__main__':
     ]
 
     info = {
-        # "省内" : provinceIn,
-        "省间" : province,
+        "省内" : provinceIn,
+        # "省间" : province,
     }
 
     # startDate = "2023-04-27"
     # endDate = "2023-05-03"
 
-    startDate = "2023-04-27"
-    endDate = "2023-04-27"
+    startDate = "2023-05-23"
+    endDate = "2023-05-24"
 
 
 
