@@ -6,11 +6,11 @@ import datetime
 from dateutil.parser import parse
 
 def rigundong():
-    sourceFilePath = r"D:\code\python\calCase\gs\muban\安北三月份D+3交易.xlsx"
+    sourceFilePath = r"D:\code\python\calCase\gs\输入\客户提供的\分时合同\安北三月份D+3交易.xlsx"
 
-    outputPath = r"D:\code\python\calCase\gs\daochu"
+    outputPath = r"D:\code\python\calCase\gs\导出\客户的\分时合同"
 
-    mubanPath = r"D:\code\python\calCase\gs\muban\导出模板.xlsx"
+    mubanPath = r"D:\code\python\calCase\gs\muban\分时合同模板.xlsx"
 
     a = "20220201"
 
@@ -59,8 +59,8 @@ def rigundong():
 
 
 def yuanshigonglv():
-    outputPath = r"D:\code\python\calCase\gs\daochu"
-    sourceFilePath = r"D:\code\python\calCase\gs\input\安马第二风电原始功率.xlsx"
+    outputPath = r"D:\code\python\calCase\gs\导出\客户的\原始功率"
+    sourceFilePath = r"D:\code\python\calCase\gs\输入\客户提供的\原始功率\安马第二风电原始功率.xlsx"
 
 
     mubanPath = r"D:\code\python\calCase\gs\muban\原始功率.xls"
