@@ -738,7 +738,8 @@ class Jituance:
                     "uploadStatus" : [],
                 }
 
-                self.compare(privteData,huanengOutputData, compareStatus)
+                self.getUnitInfo(terminalList,compareStatus)
+                # self.compare(privteData,huanengOutputData, compareStatus)
 
                 if len(compareStatus["dataCompare"]) != 0:
                     errorProvince.append(province['provinceName'])
@@ -748,6 +749,28 @@ class Jituance:
             self.outAllCompareStatus(allProvinceCompareStatus,queryType)
 
             print(queryType, "数据不一致的省份： ", errorProvince)
+
+
+    # 判断机组装机容量
+    def getUnitInfo(self, terminalList , compareStatus):
+
+        for terminal in terminalList:
+
+            terminalName = terminal[0]
+            unitList = terminal[1]
+
+            for unit in unitList:
+
+                if unit['capacity'] == None:
+
+
+                    compareStatus['uploadStatus'].append({
+                        "info": "该机组的 【装机容量】 数据未设置",
+                        "unitId": unit['unitId'],
+                        "type": "装机容量",
+                        "provinceUnitName": unit["unitName"],
+                        "provinceTerminalName": terminalName,
+                    })
 
 
 
@@ -799,10 +822,10 @@ if __name__ == '__main__':
          "tenantId":  "e4f8c059825cddf5018345a768bd2431" , "fireUrl" : "/hebeifire" ,
          "userInfo":[ {"username": "hb-test","password": "qinghua123@"} ,]
          },
-        {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,
-         "tenantId":  "e4f8c059825cddf50183630233c82afc" , "fireUrl" : "/gansufire" ,
-         "userInfo":[ {"username": "gs-test","password": "qinghua123@"} ,]
-         },
+        # {"provinceName": "甘肃", "url": "/gansugroup", "provinceIds": 62,
+        #  "tenantId":  "e4f8c059825cddf50183630233c82afc" , "fireUrl" : "/gansufire" ,
+        #  "userInfo":[ {"username": "gs-test","password": "qinghua123@"} ,]
+        #  },
         {"provinceName": "辽宁", "url": "/liaoninggroup", "provinceIds": 21,
          "tenantId":  "e4f8c059825cddf5018345b24f912483" , "fireUrl" : "/lnfire" ,
          "userInfo":[ {"username": "ln-test","password": "qinghua123@"} ,]
@@ -841,16 +864,15 @@ if __name__ == '__main__':
     ]
 
     info = {
-        "省内" : provinceIn,
-        # "省间" : province,
+        # "省内" : provinceIn,
+        "省间" : province,
     }
 
     # startDate = "2023-04-27"
     # endDate = "2023-05-03"
 
     startDate = "2023-05-23"
-    endDate = "2023-05-24"
-
+    endDate = "2023-05-23"
 
 
 
