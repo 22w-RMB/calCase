@@ -689,10 +689,10 @@ class Jituance:
 
             for province in provinceInfo:
 
-                cost = self.getCost(startDate, endDate, province['fireUrl'], province['userInfo'])
-                # cost = []
-                # print(cost)
-                print("==========获取变动成本正常")
+                # cost = self.getCost(startDate, endDate, province['fireUrl'], province['userInfo'])
+                # # cost = []
+                # # print(cost)
+                # print("==========获取变动成本正常")
 
                 CommonClass.switchTenantId(self.session,self.domain,province['tenantId'])
                 print("===========当前省份为：" ,province['provinceName'])
@@ -709,26 +709,26 @@ class Jituance:
                 # print(terminalList)
                 print("==========获取机组正常")
 
-                privteData = {}
-
-                if queryType == "省内":
-                    resquestPrivateDataUrl = province["url"] + province["privateUrl"]
-                    privteData = getattr(self, province["privateMethodName"] )(startDate,endDate,resquestPrivateDataUrl, terminalList)
-
-                elif queryType == "省间":
-
-                    # 每个省份的获取私有数据的url
-                    resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
-                    # 获取省间私有数据
-                    privteData = self.resquestProvincePrivateData(startDate,endDate,resquestPrivateDataUrl, terminalList)
-                    print("==========获取私有数据正常")
-
-                CommonClass.updateKey(privteData, cost, "variableCost")
-
-                # 记录华能集团返回的数据
-                huanengOutputData = self.getHuanengOuputData(startDate,endDate, province["provinceIds"],queryType)
-                # print(huanengOutputData)
-                print("==========获取华能数据正常")
+                # privteData = {}
+                #
+                # if queryType == "省内":
+                #     resquestPrivateDataUrl = province["url"] + province["privateUrl"]
+                #     privteData = getattr(self, province["privateMethodName"] )(startDate,endDate,resquestPrivateDataUrl, terminalList)
+                #
+                # elif queryType == "省间":
+                #
+                #     # 每个省份的获取私有数据的url
+                #     resquestPrivateDataUrl = province["url"] + "/api/province/clearing/result/list"
+                #     # 获取省间私有数据
+                #     privteData = self.resquestProvincePrivateData(startDate,endDate,resquestPrivateDataUrl, terminalList)
+                #     print("==========获取私有数据正常")
+                #
+                # CommonClass.updateKey(privteData, cost, "variableCost")
+                #
+                # # 记录华能集团返回的数据
+                # huanengOutputData = self.getHuanengOuputData(startDate,endDate, province["provinceIds"],queryType)
+                # # print(huanengOutputData)
+                # print("==========获取华能数据正常")
 
                 compareStatus = {
                     "provinceUnit" : [],
@@ -744,7 +744,13 @@ class Jituance:
                 if len(compareStatus["dataCompare"]) != 0:
                     errorProvince.append(province['provinceName'])
 
-                allProvinceCompareStatus[province["provinceName"]] = compareStatus
+                # print( allProvinceCompareStatus.keys())
+
+                if province["provinceName"] in  allProvinceCompareStatus.keys():
+                    allProvinceCompareStatus[province["provinceName"]]["uploadStatus"].extend(compareStatus['uploadStatus'])
+                else:
+                    allProvinceCompareStatus[province["provinceName"]] = compareStatus
+                print("======",compareStatus)
 
             self.outAllCompareStatus(allProvinceCompareStatus,queryType)
 
@@ -814,7 +820,11 @@ if __name__ == '__main__':
          "userInfo":[ {"username": "xj-test","password": "qinghua123@"} ,]
          },
         {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,
-         "tenantId":  "e4d20ccb81bcf0170181cbebbaec01c3" , "fireUrl" : "/mxfire" ,
+         "tenantId":  "e4f8c059825cddf5018261920bcc007e" , "fireUrl" : "/mxfire" ,
+         "userInfo":[ {"username": "mx-test","password": "qinghua123@"} ,]
+         },
+        {"provinceName": "蒙西", "url": "/mengxigroup", "provinceIds": 15,
+         "tenantId":  "e4f8c059825cddf50182619278940084" , "fireUrl" : "/mxfire" ,
          "userInfo":[ {"username": "mx-test","password": "qinghua123@"} ,]
          },
 
