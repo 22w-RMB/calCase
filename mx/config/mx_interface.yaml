@@ -6,7 +6,7 @@ logininfo:
   test_info:
     publicKey_url:
     login_url: /usercenter/web/login
-    switch_url: /usercenter/web/switchTenant?tenantId=e4f98318818fd8d4018290af355735c2
+    switch_url: /usercenter/web/switchTenant?tenantId=e4fa30fc815599960181660e095e0398
     username: zhanzw_czc
     password: passwd123@
     loginMode: 2
