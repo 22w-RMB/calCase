@@ -1,0 +1,19 @@
+"2023-01":
+  T1:
+    time:
+      - 02:00-04:00
+    haveRatio: True
+    ratio:
+      tip:
+      peak:
+      flat:
+      valley:
+  T12:
+    time:
+      - 00:00-01:00
+    haveRatio: True
+    ratio:
+      tip: 50
+      peak: 12
+      flat: 3
+      valley: 6
