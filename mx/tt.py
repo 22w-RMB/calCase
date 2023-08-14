@@ -574,6 +574,33 @@ class Mengxi:
             sd  += timedelta(days=1)
         pass
 
+    # 删除节点
+    def deleteNode(self):
+
+
+        queryUrl = self.domain + "/datacenter/mx/api/data/node/query"
+        queryParam = {
+            "provinceAreaId" : "015"
+        }
+        queryResquest = CommonClass.execRequest(self.session,method="GET",params=queryParam,url=queryUrl).json()
+        print(queryResquest)
+
+        for data in queryResquest['data']:
+
+            if "zzw" in data['nodeName'] :
+                continue
+
+
+            deleteUrl = self.domain + "/datacenter/mx/api/data/node/delete"
+
+            deleteParam = {
+                "id" : data['id']
+            }
+
+            deleteResquest = CommonClass.execRequest(self.session, method="DELETE", params=deleteParam, url=deleteUrl).json()
+
+            print(deleteResquest)
+
 
 if __name__ == '__main__':
     testSession = requests.Session()
@@ -584,17 +611,17 @@ if __name__ == '__main__':
 
     mx_test.login()
 
+    mx_test.deleteNode()
 
-
-    num = 10
-
-    t = []
-    for i in range(0,num):
-        t.append(Thread(target=mx_test.queryContract, args=("线程"+str(i),)))
-
-
-    for i in range(0,num):
-        t[i].start()
+    # num = 10
+    #
+    # t = []
+    # for i in range(0,num):
+    #     t.append(Thread(target=mx_test.queryContract, args=("线程"+str(i),)))
+    #
+    #
+    # for i in range(0,num):
+    #     t[i].start()
 
 
     # mx_test.createCost("2022-01-01","2024-01-02")
