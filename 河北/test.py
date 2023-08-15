@@ -51,6 +51,30 @@ def writeDataT(dataT):
 
     pass
 
+
+def queryDataT():
+    db = MysqlTool()
+
+    queryRes = db.querySessionIdConfig()
+    print(queryRes)
+
+    d = {}
+    for res in queryRes:
+        month = res["month"]
+        if month not in d.keys():
+            d[month] = {}
+
+        period_time_coding = res['period_time_coding']
+        d[month][period_time_coding] = {}
+        d[month][period_time_coding]["time"] = eval(res['time'])
+        d[month][period_time_coding]["haveRatio"] = eval(res['haveRatio'])
+        d[month][period_time_coding]["ratio"] = eval(res['ratio'])
+
+    db.close()
+    print(d)
+    return d
+
+
 def writeDataPeak(dataPeak):
     db = MysqlTool()
 
@@ -70,6 +94,28 @@ def writeDataPeak(dataPeak):
     db.close()
 
     pass
+
+def queryDataPeak():
+    db = MysqlTool()
+
+    queryRes = db.queryPeakPinggu()
+    print(queryRes)
+
+    d = {}
+    for res in queryRes:
+        month = res["month"]
+        if month not in d.keys():
+            d[month] = {}
+
+        peak_type = res['peak_type']
+        d[month][peak_type] = {}
+        d[month][peak_type] = eval(res['time'])
+
+    db.close()
+    print(d)
+    return d
+
+
 
 
 def a():
@@ -263,6 +309,9 @@ def generate(sd, ed, onedayData):
 if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
-    writeDataPeak(dataPeakyaml)
+    # writeDataPeak(dataPeakyaml)
     # a()
+
+    queryDataT()
+    queryDataPeak()
     pass

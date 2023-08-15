@@ -111,6 +111,24 @@ class MysqlTool:
         cursor.close()
 
     # @cursorOperate
+    def querySessionIdConfig(self):
+
+        cursor = self.db.cursor()
+
+        sql = "select * from session_id_config"
+
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header,row)) for row in res]
+
+
+
+    # @cursorOperate
     def insertPeakPinggu(self,dic):
 
         cursor = self.db.cursor()
@@ -133,6 +151,24 @@ class MysqlTool:
         print(sql)
         cursor.execute(sql)
         cursor.close()
+
+    # @cursorOperate
+    def queryPeakPinggu(self):
+
+        cursor = self.db.cursor()
+
+        sql = "select * from peak_pinggu"
+
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header,row)) for row in res]
+
+
 
     def close(self):
         self.db.close()
