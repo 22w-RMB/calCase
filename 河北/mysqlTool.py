@@ -84,6 +84,56 @@ class MysqlTool:
         cursor.execute(sql)
         cursor.close()
 
+    # @cursorOperate
+    def insertSessionIdConfig(self,dic):
+
+        cursor = self.db.cursor()
+
+        sql = "insert into session_id_config(month,period_time_coding,time,haveRatio,ratio,update_time,create_time) VALUES"
+
+
+        l = [
+            dic["month"],
+            dic["period_time_coding"],
+            dic["time"],
+            dic["haveRatio"],
+            dic["ratio"],
+            dic["update_time"],
+            dic["create_time"],
+             ]
+
+        lStr = str(l).lstrip("[").rstrip("]")
+
+        sql +=  "("+  lStr  +");"
+
+        print(sql)
+        cursor.execute(sql)
+        cursor.close()
+
+    # @cursorOperate
+    def insertPeakPinggu(self,dic):
+
+        cursor = self.db.cursor()
+
+        sql = "insert into peak_pinggu(month,peak_type,time,update_time,create_time) VALUES"
+
+
+        l = [
+            dic["month"],
+            dic["peak_type"],
+            dic["time"],
+            dic["update_time"],
+            dic["create_time"],
+             ]
+
+        lStr = str(l).lstrip("[").rstrip("]")
+
+        sql +=  "("+  lStr  +");"
+
+        print(sql)
+        cursor.execute(sql)
+        cursor.close()
+
     def close(self):
         self.db.close()
 

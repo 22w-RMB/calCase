@@ -28,6 +28,50 @@ print(dataTyaml)
 print(dataPeakyaml)
 
 
+def writeDataT(dataT):
+    db = MysqlTool()
+
+    for date in dataT:
+
+        for period_time_coding in dataT[date]:
+            ptc = dataT[date][period_time_coding]
+            d = {
+                "month": date,
+                "period_time_coding": period_time_coding,
+                "time": str(ptc["time"]),
+                "haveRatio": str(ptc["haveRatio"]),
+                "ratio": str(ptc["ratio"]),
+                "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "create_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            print(d)
+            db.insertSessionIdConfig(d)
+
+    db.close()
+
+    pass
+
+def writeDataPeak(dataPeak):
+    db = MysqlTool()
+
+    for date in dataPeak:
+
+        for peakType in dataPeak[date]:
+            d = {
+                "month": date,
+                "peak_type": peakType,
+                "time": str(dataPeak[date][peakType]),
+                "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "create_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            print(d)
+            db.insertPeakPinggu(d)
+
+    db.close()
+
+    pass
+
+
 def a():
 
 
@@ -54,7 +98,6 @@ def a():
             execData(tradingSession,startDate,endDate,fileDataList)
 
         # print(files)
-
 
 
 def execData(tradingSession,startDate,endDate,fileDataList):
@@ -92,7 +135,6 @@ def execData(tradingSession,startDate,endDate,fileDataList):
         writeSql(data,tradingSession,month,daysData,startDate,endDate)
 
 
-
 def writeSql(data,tradingSession,month,daysData,startDate,endDate):
 
     db = MysqlTool()
@@ -110,7 +152,7 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate):
             "contract_name": contract_name,
             "buyer_name": buyer_name,
             "seller_name": data["seller_name"] if "seller_name" in data.keys() else None,
-            "period_time_coding": data["period_time_coding"],
+            "period_time_coding": data["period_time_coding"][:2],
             "ele": str(daysData[date]["ele"]),
             "price": str(daysData[date]["price"]),
             "date": date,
@@ -220,5 +262,7 @@ def generate(sd, ed, onedayData):
 
 if __name__ == '__main__':
 
-
-    a()
+    # writeDataT(dataTyaml)
+    writeDataPeak(dataPeakyaml)
+    # a()
+    pass
