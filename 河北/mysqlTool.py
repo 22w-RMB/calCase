@@ -16,6 +16,7 @@ class MysqlTool:
         try:
             self.db = pymysql.connect(host=host,port=port,user=user,password=password,database=database,charset=charset)
             print("连接数据库成功")
+            self.db.autocommit(1)
         except:
             print("连接数据库失败")
 
@@ -40,9 +41,11 @@ class MysqlTool:
         return wrapper
 
     # @cursorOperate
-    def insertContract(self,cursor,dic):
+    def insertContract(self,dic):
 
-        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time) VALUES"
+        cursor = self.db.cursor()
+
+        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time,month) VALUES"
 
         # l = [
         #     dic["contract_name"],
@@ -70,18 +73,16 @@ class MysqlTool:
             dic["end_date"],
             dic["update_time"],
             dic["create_time"],
+            dic["month"],
              ]
 
-        sql +=  "("+ (",".join(l))   +")"
+        lStr = str(l).replace("[","").replace("]","")
 
+        sql +=  "("+  lStr  +");"
 
         print(sql)
-
-
-        # cursor.execute(sql)
-        # print("6666")
-
-        pass
+        cursor.execute(sql)
+        cursor.close()
 
     def close(self):
         self.db.close()
@@ -89,7 +90,7 @@ class MysqlTool:
 if __name__ == '__main__':
 
 
-    db = MysqlTool()
+    # db = MysqlTool()
 
     d = {
         "contract_name" : "dsa",
@@ -104,7 +105,6 @@ if __name__ == '__main__':
         "update_time" : "",
         "create_time" : "",
 
-
     }
 
-    db.insertContract("1",d)
+    # db.insertContract("1",d)

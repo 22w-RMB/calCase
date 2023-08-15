@@ -8,7 +8,15 @@ class Tool:
     @staticmethod
     def time96To24list(timeList):
 
+
         time24List = [0 for i in range(0,24) ]
+        count = 0
+
+        if timeList == None:
+            return {
+                "time24List": time24List,
+                "count": count
+            }
 
         # 处理00:00 开始的，如00:00-00:45
 
@@ -22,16 +30,27 @@ class Tool:
             while begin<=end:
                 time24List[begin] = 1
                 begin += 1
+                count += 1
 
-        return time24List
+        return {
+            "time24List": time24List,
+            "count": count
+        }
 
 
     @staticmethod
     def time24o24list(timeList):
 
         time24List = [0 for i in range(0,24) ]
+        count = 0
 
         # 处理00:00 开始的，如00:00-01:00
+        if time24List == None:
+            return {
+                "time24List": time24List,
+                "count": count
+            }
+
 
         for d in timeList:
             tempList = d.split("-")
@@ -43,16 +62,25 @@ class Tool:
             while begin<=end:
                 time24List[begin] = 1
                 begin += 1
+                count += 1
 
-        return time24List
+        return {
+
+            "time24List":time24List,
+            "count" : count
+        }
 
 
 if __name__ == '__main__':
 
-    test = ["00:00-00:45","20:00-23:45"]
+    # test = ["00:00-00:45","20:00-23:45"]
+    #
+    # print(Tool.time96To24list(test))
 
-    print(Tool.time96To24list(test))
+    test1 = ["17:00-19:00"]
+    a = str(test1)
 
-    test1 = ["00:00-02:00","03:00-06:00"]
+    # print(Tool.time24o24list(test1))
 
-    print(Tool.time24o24list(test1))
+    print(a)
+    print(type(eval(a)))

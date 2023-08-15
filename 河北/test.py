@@ -2,11 +2,9 @@ import datetime
 import os
 from datetime import timedelta
 from tool import Tool
-import requests
-
 from common.common import CommonClass
 from excel_handler import ExcelHepler
-from threading import Thread
+from mysqlTool import MysqlTool
 
 dataTyamlPath = CommonClass.mkDir("河北","config","T.yaml",isGetStr=True)
 dataPeakyamlPath = CommonClass.mkDir("河北","config","峰平谷.yaml",isGetStr=True)
@@ -58,6 +56,7 @@ def a():
         # print(files)
 
 
+
 def execData(tradingSession,startDate,endDate,fileDataList):
 
 
@@ -73,44 +72,151 @@ def execData(tradingSession,startDate,endDate,fileDataList):
         period_of_StartTimeString = data["Period_of_time"][:10]
         period_of_EndTimeString = data["Period_of_time"][11:]
 
-        # print(period_of_StartTimeString)
-        # print(period_of_EndTimeString)
 
+        sd = datetime.datetime.strptime(period_of_StartTimeString, "%Y-%m-%d")
+        ed = datetime.datetime.strptime(period_of_EndTimeString, "%Y-%m-%d")
 
-        period_of_StartTime = datetime.datetime.strptime(period_of_StartTimeString)
-        period_of_EndTime = datetime.datetime.strptime(period_of_EndTimeString)
+        days = (ed-sd).days+1
 
         month = data["Period_of_time"][:7]
 
-        if month not in dataTyaml.keys():
-            print(month, "该月份未设置分时段编码")
+        onedayData = getOneDayData(month, period_time_coding, data["ele"]/days, data["price"])
+        print()
+
+        if onedayData == None:
             continue
 
-        if period_time_coding not in  dataTyaml[month].keys():
-            print(month, "该月份未设置",period_time_coding,"分时段编码")
-            continue
+        daysData = generate(sd,ed,onedayData)
+        print(daysData)
 
-        if dataTyaml[month][period_time_coding]["haveRatio"] == True:
-            # 查峰平谷
-            if month not in dataPeakyaml.keys():
-                print(month, "该月份未设置峰平谷")
+        writeSql(data,tradingSession,month,daysData,startDate,endDate)
+
+
+
+def writeSql(data,tradingSession,month,daysData,startDate,endDate):
+
+    db = MysqlTool()
+
+    for date in daysData:
+        contract_name = ""
+        buyer_name = None
+        if "buyer_name" in data.keys():
+            contract_name = tradingSession + data["buyer_name"]
+            buyer_name = data["buyer_name"]
+        else:
+            contract_name = tradingSession + data["seller_name"]
+
+        d = {
+            "contract_name": contract_name,
+            "buyer_name": buyer_name,
+            "seller_name": data["seller_name"] if "seller_name" in data.keys() else None,
+            "period_time_coding": data["period_time_coding"],
+            "ele": str(daysData[date]["ele"]),
+            "price": str(daysData[date]["price"]),
+            "date": date,
+            "start_date": startDate,
+            "end_date": endDate,
+            "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "create_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "month": month
+        }
+
+        print(d)
+        db.insertContract(d)
+
+    db.close()
+
+    pass
+
+
+def getOneDayData(month,period_time_coding,ele,price):
+
+
+    if month not in dataTyaml.keys():
+        print(month, "该月份未设置分时段编码")
+        return None
+
+    if period_time_coding not in dataTyaml[month].keys():
+        print(month, "该月份未设置", period_time_coding, "分时段编码")
+        return None
+
+    eleDateData = [None for i in range(0, 24)]
+    priceDateData = [None for i in range(0, 24)]
+
+    if dataTyaml[month][period_time_coding]["haveRatio"] == True:
+        # 查峰平谷
+        if month not in dataPeakyaml.keys():
+            print(month, "该月份未设置峰平谷")
+            return None
+
+        pTypes = ["tip", "peak", "flat", "valley"]
+
+        for pType in pTypes:
+            pTypeRatio = dataTyaml[month][period_time_coding]["ratio"][pType]
+
+            if pType == None:
                 continue
 
-            pTypes = [ "tip", "peak","flat" , "valley"]
+            if pTypeRatio == 0:
+                continue
+
+            res = Tool.time96To24list(dataPeakyaml[month][pType])
+            pTypeTimeList = res["time24List"]
+            count = res["count"]
+
+            if count == 0:
+                print(month, "该月份未设置",pType,"段")
+                return None
+
+            perEle = ele * (pTypeRatio/100) / count
+            perPrice = price
+
+            for index in range(0, 24):
+
+                if pTypeTimeList[index] == 1:
+                    eleDateData[index] = perEle
+                    priceDateData[index] = perPrice
 
 
-            for pType in pTypes:
-                pTypeTime = dataPeakyaml[month][pType]
-                pTypeRatio = dataTyaml[month][period_time_coding]["ratio"]["pType"]
+
+    if dataTyaml[month][period_time_coding]["haveRatio"] == False:
+
+        res = Tool.time24o24list(dataTyaml[month][period_time_coding]["time"])
+        time24List = res["time24List"]
+
+        count = res["count"]
+
+        perEle = ele / count
+        perPrice = price
+
+        for index in range(0, 24):
+
+            if time24List[index] == 1:
+                eleDateData[index] = perEle
+                priceDateData[index] = perPrice
+
+        pass
+
+    return {
+        "ele" :eleDateData,
+        "price" :priceDateData
+    }
 
 
-            continue
+def generate(sd, ed, onedayData):
 
-        if dataTyaml[month][period_time_coding]["haveRatio"] == False:
-            time24List = Tool.time24o24list( dataTyaml[month][period_time_coding]["time"] )
+    dataDict = {}
 
-            pass
+    while sd <= ed:
+        dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+        dataDict[dateStr] = onedayData
+
+        # 日期 +1
+        sd += timedelta(days=1)
+
+    return dataDict
     pass
+
 
 if __name__ == '__main__':
 

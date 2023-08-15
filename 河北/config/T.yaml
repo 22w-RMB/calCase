@@ -1,19 +1,50 @@
 "2023-01":
   T1:
     time:
-      - 02:00-04:00
-    haveRatio: True
+      - 17:00-19:00
+    haveRatio: False
     ratio:
       tip:
       peak:
       flat:
       valley:
-  T12:
+  T2:
+    time:
+      - 16:00-17:00
+      - 19:00-24:00
+    haveRatio: False
+    ratio:
+      tip:
+      peak:
+      flat:
+      valley:
+  T3:
     time:
       - 00:00-01:00
+      - 06:00-12:00
+      - 15:00-16:00
+    haveRatio: False
+    ratio:
+      tip:
+      peak:
+      flat:
+      valley:
+  T4:
+    time:
+      - 01:00-06:00
+      - 12:00-15:00
+    haveRatio: False
+    ratio:
+      tip:
+      peak:
+      flat:
+      valley:
+  T5:
+    time:
+      - 16:00-24:00
     haveRatio: True
     ratio:
-      tip: 50
-      peak: 12
-      flat: 3
-      valley: 6
+      tip: 10
+      peak: 20
+      flat: 30
+      valley: 40
