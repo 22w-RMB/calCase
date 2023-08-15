@@ -2,7 +2,7 @@
 
 
 
-class tool:
+class Tool:
 
 
     @staticmethod
@@ -51,8 +51,8 @@ if __name__ == '__main__':
 
     test = ["00:00-00:45","20:00-23:45"]
 
-    print(tool.time96To24list(test))
+    print(Tool.time96To24list(test))
 
     test1 = ["00:00-02:00","03:00-06:00"]
 
-    print(tool.time24o24list(test1))
+    print(Tool.time24o24list(test1))

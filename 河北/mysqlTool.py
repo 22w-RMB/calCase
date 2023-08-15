@@ -39,15 +39,48 @@ class MysqlTool:
 
         return wrapper
 
-    @cursorOperate
-    def contract(self,cursor):
+    # @cursorOperate
+    def insertContract(self,cursor,dic):
 
-        sql = "select * from mlt_data_private"
-        cursor.execute(sql)
-        print("6666")
+        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time) VALUES"
+
+        # l = [
+        #     dic["contract_name"],
+        #     dic["buyer_name"],
+        #     dic["seller_name"],
+        #     dic["period_time_coding"],
+        #     dic["ele"],
+        #     dic["price"],
+        #     dic["date"],
+        #     dic["start_date"],
+        #     dic["end_date"],
+        #     dic["update_time"],
+        #     dic["create_time"],
+        #      ]
+
+        l = [
+            dic["contract_name"],
+            dic["buyer_name"],
+            dic["seller_name"],
+            dic["period_time_coding"],
+            dic["ele"],
+            dic["price"],
+            dic["date"],
+            dic["start_date"],
+            dic["end_date"],
+            dic["update_time"],
+            dic["create_time"],
+             ]
+
+        sql +=  "("+ (",".join(l))   +")"
 
 
-        print("你牛")
+        print(sql)
+
+
+        # cursor.execute(sql)
+        # print("6666")
+
         pass
 
     def close(self):
@@ -58,4 +91,20 @@ if __name__ == '__main__':
 
     db = MysqlTool()
 
-    db.contract()
+    d = {
+        "contract_name" : "dsa",
+        "buyer_name" : "few",
+        "seller_name" : "",
+        "period_time_coding" : "",
+        "ele" : "",
+        "price" : "",
+        "date" : "",
+        "start_date" : "",
+        "end_date" : "",
+        "update_time" : "",
+        "create_time" : "",
+
+
+    }
+
+    db.insertContract("1",d)
