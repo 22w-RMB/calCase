@@ -227,6 +227,8 @@ def calTRatio(dataList):
     for key in eleRes:
         if key == "sum":
             continue
+        if eleRes[key][0] ==None :
+            continue
         eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
 
     print(eleRes)
@@ -294,6 +296,9 @@ def calPeakRatio(dataList):
     # 计算峰平谷占比
     for key in eleRes:
         if key == "sum":
+            continue
+
+        if eleRes[key][0] ==None :
             continue
         eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
 
