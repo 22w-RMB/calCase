@@ -116,7 +116,6 @@ def queryDataPeak():
 def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,startDate=None,endDate=None):
 
 
-
     d = {
         "trading_session": tradingSession,
         "seller_name": seller_name,
@@ -138,12 +137,171 @@ def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,s
         r["price"] = eval( r["price"])
 
 
-    return
+    return queryRes
 
+def cal24Info(dataList):
+
+    eleRes = [None for i in range(0,24)]
+    priceRes = [None for i in range(0,24)]
+    feeRes = [None for i in range(0,24)]
+
+
+    for data in dataList:
+
+        ele = data["ele"]
+        price = data["price"]
+
+        for i in range(0,24):
+
+            if ele[i] == None:
+                continue
+
+            if eleRes[i] == None:
+                eleRes[i] = ele[i]
+                priceRes[i] = price[i]
+                feeRes[i] = price[i]*ele[i]
+            else:
+                eleRes[i] += ele[i]
+                feeRes[i] += (ele[i]*price[i])
+                if eleRes[i] != 0 :
+                    priceRes[i] = feeRes[i] / eleRes[i]
+
+    eleSum = 0
+    priceSum = 0
+    feeSum = 0
+
+
+    for i in range(0,24):
+        if eleRes[i] != None:
+            eleSum += eleRes[i]
+        if feeRes[i] != None:
+            feeSum += feeRes[i]
+
+    if eleSum != 0:
+        priceSum = feeSum / eleSum
+
+    print("电量24点结果",eleRes)
+    print("电价24点结果",priceRes)
+    print("费用24点结果",feeRes)
+    print("总电量",eleSum)
+    print("均价",priceSum)
+    print("总费用",feeSum)
+
+def calTRatio(dataList):
+
+
+    eleRes = {
+        "sum": [0,100],
+        "T1": [None,None],
+        "T2": [None,None],
+        "T3": [None,None],
+        "T4": [None,None],
+        "T5": [None,None],
+        "T6": [None,None],
+    }
+
+    for data in dataList:
+        period_time_coding = data["period_time_coding"]
+        if period_time_coding in ["T6","T7" , "T8", "T9"]:
+            period_time_coding ='T6'
+
+        ele = None
+        for i in range(0,24):
+            if data["ele"][i] == None:
+                continue
+            if ele == None:
+                ele = data["ele"][i]
+            else:
+                ele += data["ele"][i]
+
+        if ele != None:
+            eleRes["sum"][0] += ele
+
+        if eleRes[period_time_coding][0] == None:
+            eleRes[period_time_coding][0] = ele
+        else:
+            eleRes[period_time_coding][0] += ele
+
+
+
+    for key in eleRes:
+        if key == "sum":
+            continue
+        eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
+
+    print(eleRes)
+    return eleRes
+
+# 计算峰平谷占比
+def calPeakRatio(dataList):
+
+    eleRes = {
+        "sum": [0,100],
+        "tip": [None,None],
+        "peak": [None,None],
+        "flat": [None,None],
+        "valley": [None,None],
+    }
+
+    allPeak = queryDataPeak()
+    for month in allPeak:
+        for key in allPeak[month]:
+            allPeak[month][key] = Tool.time96To24list( allPeak[month][key] )['time24List']
+
+
+    # print(allPeak)
+
+    for data in dataList:
+        # 计算总电量
+        for i in range(0, 24):
+
+            if data["ele"][i] == None:
+                continue
+
+            if eleRes["sum"][0] == None:
+                eleRes["sum"][0] = data["ele"][i]
+            else:
+                eleRes["sum"][0] += data["ele"][i]
+
+
+        month = data["month"]
+
+
+        if month not in allPeak.keys():
+            continue
+
+        monthPeak = allPeak[month]
+
+        for peakType in eleRes:
+
+            if peakType not in monthPeak.keys():
+                continue
+
+            for i in range(0,24):
+
+
+                if monthPeak[peakType][i] == 1:
+                    if data["ele"][i] == None:
+                        continue
+
+                    if eleRes[peakType][0] == None:
+                        eleRes[peakType][0] = data["ele"][i]
+                    else:
+                        eleRes[peakType][0] += data["ele"][i]
+
+            pass
+
+    # 计算峰平谷占比
+    for key in eleRes:
+        if key == "sum":
+            continue
+        eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
+
+    print(eleRes)
+    return eleRes
 
 
 def a():
-
 
     for root , dirs ,files in os.walk(r"D:\code\python\calCase\河北\导入文件"):
 
@@ -339,10 +497,14 @@ if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
-    a()
+    # a()
 
     # queryDataT()
     # queryDataPeak()
 
-    # queryContract(tradingSession=None, seller_name=None, period_time_coding=["T1","T2"], startDate=None, endDate=None)
+    res = queryContract(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-31")
+
+    # cal24Info(res)
+    # calTRatio(res)
+    calPeakRatio(res)
     pass

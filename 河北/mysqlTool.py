@@ -99,11 +99,11 @@ class MysqlTool:
 
             if dic[key] != None:
                 if key == "start_date":
-                    l.append(key + ">=" + '"'+dic[key]+'"')
+                    l.append("date" + ">=" + '"'+dic[key]+'"')
                     continue
 
                 if key == "end_date":
-                    l.append(key + "<=" + '"'+dic[key]+'"')
+                    l.append("date" + "<=" + '"'+dic[key]+'"')
                     continue
                 ll = []
                 for k in dic[key]:
