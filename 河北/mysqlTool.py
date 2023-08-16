@@ -45,7 +45,7 @@ class MysqlTool:
 
         cursor = self.db.cursor()
 
-        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time,month) VALUES"
+        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time,month,trading_session) VALUES"
 
         # l = [
         #     dic["contract_name"],
@@ -74,15 +74,60 @@ class MysqlTool:
             dic["update_time"],
             dic["create_time"],
             dic["month"],
+            dic["trading_session"],
              ]
 
-        lStr = str(l).replace("[","").replace("]","")
+        lStr = str(l).lstrip("[").rstrip("]")
 
         sql +=  "("+  lStr  +");"
 
         print(sql)
         cursor.execute(sql)
         cursor.close()
+
+        # @cursorOperate
+
+    def queryContract(self,dic):
+
+        cursor = self.db.cursor()
+
+        sql = "select * from mlt_data_private"
+
+        l = []
+
+        for key in dic.keys():
+
+            if dic[key] != None:
+                if key == "start_date":
+                    l.append(key + ">=" + '"'+dic[key]+'"')
+                    continue
+
+                if key == "end_date":
+                    l.append(key + "<=" + '"'+dic[key]+'"')
+                    continue
+                ll = []
+                for k in dic[key]:
+                    ll.append( key + "=" + '"'+k+'"' )
+
+                l.append(
+                    "("+ (" or ".join(ll)) +")"
+                )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header, row)) for row in res]
 
     # @cursorOperate
     def insertSessionIdConfig(self,dic):
@@ -125,7 +170,6 @@ class MysqlTool:
         cursor.close()
 
         return [dict(zip(header,row)) for row in res]
-
 
 
     # @cursorOperate

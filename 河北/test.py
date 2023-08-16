@@ -51,7 +51,6 @@ def writeDataT(dataT):
 
     pass
 
-
 def queryDataT():
     db = MysqlTool()
 
@@ -73,7 +72,6 @@ def queryDataT():
     db.close()
     print(d)
     return d
-
 
 def writeDataPeak(dataPeak):
     db = MysqlTool()
@@ -115,6 +113,32 @@ def queryDataPeak():
     print(d)
     return d
 
+def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,startDate=None,endDate=None):
+
+
+
+    d = {
+        "trading_session": tradingSession,
+        "seller_name": seller_name,
+        "period_time_coding": period_time_coding,
+        "start_date": startDate,
+        "end_date": endDate,
+    }
+
+    db = MysqlTool()
+
+    queryRes = db.queryContract(d)
+
+    print(queryRes)
+    db.close()
+
+
+    for r in queryRes:
+        r["ele"] = eval( r["ele"])
+        r["price"] = eval( r["price"])
+
+
+    return
 
 
 
@@ -195,6 +219,7 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate):
             contract_name = tradingSession + data["seller_name"]
 
         d = {
+            "trading_session": tradingSession,
             "contract_name": contract_name,
             "buyer_name": buyer_name,
             "seller_name": data["seller_name"] if "seller_name" in data.keys() else None,
@@ -242,10 +267,14 @@ def getOneDayData(month,period_time_coding,ele,price):
         for pType in pTypes:
             pTypeRatio = dataTyaml[month][period_time_coding]["ratio"][pType]
 
-            if pType == None:
+            if pTypeRatio == None:
                 continue
 
             if pTypeRatio == 0:
+                continue
+
+            if pType not in dataPeakyaml[month].keys():
+                print(month, "该月份未设置", pType, "段")
                 continue
 
             res = Tool.time96To24list(dataPeakyaml[month][pType])
@@ -310,8 +339,10 @@ if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
-    # a()
+    a()
 
-    queryDataT()
-    queryDataPeak()
+    # queryDataT()
+    # queryDataPeak()
+
+    # queryContract(tradingSession=None, seller_name=None, period_time_coding=["T1","T2"], startDate=None, endDate=None)
     pass
