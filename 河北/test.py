@@ -21,7 +21,13 @@ enumD = {
     "分时段编码": "period_time_coding",
     "售方电量": "ele",
     "售方电价": "price",
-    "时间段": "Period_of_time"
+    "时间段": "Period_of_time",
+    "时间类型": "timeType",
+    "交易单元": "seller_name",
+    "成交电量": "ele",
+    "成交均价": "price",
+    "成交电量（日均）": "ele",
+    "出清电价（日均）": "price",
 }
 
 print(dataTyaml)
@@ -202,6 +208,9 @@ def calTRatio(dataList):
 
     for data in dataList:
         period_time_coding = data["period_time_coding"]
+        if period_time_coding == None:
+            continue
+
         if period_time_coding in ["T6","T7" , "T8", "T9"]:
             period_time_coding ='T6'
 
@@ -306,9 +315,9 @@ def calPeakRatio(dataList):
     return eleRes
 
 
-def a():
+def importFile():
 
-    for root , dirs ,files in os.walk(r"D:\code\python\calCase\河北\导入文件"):
+    for root , dirs ,files in os.walk(r"D:\code\python\calCase\河北\导入文件\年度双边协商"):
 
         # print(root)
         # print(dirs)
@@ -328,47 +337,90 @@ def a():
             fileDataList = e.getAllData(enumD)
             print(fileDataList)
 
-            execData(tradingSession,startDate,endDate,fileDataList)
+            execData(tradingSession,startDate,endDate,fileDataList,"年度双边协商")
 
         # print(files)
 
 
-def execData(tradingSession,startDate,endDate,fileDataList):
+def execData(tradingSession,startDate,endDate,fileDataList,contractType):
+
+    # 处理分时段标识配置的文件
+    if contractType in ["日集中竞价","日滚动撮合"]:
+        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType)
+
+    else:
+
+        execTData(fileDataList, tradingSession, startDate, endDate,contractType)
 
 
+
+
+def execTData(fileDataList,tradingSession,startDate,endDate,contractType):
     for data in fileDataList:
-
         if data["period_time_coding"] == None:
             continue
 
-        #分时段编码
+        # 分时段编码
         period_time_coding = data["period_time_coding"][:2]
 
         #
         period_of_StartTimeString = data["Period_of_time"][:10]
         period_of_EndTimeString = data["Period_of_time"][11:]
 
-
         sd = datetime.datetime.strptime(period_of_StartTimeString, "%Y-%m-%d")
         ed = datetime.datetime.strptime(period_of_EndTimeString, "%Y-%m-%d")
 
-        days = (ed-sd).days+1
+        days = (ed - sd).days + 1
 
         month = data["Period_of_time"][:7]
 
-        onedayData = getOneDayData(month, period_time_coding, data["ele"]/days, data["price"])
-        print()
+        onedayData = getOneDayData(month, period_time_coding, data["ele"] / days, data["price"])
 
         if onedayData == None:
             continue
 
         daysData = generate(sd,ed,onedayData)
         print(daysData)
+        writeSql(data, tradingSession, month, daysData, startDate, endDate,contractType)
 
-        writeSql(data,tradingSession,month,daysData,startDate,endDate)
+#日滚动撮合、日集中竞价
+def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType):
+
+    dic = {
+
+    }
+
+    for data in fileDataList:
+        if data["seller_name"] not in dic.keys():
+            dic[data["seller_name"]] = {}
+            dic[data["seller_name"]]["seller_name"] = data["seller_name"]
+            dic[data["seller_name"]]["ele"] = [None for i in range(0,24)]
+            dic[data["seller_name"]]["price"] = [None for i in range(0,24)]
+
+        res = Tool.time24o24list([data["timeType"]])
+        time24List = res["time24List"]
+        count = res["count"]
+
+        for i  in range(0,24):
+            if time24List[i] == 1:
+                dic[data["seller_name"]]["ele"][i] = data["ele"] / count
+                dic[data["seller_name"]]["price"][i] =  data["price"]
+
+    for key in dic:
+
+        month = startDate[:7]
+        daysData = {
+            startDate : dic[key]
+        }
+        data = {
+            "seller_name" : key
+        }
+
+        print(daysData)
+        writeSql(data, tradingSession, month, daysData, startDate, startDate, contractType)
 
 
-def writeSql(data,tradingSession,month,daysData,startDate,endDate):
+def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType):
 
     db = MysqlTool()
 
@@ -386,7 +438,7 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate):
             "contract_name": contract_name,
             "buyer_name": buyer_name,
             "seller_name": data["seller_name"] if "seller_name" in data.keys() else None,
-            "period_time_coding": data["period_time_coding"][:2],
+            "period_time_coding": data["period_time_coding"][:2] if "period_time_coding" in data.keys() else None,
             "ele": str(daysData[date]["ele"]),
             "price": str(daysData[date]["price"]),
             "date": date,
@@ -502,14 +554,14 @@ if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
-    # a()
+    # importFile()
 
     # queryDataT()
     # queryDataPeak()
 
-    res = queryContract(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-31")
+    res = queryContract(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-01")
 
     # cal24Info(res)
-    # calTRatio(res)
-    calPeakRatio(res)
+    calTRatio(res)
+    # calPeakRatio(res)
     pass

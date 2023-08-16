@@ -45,7 +45,12 @@ class MysqlTool:
 
         cursor = self.db.cursor()
 
-        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time,month,trading_session) VALUES"
+        # sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time,month,trading_session) VALUES"
+        sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele," \
+              "price,date,start_date,end_date,update_time,create_time,month,trading_session) " \
+              "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+
+
 
         # l = [
         #     dic["contract_name"],
@@ -59,8 +64,9 @@ class MysqlTool:
         #     dic["end_date"],
         #     dic["update_time"],
         #     dic["create_time"],
+        #     dic["month"],
+        #     dic["trading_session"],
         #      ]
-
         l = [
             dic["contract_name"],
             dic["buyer_name"],
@@ -75,14 +81,14 @@ class MysqlTool:
             dic["create_time"],
             dic["month"],
             dic["trading_session"],
-             ]
-
-        lStr = str(l).lstrip("[").rstrip("]")
-
-        sql +=  "("+  lStr  +");"
+       ]
+        print(l)
+        # lStr = str(l).lstrip("[").rstrip("]")
+        #
+        # sql +=  "("+  lStr  +");"
 
         print(sql)
-        cursor.execute(sql)
+        cursor.execute(sql,l)
         cursor.close()
 
         # @cursorOperate

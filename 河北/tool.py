@@ -77,10 +77,13 @@ if __name__ == '__main__':
     #
     # print(Tool.time96To24list(test))
 
-    test1 = ["17:00-19:00"]
-    a = str(test1)
+    # test1 = ["17:00-19:00"]
+    # a = str(test1)
 
     # print(Tool.time24o24list(test1))
 
-    print(a)
-    print(type(eval(a)))
+    # print(a)
+    # print(type(eval(a)))
+
+    print(str(None))
+    pass

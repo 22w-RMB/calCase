@@ -56,7 +56,6 @@ class ExcelHepler:
 
 
 
-    # 针对甘肃用的
     def getAllData(self,emunDict):
 
         datas = []
@@ -117,7 +116,13 @@ if __name__ == '__main__':
         "分时段编码": "period_time_coding",
         "售方电量": "ele",
         "售方电价" : "price",
-        "时间段" :"Period_of_time"
+        "时间段" :"Period_of_time",
+        "时间类型" :"timeType",
+        "交易单元" : "seller_name",
+        "成交电量" : "ele",
+        "成交均价" : "price",
+        "成交电量（日均）" : "ele",
+        "出清电价（日均）" : "price",
     }
 
     l = e.getAllData(enumD)
