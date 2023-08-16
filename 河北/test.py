@@ -30,6 +30,21 @@ enumD = {
     "出清电价（日均）": "price",
 }
 
+contractTypeEnum = {
+    "中长期市场化":
+        ["年度双边协商" ,
+        "月度集中竞价" ,
+        "周滚动撮合" ,
+        "日滚动撮合" ,
+        "日集中竞价" ],
+    "市场代购电":
+        ["月度代理购电" ,
+        "月内代理购电" ,
+        "上下调交易" ,
+        "题材电量挂牌" ,
+        "张河湾抽水电量" ]
+}
+
 print(dataTyaml)
 print(dataPeakyaml)
 
@@ -119,7 +134,7 @@ def queryDataPeak():
     print(d)
     return d
 
-def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,startDate=None,endDate=None):
+def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,startDate=None,endDate=None,contractType=None):
 
 
     d = {
@@ -128,6 +143,7 @@ def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,s
         "period_time_coding": period_time_coding,
         "start_date": startDate,
         "end_date": endDate,
+        "contract_type": contractType,
     }
 
     db = MysqlTool()
@@ -193,8 +209,82 @@ def cal24Info(dataList):
     print("均价",priceSum)
     print("总费用",feeSum)
 
-def calTRatio(dataList):
+    return {
+        "ele" : eleRes,
+        "price" : priceRes,
+        "fee" : feeRes,
+        "eleSum" : eleSum,
+        "priceSum" : priceSum,
+        "feeSum" : feeSum,
+    }
 
+def outputData(units,startDate,endDate):
+    allType = {
+        "中长期总体": []
+    }
+    for key in contractTypeEnum:
+        allType[key] = contractTypeEnum[key]
+        allType["中长期总体"].extend(contractTypeEnum[key])
+        for t in contractTypeEnum[key]:
+            allType[t] = [t]
+
+    all = {
+        "汇总" : ini()
+    }
+    for t in allType:
+        queryRes = queryContract(tradingSession=None, seller_name=units, period_time_coding=None, startDate=startDate,
+                                 endDate=endDate, contractType=allType[t])
+
+        calRes = cal24Info(queryRes)
+        all["汇总"][t]["持仓电量"] = calRes["ele"]
+        all["汇总"][t]["持仓均价"] = calRes["price"]
+        all["汇总"][t]["总电量"] = calRes["eleSum"]
+        all["汇总"][t]["总均价"] = calRes["priceSum"]
+
+    for unit in units:
+        all[unit] = ini()
+
+        for t in allType:
+            queryRes = queryContract(tradingSession=None, seller_name=[unit], period_time_coding=None, startDate=startDate,
+                      endDate=endDate,contractType=allType[t])
+
+            calRes = cal24Info(queryRes)
+            all[unit][t]["持仓电量"] = calRes["ele"]
+            all[unit][t]["持仓均价"] = calRes["price"]
+            all[unit][t]["总电量"] = calRes["eleSum"]
+            all[unit][t]["总均价"] = calRes["priceSum"]
+
+    pass
+
+def ini():
+
+    d = {
+        "中长期总体": {
+            "持仓电量": None,
+            "持仓均价": None,
+            "总电量": None,
+            "总均价": None,
+        },
+    }
+
+    for key in contractTypeEnum:
+        d[key] = {
+                "持仓电量": None,
+                "持仓均价": None,
+                "总电量": None,
+                "总均价": None,
+            }
+        for t in contractTypeEnum[key]:
+            d[t] = {
+                "持仓电量": None,
+                "持仓均价": None,
+                "总电量": None,
+                "总均价": None,
+            }
+
+    return d
+
+def calTRatio(dataList):
 
     eleRes = {
         "sum": [0,100],
@@ -446,7 +536,8 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType)
             "end_date": endDate,
             "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "create_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "month": month
+            "month": month,
+            "contract_type": contractType,
         }
 
         print(d)
@@ -559,9 +650,11 @@ if __name__ == '__main__':
     # queryDataT()
     # queryDataPeak()
 
-    res = queryContract(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-01")
+    # res = queryContract(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-01")
 
     # cal24Info(res)
-    calTRatio(res)
+    # calTRatio(res)
     # calPeakRatio(res)
+
+    print(ini())
     pass
