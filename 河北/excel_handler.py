@@ -55,6 +55,17 @@ class ExcelHepler:
         self.saveFile(savePath)
 
 
+    def writeData(self,savePath,dataList,sheetName="Sheet1"):
+
+        ws = self.wb.sheets[sheetName]
+
+
+        ws.range((2,1),(1000,28)).value = dataList
+
+
+        self.saveFile(savePath)
+
+
 
     def getAllData(self,emunDict):
 
@@ -68,20 +79,32 @@ class ExcelHepler:
 
         # print( ws.range(1,1) .value )
         try:
+
+            header = ws.range((1,1),(1,maxCol)).value
+            for i in range(0,len(header)):
+                if header[i] in emunDict.keys():
+                    header[i] = emunDict[header[i]]
+
             for i in range(2,maxRow+1):
-
-                d = {
-
-                }
-                for j in range(1, maxCol + 1):
-                    header = ws.range(1,j) .value
-
-                    if header in emunDict.keys():
-                        v = ws.range(i,j) .value
-                        d[emunDict[header]] = v
+                rowData = ws.range((i,1),(i,maxCol)).value
 
 
-                resList.append(d)
+                resList.append(dict(zip(header,rowData)))
+
+            # for i in range(2,maxRow+1):
+            #
+            #     d = {
+            #
+            #     }
+            #     for j in range(1, maxCol + 1):
+            #         header = ws.range(1,j) .value
+            #
+            #         if header in emunDict.keys():
+            #             v = ws.range(i,j) .value
+            #             d[emunDict[header]] = v
+            #
+            #
+            #     resList.append(d)
         finally:
             self.close()
 

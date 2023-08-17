@@ -218,7 +218,24 @@ def cal24Info(dataList):
         "feeSum" : feeSum,
     }
 
-def outputData(units,startDate,endDate):
+def buildOutputData(units,startDate,endDate):
+    buildResList = []
+    rankType=[
+        "中长期总体",
+        "市场代购电",
+        "中长期市场化",
+        "月度代理购电",
+        "月内代理购电",
+        "上下调交易",
+        "题材电量挂牌",
+        "张河湾抽水电量",
+        "年度双边协商",
+        "月度集中竞价",
+        "周滚动撮合",
+        "日滚动撮合",
+        "日集中竞价",
+    ]
+
     allType = {
         "中长期总体": []
     }
@@ -240,7 +257,8 @@ def outputData(units,startDate,endDate):
         all["汇总"][t]["持仓均价"] = calRes["price"]
         all["汇总"][t]["总电量"] = calRes["eleSum"]
         all["汇总"][t]["总均价"] = calRes["priceSum"]
-
+        ["汇总", ]
+    print(allType)
     for unit in units:
         all[unit] = ini()
 
@@ -253,6 +271,49 @@ def outputData(units,startDate,endDate):
             all[unit][t]["持仓均价"] = calRes["price"]
             all[unit][t]["总电量"] = calRes["eleSum"]
             all[unit][t]["总均价"] = calRes["priceSum"]
+
+    for unit in all:
+        for t in rankType:
+            eleList = [unit,t,"持仓电量",all[unit][t]["总电量"]]
+            eleList.extend(all[unit][t]["持仓电量"])
+            priceList = [unit, t, "持仓均价", all[unit][t]["总均价"]]
+            priceList.extend(all[unit][t]["持仓均价"])
+            buildResList.append(eleList)
+            buildResList.append(priceList)
+
+    print(buildResList)
+    return  buildResList
+
+# 输出到excel
+def outputData(units,startDate,endDate):
+
+    sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
+
+    resData = {}
+
+    while sd <= ed:
+        dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+
+        resData[dateStr] = buildOutputData(units, dateStr, dateStr)
+
+        # 日期 +1
+        sd += timedelta(days=1)
+
+    tempPath = CommonClass.mkDir("河北","导出模板","模板.xlsx",isGetStr=True)
+    templateE = ExcelHepler(tempPath)
+    template = templateE.getTemplateStyle("Sheet1")
+    templateE.close()
+
+    print(resData)
+
+    savePath = CommonClass.mkDir("河北","导出模板","结果.xlsx",isGetStr=True)
+    e = ExcelHepler()
+    for date in resData:
+        e.newExcel(sheetName=date,templateStyle=template)
+        e.writeData(savePath,resData[date],date)
+
+    e.close()
 
     pass
 
@@ -407,27 +468,34 @@ def calPeakRatio(dataList):
 
 def importFile():
 
-    for root , dirs ,files in os.walk(r"D:\code\python\calCase\河北\导入文件\年度双边协商"):
 
-        # print(root)
-        # print(dirs)
+    for categories in contractTypeEnum:
+        for contractType in contractTypeEnum[categories]:
 
-        for file in files:
-            filePath = os.path.join(root,file)
-            filename = file.replace(".xlsx","")
-            tradingSession = filename.split("-")[0]
-            startDate = filename[len(tradingSession)+1:len(tradingSession)+11]
-            endDate = filename[len(tradingSession)+12:len(tradingSession)+32]
-            # print(filename)
-            # print(tradingSession)
-            # print(startDate)
-            # print(endDate)
+            contractTypePath = CommonClass.mkDir("河北","导入文件",contractType,isGetStr=True)
+            if  os.path.exists(contractTypePath) == False:
+                continue
 
-            e = ExcelHepler(filePath)
-            fileDataList = e.getAllData(enumD)
-            print(fileDataList)
 
-            execData(tradingSession,startDate,endDate,fileDataList,"年度双边协商")
+
+            for root , dirs ,files in os.walk(contractTypePath):
+
+                for file in files:
+                    filePath = os.path.join(root,file)
+                    filename = file.replace(".xlsx","")
+                    tradingSession = filename.split("-")[0]
+                    startDate = filename[len(tradingSession)+1:len(tradingSession)+11]
+                    endDate = filename[len(tradingSession)+12:len(tradingSession)+32]
+                    # print(filename)
+                    # print(tradingSession)
+                    # print(startDate)
+                    # print(endDate)
+
+                    e = ExcelHepler(filePath)
+                    fileDataList = e.getAllData(enumD)
+                    print(fileDataList)
+
+                    execData(tradingSession,startDate,endDate,fileDataList,contractType)
 
         # print(files)
 
@@ -441,8 +509,6 @@ def execData(tradingSession,startDate,endDate,fileDataList,contractType):
     else:
 
         execTData(fileDataList, tradingSession, startDate, endDate,contractType)
-
-
 
 
 def execTData(fileDataList,tradingSession,startDate,endDate,contractType):
@@ -646,7 +712,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile()
-
+    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
 
@@ -656,5 +722,5 @@ if __name__ == '__main__':
     # calTRatio(res)
     # calPeakRatio(res)
 
-    print(ini())
+    # print(ini())
     pass

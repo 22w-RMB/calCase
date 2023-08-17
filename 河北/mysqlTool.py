@@ -51,7 +51,6 @@ class MysqlTool:
               "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 
-
         # l = [
         #     dic["contract_name"],
         #     dic["buyer_name"],
