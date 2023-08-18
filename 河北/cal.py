@@ -182,11 +182,11 @@ def cal24Info(dataList):
 
             if eleRes[i] == None:
                 eleRes[i] = ele[i]
-                priceRes[i] = price[i]
-                feeRes[i] = price[i]*ele[i]
+                priceRes[i] = 0 if price[i]==None else price[i]
+                feeRes[i] = eleRes[i]*priceRes[i]
             else:
                 eleRes[i] += ele[i]
-                feeRes[i] += (ele[i]*price[i])
+                feeRes[i] += (ele[i]*(0 if price[i]==None else price[i]))
                 if eleRes[i] != 0 :
                     priceRes[i] = feeRes[i] / eleRes[i]
 
@@ -324,7 +324,6 @@ def outputData(units,startDate,endDate):
 # 构建持仓总览输出的数据
 def execAnalysisData(units,startDate,endDate):
 
-
     sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
     ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
 
@@ -345,7 +344,7 @@ def execAnalysisData(units,startDate,endDate):
             calRes = cal24Info(queryRes)
 
             clearing = PrivateData.queryClearingData(unit=[unit], startDate=dateStr, endDate=dateStr, dataType=["dayAhead"])
-
+            print("===========",clearing)
             calContractDataList.append(
                 {
                     "ele" : calRes["ele"],
@@ -356,7 +355,7 @@ def execAnalysisData(units,startDate,endDate):
             calClearingDataList.append(
                 {
                     "ele" : calRes["ele"],
-                    "price" : clearing[0]["price"],
+                    "price" : [None for i in range(0,24)] if len(clearing)==0 else clearing[0]["price"],
                 }
             )
 
@@ -838,7 +837,7 @@ if __name__ == '__main__':
     # calPeakRatio(res)
     # print(ini())
 
-    execAnalysisData(["河北1#1机组"],"2023-01-01","2023-01-01")
+    execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
 
 
     pass
