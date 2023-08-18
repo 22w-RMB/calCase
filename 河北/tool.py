@@ -4,6 +4,23 @@
 
 class Tool:
 
+    @staticmethod
+    def data96To24list(dataList):
+
+
+        data24List = [0 for i in range(0,24) ]
+
+        if dataList == None:
+            return data24List
+
+        for i in range(0,24):
+
+            tempL =  dataList[i*4:(i+1)*4]
+
+            data24List[i] = sum( tempL)/len(tempL)
+
+
+        return data24List
 
     @staticmethod
     def time96To24list(timeList):

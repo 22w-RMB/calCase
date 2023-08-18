@@ -709,10 +709,10 @@ def generate(sd, ed, onedayData):
 
 if __name__ == '__main__':
 
-    writeDataT(dataTyaml)
-    writeDataPeak(dataPeakyaml)
+    # writeDataT(dataTyaml)
+    # writeDataPeak(dataPeakyaml)
     # importFile()
-    # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
+    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
 
