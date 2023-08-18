@@ -140,7 +140,7 @@ class MysqlTool:
 
         cursor = self.db.cursor()
 
-        sql = "insert into session_id_config(month,period_time_coding,time,haveRatio,ratio,update_time,create_time) VALUES"
+        sql = "replace into session_id_config(month,period_time_coding,time,haveRatio,ratio,update_time,create_time) VALUES"
 
 
         l = [
@@ -183,7 +183,7 @@ class MysqlTool:
 
         cursor = self.db.cursor()
 
-        sql = "insert into peak_pinggu(month,peak_type,time,update_time,create_time) VALUES"
+        sql = "replace into peak_pinggu(month,peak_type,time,update_time,create_time) VALUES"
 
 
         l = [
