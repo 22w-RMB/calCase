@@ -13,6 +13,7 @@ class PrivateData:
     def __init__(self):
         pass
 
+
     def importClearingFile(self):
 
         clearingFilePath = CommonClass.mkDir("河北","私有数据","出清结果",isGetStr=True)
@@ -70,7 +71,8 @@ class PrivateData:
 
         db.close()
 
-    def queryClearingData(self,unit=None,startDate=None,endDate=None,dataType=["dayAhead"]):
+    @staticmethod
+    def queryClearingData(unit=None,startDate=None,endDate=None,dataType=["dayAhead"]):
 
         d = {
             "unit": unit,
@@ -97,24 +99,24 @@ class PrivateData:
         }
 
 
-        for r in queryRes:
-            date = datetime.date.strftime(r["date"] ,"%Y-%m-%d")
-            if date not in resD:
-                resD[date] = {}
+        # for r in queryRes:
+        #     date = datetime.date.strftime(r["date"] ,"%Y-%m-%d")
+        #     if date not in resD:
+        #         resD[date] = {}
+        #
+        #     if r["unit"] not in resD[date]:
+        #         resD[date][r["unit"]] = {
+        #             "ele" : r["ele"],
+        #             "power" : r["power"],
+        #             "price" : r["price"],
+        #         }
 
-            if r["unit"] not in resD[date]:
-                resD[date][r["unit"]] = {
-                    "ele" : r["ele"],
-                    "power" : r["power"],
-                    "price" : r["price"],
-                }
-
-        print(resD)
-        return resD
+        # print(resD)
+        return queryRes
 
 
 
 if __name__ == '__main__':
 
     p = PrivateData()
-    p.queryClearingData()
+    p.importClearingFile()

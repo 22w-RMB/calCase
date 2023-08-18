@@ -5,6 +5,7 @@ from tool import Tool
 from common.common import CommonClass
 from excel_handler import ExcelHepler
 from mysqlTool import MysqlTool
+from private_data import PrivateData
 
 dataTyamlPath = CommonClass.mkDir("河北","config","T.yaml",isGetStr=True)
 dataPeakyamlPath = CommonClass.mkDir("河北","config","峰平谷.yaml",isGetStr=True)
@@ -161,6 +162,7 @@ def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,s
 
     return queryRes
 
+# 将查询到的合同计算成24点结果
 def cal24Info(dataList):
 
     eleRes = [None for i in range(0,24)]
@@ -202,12 +204,12 @@ def cal24Info(dataList):
     if eleSum != 0:
         priceSum = feeSum / eleSum
 
-    print("电量24点结果",eleRes)
-    print("电价24点结果",priceRes)
-    print("费用24点结果",feeRes)
-    print("总电量",eleSum)
-    print("均价",priceSum)
-    print("总费用",feeSum)
+    # print("电量24点结果",eleRes)
+    # print("电价24点结果",priceRes)
+    # print("费用24点结果",feeRes)
+    # print("总电量",eleSum)
+    # print("均价",priceSum)
+    # print("总费用",feeSum)
 
     return {
         "ele" : eleRes,
@@ -218,6 +220,7 @@ def cal24Info(dataList):
         "feeSum" : feeSum,
     }
 
+# 构建持仓总览输出的数据
 def buildOutputData(units,startDate,endDate):
     buildResList = []
     rankType=[
@@ -316,6 +319,118 @@ def outputData(units,startDate,endDate):
     e.close()
 
     pass
+
+
+# 构建持仓总览输出的数据
+def execAnalysisData(units,startDate,endDate):
+
+
+    sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
+
+    resData = {}
+    resList = []
+
+    while sd <= ed:
+
+        calContractDataList = []
+        calClearingDataList = []
+
+        dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+
+        for unit in units:
+
+            queryRes = queryContract(tradingSession=None, seller_name=[unit], period_time_coding=None, startDate=dateStr,
+                                     endDate=dateStr, contractType=None)
+            calRes = cal24Info(queryRes)
+
+            clearing = PrivateData.queryClearingData(unit=[unit], startDate=dateStr, endDate=dateStr, dataType=["dayAhead"])
+
+            calContractDataList.append(
+                {
+                    "ele" : calRes["ele"],
+                    "price" : calRes["price"],
+                }
+            )
+
+            calClearingDataList.append(
+                {
+                    "ele" : calRes["ele"],
+                    "price" : clearing[0]["price"],
+                }
+            )
+
+            # data["持仓电量"] = calRes["ele"]
+            # data["持仓均价"] = calRes["price"]
+            # data["费用"] = calRes["fee"]
+            # data["总电量"] = calRes["eleSum"]
+            # data["总均价"] = calRes["priceSum"]
+            # data["总费用"] = calRes["feeSum"]
+            # data["日前出清电价"] = clearing["price"]
+            #
+            # dataList.append(data)
+
+        calContractDataRes = cal24Info(calContractDataList)
+        calClearingDataRes = cal24Info(calClearingDataList)
+
+        print(calContractDataRes["eleSum"])
+        print(calContractDataRes["price"])
+        print(calContractDataRes["ele"])
+        print(calClearingDataRes)
+
+        resData[dateStr] = {
+            "合同电费": calContractDataRes["fee"],
+            "合同结算电价": calContractDataRes["price"],
+            "合同日前加权均价": calClearingDataRes["price"],
+            "合同电量": calContractDataRes["ele"],
+            "现货电费": calClearingDataRes["fee"],
+        }
+
+        aa =  [dateStr,None,None,"合同电量（MWh）", ]
+
+        bb =  [dateStr,None,None,"合同价格（元/MWh）", ]
+        cc =  [dateStr,None,None,"合同日前加权价格（元/MWh）", ]
+        dd =  [dateStr,None,None,"合同电费", ]
+        ee =  [dateStr,None,None,"现货电费（元）", ]
+
+        aa.extend(calContractDataRes["ele"])
+        bb.extend(calContractDataRes["price"])
+        cc.extend(calClearingDataRes["price"])
+        dd.extend(calContractDataRes["fee"] )
+        ee.extend(calClearingDataRes["fee"] )
+
+        resList.append(aa)
+        resList.append(bb)
+        resList.append(cc)
+        resList.append(dd)
+        resList.append(ee)
+
+        # 日期 +1
+        sd += timedelta(days=1)
+
+    print(resList)
+    outputAnalysisData(resList)
+    return  resData
+
+# 输出到excel
+def outputAnalysisData(resList):
+
+
+
+    tempPath = CommonClass.mkDir("河北","导出模板","合同分析模板.xlsx",isGetStr=True)
+    templateE = ExcelHepler(tempPath)
+    template = templateE.getTemplateStyle("Sheet1")
+    templateE.close()
+
+    savePath = CommonClass.mkDir("河北","导出模板","合同分析结果.xlsx",isGetStr=True)
+    e = ExcelHepler()
+    e.newExcel(sheetName="Sheet1",templateStyle=template)
+    e.writeData(savePath,resList,"Sheet1")
+
+    e.close()
+
+    pass
+
 
 def ini():
 
@@ -712,7 +827,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile()
-    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
+    # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
 
@@ -721,6 +836,9 @@ if __name__ == '__main__':
     # cal24Info(res)
     # calTRatio(res)
     # calPeakRatio(res)
-
     # print(ini())
+
+    execAnalysisData(["河北1#1机组"],"2023-01-01","2023-01-01")
+
+
     pass
