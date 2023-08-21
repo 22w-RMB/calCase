@@ -591,7 +591,6 @@ def importFile():
                 continue
 
 
-
             for root , dirs ,files in os.walk(contractTypePath):
 
                 for file in files:
@@ -609,23 +608,29 @@ def importFile():
                     fileDataList = e.getAllData(enumD)
                     print(fileDataList)
 
-                    execData(tradingSession,startDate,endDate,fileDataList,contractType)
+                    execData(tradingSession,startDate,endDate,fileDataList,contractType,"卖出")
 
         # print(files)
 
 
-def execData(tradingSession,startDate,endDate,fileDataList,contractType):
+def execData(tradingSession,startDate,endDate,fileDataList,contractType,isSell):
 
     # 处理分时段标识配置的文件
     if contractType in ["日集中竞价","日滚动撮合"]:
-        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType)
+        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
 
     else:
 
-        execTData(fileDataList, tradingSession, startDate, endDate,contractType)
+        execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
 
 
-def execTData(fileDataList,tradingSession,startDate,endDate,contractType):
+def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell):
+
+    sell = 1
+
+    if isSell !="卖出":
+        sell = -1
+
     for data in fileDataList:
         if data["period_time_coding"] == None:
             continue
@@ -644,7 +649,7 @@ def execTData(fileDataList,tradingSession,startDate,endDate,contractType):
 
         month = data["Period_of_time"][:7]
 
-        onedayData = getOneDayData(month, period_time_coding, data["ele"] / days, data["price"])
+        onedayData = getOneDayData(month, period_time_coding, sell*data["ele"] / days, data["price"])
 
         if onedayData == None:
             continue
@@ -654,7 +659,11 @@ def execTData(fileDataList,tradingSession,startDate,endDate,contractType):
         writeSql(data, tradingSession, month, daysData, startDate, endDate,contractType)
 
 #日滚动撮合、日集中竞价
-def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType):
+def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType,isSell):
+    sell = 1
+
+    if isSell != "卖出":
+        sell = -1
 
     dic = {
 
@@ -673,7 +682,7 @@ def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType):
 
         for i  in range(0,24):
             if time24List[i] == 1:
-                dic[data["seller_name"]]["ele"][i] = data["ele"] / count
+                dic[data["seller_name"]]["ele"][i] = sell* data["ele"] / count
                 dic[data["seller_name"]]["price"][i] =  data["price"]
 
     for key in dic:
@@ -698,7 +707,7 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType)
         contract_name = ""
         buyer_name = None
         if "buyer_name" in data.keys():
-            contract_name = tradingSession + data["buyer_name"]
+            contract_name = tradingSession + data["buyer_name"] + data["seller_name"]
             buyer_name = data["buyer_name"]
         else:
             contract_name = tradingSession + data["seller_name"]
@@ -823,8 +832,8 @@ def generate(sd, ed, onedayData):
 
 if __name__ == '__main__':
 
-    # writeDataT(dataTyaml)
-    # writeDataPeak(dataPeakyaml)
+    writeDataT(dataTyaml)
+    writeDataPeak(dataPeakyaml)
     # importFile()
     # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
@@ -837,7 +846,7 @@ if __name__ == '__main__':
     # calPeakRatio(res)
     # print(ini())
 
-    execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
+    # execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
 
 
     pass

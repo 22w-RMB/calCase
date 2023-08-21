@@ -10,7 +10,6 @@ from common.common import CommonClass
 configyamlPath = CommonClass.mkDir("河北","config","hb_interface.yaml",isGetStr=True)
 
 
-
 class Hebei:
 
     def __init__(self,session, yamlData, type):
@@ -96,6 +95,28 @@ class Hebei:
 
         pass
 
+    def deleteT(self):
+
+        qeuryUrl = self.domain + "/datacenter/hb/api/mlt/config/query/t"
+        qeuryParam = {
+            "startDate":"2023-01",
+            "endDate": "2023-12",
+        }
+        # print(requestParam)
+
+        qeuryRes = CommonClass.execRequest(self.session, method="GET", url=qeuryUrl, params=qeuryParam).json()
+        print(qeuryRes)
+
+        deleteUrl = self.domain + "/datacenter/hb/api/mlt/config/delete/t"
+
+        for res in qeuryRes["data"]:
+
+            deleteParam = {
+                "id" : res['id']
+            }
+
+            deleteRes = CommonClass.execRequest(self.session, method="Delete", url=deleteUrl, params=deleteParam).json()
+            print(deleteRes)
 
 
 if __name__ == '__main__':
@@ -106,8 +127,8 @@ if __name__ == '__main__':
     hebei_test = Hebei(testSession,yamlData,"test")
 
     hebei_test.login()
-    # hebei_test.createTData()
-    hebei_test.createPeak()
-
+    # hebei_test.createPeak()
+    hebei_test.deleteT()
+    hebei_test.createTData()
 
 
