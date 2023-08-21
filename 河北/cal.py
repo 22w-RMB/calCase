@@ -616,15 +616,37 @@ def importFile():
         # print(files)
 
 
+def deleteContract(startDate,endDate,tradingSession):
+
+    print("====开始删除合同")
+
+    db = MysqlTool()
+
+
+    d = {
+        "trading_session": [tradingSession],
+        "start_date": [startDate],
+        "end_date": [endDate if endDate!="" else startDate ] ,
+    }
+
+    db.deleteContract(d)
+
+    db.close()
+    print("====合同删除完毕")
+    pass
+
+
 def execData(tradingSession,startDate,endDate,fileDataList,contractType,isSell):
 
+    deleteContract(startDate, endDate, tradingSession)
+
     # 处理分时段标识配置的文件
-    if contractType in ["日集中竞价","日滚动撮合"]:
-        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
-
-    else:
-
-        execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
+    # if contractType in ["日集中竞价","日滚动撮合"]:
+    #     execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
+    #
+    # else:
+    #
+    #     execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
 
 
 def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell):

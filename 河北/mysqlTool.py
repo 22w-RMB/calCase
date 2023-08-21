@@ -135,6 +135,38 @@ class MysqlTool:
 
         return [dict(zip(header, row)) for row in res]
 
+    def deleteContract(self,dic):
+
+        cursor = self.db.cursor()
+
+        sql = "delete from mlt_data_private"
+
+        l = []
+
+        for key in dic.keys():
+
+            if dic[key] != None:
+
+                ll = []
+                for k in dic[key]:
+                    ll.append( key + "=" + '"'+k+'"' )
+
+                l.append(
+                    "("+ (" or ".join(ll)) +")"
+                )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        cursor.close()
+
+
     # @cursorOperate
     def insertSessionIdConfig(self,dic):
 

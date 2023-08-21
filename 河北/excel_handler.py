@@ -151,31 +151,31 @@ class ExcelHepler:
 
 if __name__ == '__main__':
 
-    # path = r"D:\code\python\calCase\河北\导入文件\年度双边协商\交易场次名称（年度双边协商）-2023-01-01-2023-12-31.xlsx"
-    # e = ExcelHepler(path)
-    #
-    #
-    # enumD = {
-    #     "购方名称": "buyer_name",
-    #     "售方名称": "seller_name",
-    #     "分时段编码": "period_time_coding",
-    #     "售方电量": "ele",
-    #     "售方电价" : "price",
-    #     "时间段" :"Period_of_time",
-    #     "时间类型" :"timeType",
-    #     "交易单元" : "seller_name",
-    #     "成交电量" : "ele",
-    #     "成交均价" : "price",
-    #     "成交电量（日均）" : "ele",
-    #     "出清电价（日均）" : "price",
-    # }
-    #
-    # l = e.getAllData(enumD)
-    #
-    # print(l)
+    path = r"D:\code\python\calCase\河北\导入文件\张河湾抽水电量\交易场次名称（张河湾抽水电量）-2022-12-01-2022-12-31.xlsx"
+    e = ExcelHepler(path)
 
-    p = r"D:\code\python\calCase\河北\私有数据\出清结果\日前交易结果-电厂-20230613.xlsx"
-    e = ExcelHepler(p)
-    e.getClearingData()
+
+    enumD = {
+        "购方名称": "buyer_name",
+        "售方名称": "seller_name",
+        "分时段编码": "period_time_coding",
+        "售方电量": "ele",
+        "售方电价" : "price",
+        "时间段" :"Period_of_time",
+        "时间类型" :"timeType",
+        "交易单元" : "seller_name",
+        "成交电量" : "ele",
+        "成交均价" : "price",
+        "成交电量（日均）" : "ele",
+        "出清电价（日均）" : "price",
+    }
+
+    l = e.getAllData(enumD)
+
+    print(l)
+
+    # p = r"D:\code\python\calCase\河北\私有数据\出清结果\日前交易结果-电厂-20230613.xlsx"
+    # e = ExcelHepler(p)
+    # e.getClearingData()
 
     pass
