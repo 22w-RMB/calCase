@@ -28,7 +28,7 @@ enumD = {
     "成交电量": "ele",
     "成交均价": "price",
     "成交电量（日均）": "ele",
-    "出清电价（日均）": "price",
+    "出清电价": "price",
 }
 
 contractTypeEnum = {
@@ -586,6 +586,9 @@ def importFile():
     for categories in contractTypeEnum:
         for contractType in contractTypeEnum[categories]:
 
+            # if contractType !="日集中竞价":
+            #     continue
+
             contractTypePath = CommonClass.mkDir("河北","导入文件",contractType,isGetStr=True)
             if  os.path.exists(contractTypePath) == False:
                 continue
@@ -680,9 +683,10 @@ def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType,isS
         time24List = res["time24List"]
         count = res["count"]
 
+        # print("=========",data)
         for i  in range(0,24):
             if time24List[i] == 1:
-                dic[data["seller_name"]]["ele"][i] = sell* data["ele"] / count
+                dic[data["seller_name"]]["ele"][i] = sell * data["ele"] / count
                 dic[data["seller_name"]]["price"][i] =  data["price"]
 
     for key in dic:
@@ -832,9 +836,9 @@ def generate(sd, ed, onedayData):
 
 if __name__ == '__main__':
 
-    writeDataT(dataTyaml)
-    writeDataPeak(dataPeakyaml)
-    # importFile()
+    # writeDataT(dataTyaml)
+    # writeDataPeak(dataPeakyaml)
+    importFile()
     # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
