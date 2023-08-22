@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 from datetime import timedelta
 from tool import Tool
@@ -327,8 +328,17 @@ def execAnalysisData(units,startDate,endDate):
     sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
     ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
 
-    resData = {}
-    resList = []
+    resData = {
+        "收益分析" : [],
+        "盈亏分析" : [],
+        "电量分析" : [],
+        "汇总统计" : [],
+        "峰平谷分和T1~T6统计" : [],
+    }
+
+    dataList = []
+    contractDataList = []
+    clearingDataList = []
 
     while sd <= ed:
 
@@ -344,7 +354,25 @@ def execAnalysisData(units,startDate,endDate):
             calRes = cal24Info(queryRes)
 
             clearing = PrivateData.queryClearingData(unit=[unit], startDate=dateStr, endDate=dateStr, dataType=["dayAhead"])
-            print("===========",clearing)
+            # print("===========",clearing)
+
+            contractDataList.append(
+                {
+                    "ele": calRes["ele"],
+                    "price": calRes["price"],
+                }
+            )
+            clearingDataList.append(
+                {
+                    "ele": calRes["ele"],
+                    "price": [None for i in range(0, 24)] if len(clearing) == 0 else clearing[0]["price"],
+                }
+            )
+
+            dataList.extend(
+                queryRes
+            )
+
             calContractDataList.append(
                 {
                     "ele" : calRes["ele"],
@@ -372,18 +400,18 @@ def execAnalysisData(units,startDate,endDate):
         calContractDataRes = cal24Info(calContractDataList)
         calClearingDataRes = cal24Info(calClearingDataList)
 
-        print(calContractDataRes["eleSum"])
-        print(calContractDataRes["price"])
-        print(calContractDataRes["ele"])
-        print(calClearingDataRes)
+        # print(calContractDataRes["eleSum"])
+        # print(calContractDataRes["price"])
+        # print(calContractDataRes["ele"])
+        # print(calClearingDataRes)
 
-        resData[dateStr] = {
-            "合同电费": calContractDataRes["fee"],
-            "合同结算电价": calContractDataRes["price"],
-            "合同日前加权均价": calClearingDataRes["price"],
-            "合同电量": calContractDataRes["ele"],
-            "现货电费": calClearingDataRes["fee"],
-        }
+        # resData[dateStr] = {
+        #     "合同电费": calContractDataRes["fee"],
+        #     "合同结算电价": calContractDataRes["price"],
+        #     "合同日前加权均价": calClearingDataRes["price"],
+        #     "合同电量": calContractDataRes["ele"],
+        #     "现货电费": calClearingDataRes["fee"],
+        # }
 
         aa =  [dateStr,None,None,"合同电量（MWh）", ]
 
@@ -391,6 +419,7 @@ def execAnalysisData(units,startDate,endDate):
         cc =  [dateStr,None,None,"合同日前加权价格（元/MWh）", ]
         dd =  [dateStr,None,None,"合同电费", ]
         ee =  [dateStr,None,None,"现货电费（元）", ]
+        ff =  [dateStr,None,None,"中长期对比日前盈亏（元）", ]
 
         aa.extend(calContractDataRes["ele"])
         bb.extend(calContractDataRes["price"])
@@ -398,36 +427,75 @@ def execAnalysisData(units,startDate,endDate):
         dd.extend(calContractDataRes["fee"] )
         ee.extend(calClearingDataRes["fee"] )
 
-        resList.append(aa)
-        resList.append(bb)
-        resList.append(cc)
-        resList.append(dd)
-        resList.append(ee)
+        ffData = [ calContractDataRes["fee"][i]-calClearingDataRes["fee"][i]    for i in range(0,24) ]
+        ff.extend(ffData)
+
+        resData["收益分析"].append(dd)
+        resData["收益分析"].append(bb)
+        resData["收益分析"].append(aa)
+        resData["盈亏分析"].append(ff)
+        resData["盈亏分析"].append(ee)
+        resData["电量分析"].append(aa)
+        resData["电量分析"].append(bb)
+        resData["电量分析"].append(cc)
+
 
         # 日期 +1
         sd += timedelta(days=1)
 
-    print(resList)
-    outputAnalysisData(resList)
+    # print(dataList)
+    pRatio = calPeakRatio(dataList)
+    tRatio = calTRatio(dataList)
+
+    resData["峰平谷分和T1~T6统计"].append(
+        ["数据","尖峰","高峰","平段","低谷","T1","T2","T3","T4","T5","T6"]
+    )
+    resData["峰平谷分和T1~T6统计"].append(
+        ["电量（MWh）",pRatio['tip'][0],pRatio['peak'][0],pRatio['flat'][0],pRatio['valley'][0],
+         tRatio["T1"][0],tRatio["T2"][0],tRatio["T3"][0],tRatio["T4"][0],tRatio["T5"][0],tRatio["T6"][0],
+         ]
+    )
+    resData["峰平谷分和T1~T6统计"].append(
+        ["占比（%）",pRatio['tip'][1],pRatio['peak'][1],pRatio['flat'][1],pRatio['valley'][1],
+         tRatio["T1"][1],tRatio["T2"][1],tRatio["T3"][1],tRatio["T4"][1],tRatio["T5"][1],tRatio["T6"][1],
+         ]
+    )
+
+    contractDataRes = cal24Info(contractDataList)
+    clearingDataRes = cal24Info(clearingDataList)
+    resData["汇总统计"].append(
+        ["数值", contractDataRes["feeSum"]/10000,clearingDataRes["feeSum"]/10000,
+         (contractDataRes["feeSum"]-clearingDataRes["feeSum"])/10000,contractDataRes["eleSum"],
+         contractDataRes["priceSum"],clearingDataRes["priceSum"]
+         ]
+    )
+
+    outputAnalysisData(resData)
     return  resData
 
 # 输出到excel
-def outputAnalysisData(resList):
+def outputAnalysisData(resData):
 
 
 
     tempPath = CommonClass.mkDir("河北","导出模板","合同分析模板.xlsx",isGetStr=True)
-    templateE = ExcelHepler(tempPath)
-    template = templateE.getTemplateStyle("Sheet1")
-    templateE.close()
+    # templateE = ExcelHepler(tempPath)
+
+
 
     savePath = CommonClass.mkDir("河北","导出模板","合同分析结果.xlsx",isGetStr=True)
-    e = ExcelHepler()
-    e.newExcel(sheetName="Sheet1",templateStyle=template)
-    e.writeData(savePath,resList,"Sheet1")
+    e = ExcelHepler(tempPath)
+
+    # print(json.dumps(resData, ensure_ascii=False, indent=4))
+
+    for sheetName in resData:
+        print("============",sheetName)
+        # template = templateE.getTemplateStyle(sheetName)
+        # e.newExcel(sheetName=sheetName,templateStyle=template)
+        e.writeData(savePath,resData[sheetName],sheetName)
 
     e.close()
-
+    # templateE.close()
     pass
 
 
@@ -497,7 +565,6 @@ def calTRatio(dataList):
             eleRes[period_time_coding][0] += ele
 
 
-
     for key in eleRes:
         if key == "sum":
             continue
@@ -555,7 +622,6 @@ def calPeakRatio(dataList):
 
             for i in range(0,24):
 
-
                 if monthPeak[peakType][i] == 1:
                     if data["ele"][i] == None:
                         continue
@@ -609,7 +675,7 @@ def importFile():
 
                     e = ExcelHepler(filePath)
                     fileDataList = e.getAllData(enumD)
-                    print(fileDataList)
+                    # print(fileDataList)
 
                     execData(tradingSession,startDate,endDate,fileDataList,contractType,"卖出")
 
@@ -680,7 +746,7 @@ def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell)
             continue
 
         daysData = generate(sd,ed,onedayData)
-        print(daysData)
+        # print(daysData)
         writeSql(data, tradingSession, month, daysData, startDate, endDate,contractType)
 
 #日滚动撮合、日集中竞价
@@ -721,7 +787,7 @@ def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType,isS
             "seller_name" : key
         }
 
-        print(daysData)
+        # print(daysData)
         writeSql(data, tradingSession, month, daysData, startDate, startDate, contractType)
 
 
@@ -755,7 +821,7 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType)
             "contract_type": contractType,
         }
 
-        print(d)
+        # print(d)
         db.insertContract(d)
 
     db.close()
@@ -860,7 +926,7 @@ if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
-    importFile()
+    # importFile()
     # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
@@ -873,6 +939,7 @@ if __name__ == '__main__':
     # print(ini())
 
     # execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
+    execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
 
 
     pass

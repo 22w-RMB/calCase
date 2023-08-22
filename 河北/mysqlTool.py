@@ -82,7 +82,7 @@ class MysqlTool:
             dic["trading_session"],
             dic["contract_type"],
        ]
-        print(l)
+        # print(l)
         # lStr = str(l).lstrip("[").rstrip("]")
         #
         # sql +=  "("+  lStr  +");"
