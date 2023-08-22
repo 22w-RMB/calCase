@@ -641,12 +641,12 @@ def execData(tradingSession,startDate,endDate,fileDataList,contractType,isSell):
     deleteContract(startDate, endDate, tradingSession)
 
     # 处理分时段标识配置的文件
-    # if contractType in ["日集中竞价","日滚动撮合"]:
-    #     execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
-    #
-    # else:
-    #
-    #     execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
+    if contractType in ["日集中竞价","日滚动撮合"]:
+        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
+
+    else:
+
+        execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
 
 
 def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell):
@@ -733,10 +733,10 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType)
         contract_name = ""
         buyer_name = None
         if "buyer_name" in data.keys():
-            contract_name = tradingSession + data["buyer_name"] + data["seller_name"]
+            contract_name = tradingSession +"-" + data["buyer_name"] +"-"+ data["seller_name"]
             buyer_name = data["buyer_name"]
         else:
-            contract_name = tradingSession + data["seller_name"]
+            contract_name = tradingSession +"-"+ data["seller_name"]
 
         d = {
             "trading_session": tradingSession,
