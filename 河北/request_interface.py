@@ -119,6 +119,47 @@ class Hebei:
             print(deleteRes)
 
 
+    def deleteCalendar(self):
+        qeuryUrl = self.domain + "/datacenter/hb/api/mlt/trade/calendar/data"
+
+        monthList = [
+            "2023-01",
+            "2023-02",
+            "2023-03",
+            "2023-04",
+            "2023-05",
+            "2023-06",
+            "2023-07",
+            "2023-08",
+            "2023-09",
+            "2023-10",
+            "2023-11",
+            "2023-12",
+            ]
+
+        for month in monthList:
+
+
+            qeuryParam = {
+                "month": month,
+                "provinceAreaId": "013",
+            }
+            # print(requestParam)
+
+            qeuryRes = CommonClass.execRequest(self.session, method="GET", url=qeuryUrl, params=qeuryParam).json()
+            print(qeuryRes)
+
+            deleteUrl = self.domain + "/datacenter/hb/api/mlt/trade/calendar/delete"
+
+            for res in qeuryRes["data"]:
+                deleteParam = {
+                    "id": res['id']
+                }
+
+                deleteRes = CommonClass.execRequest(self.session, method="Delete", url=deleteUrl, params=deleteParam).json()
+                print(deleteRes)
+
+
 if __name__ == '__main__':
     testSession = requests.Session()
 
@@ -128,7 +169,8 @@ if __name__ == '__main__':
 
     hebei_test.login()
     # hebei_test.createPeak()
-    hebei_test.deleteT()
-    hebei_test.createTData()
+    # hebei_test.deleteT()
+    # hebei_test.createTData()
 
+    hebei_test.deleteCalendar()
 
