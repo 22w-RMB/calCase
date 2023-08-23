@@ -922,6 +922,110 @@ def generate(sd, ed, onedayData):
     pass
 
 
+def compareData(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-01"):
+    dataLists = queryContract(tradingSession=tradingSession, seller_name=seller_name, period_time_coding=period_time_coding, startDate=startDate,
+                        endDate=endDate)
+
+    mTool1 = MysqlTool(
+        host="192.168.1.76",
+        port=3306,
+        user="pps_datacenter_test",
+        password="qinghua123@",
+        database="datacenter_hebei",
+        charset="utf8",
+    )
+
+    mTool2 = MysqlTool(
+        host="192.168.1.76",
+        port=3306,
+        user="hb_fire",
+        password="qinghua123@",
+        database="hb_fire_test",
+        charset="utf8",
+    )
+
+    resultList = [
+        # ["交易场次名称", "机组名称", "月份", "时段标识配置","合同日期" ,"类型", "数据不一致开始时刻点","测试环境数据","算例数据","测试环境所有时刻点数据","算例所有时刻点数据"]
+
+    ]
+
+    for data in dataLists:
+
+        calendarQueryDict = {
+            "month": [data["month"]] ,
+            "trade_name" :  [data["trading_session"]]
+        }
+        calendarQueryResIdList = mTool1.queryCalendar(calendarQueryDict)
+
+        contractQueryDict = {
+            "calendar_id":calendarQueryResIdList,
+            "own_enterprise" : [data["seller_name"]],
+        }
+
+        if data["buyer_name"] != None:
+            contractQueryDict["opposite_enterprise"] =  [data["buyer_name"]]
+
+        contractQueryResIdList = mTool2.queryTestContractData(contractQueryDict)
+
+        dateStr = data["date"].strftime("%Y-%m-%d")
+
+        contractDetailQueryDict = {
+            "contract_id" : contractQueryResIdList,
+            "run_date" : [dateStr],
+        }
+
+        contractDetailRes = mTool2.queryTestContractDetail(contractDetailQueryDict)
+
+        for res in contractDetailRes:
+            res["ele"] = eval( res["ele"].replace("null","None") )
+            res["price"] = eval( res["price"].replace("null","None") )
+        # print(contractDetailRes)
+
+        for i in range(0,24):
+
+
+            eleTestData = round(contractDetailRes[0]["ele"][i],6) if contractDetailRes[0]["ele"][i]!=None else None
+            eleCalData = round(data["ele"][i],6) if data["ele"][i]!=None else None
+
+            if eleTestData != eleCalData:
+                resultList.append(
+                    [data["trading_session"],data["seller_name"],data["month"],data["period_time_coding"],
+                     str(dateStr),"电量",i+1,eleTestData,eleCalData,str(contractDetailRes[0]["ele"]),str(data["ele"])]
+                )
+            break
+
+        for i in range(0, 24):
+
+            priceTestData = round(contractDetailRes[0]["price"][i], 6) if contractDetailRes[0]["price"][i]!=None else None
+            priceCalData = round(data["price"][i], 6) if data["price"][i]!=None else None
+
+
+            if priceTestData != priceCalData:
+                resultList.append(
+                    [data["trading_session"], data["seller_name"], data["month"], data["period_time_coding"], str(dateStr),
+                     "电价", i + 1, priceTestData, priceCalData, str(contractDetailRes[0]["price"]), str(data["price"])]
+                )
+            break
+
+    print(resultList)
+    outComareData(resultList)
+    mTool1.close()
+    mTool2.close()
+
+def outComareData(resultList):
+    tempPath = CommonClass.mkDir("河北", "导出模板", "对比结果模板.xlsx", isGetStr=True)
+
+    savePath = CommonClass.mkDir("河北", "导出模板", "对比结果.xlsx", isGetStr=True)
+    e = ExcelHepler(tempPath)
+
+    # print(json.dumps(resData, ensure_ascii=False, indent=4))
+    e.writeData(savePath, resultList )
+
+    e.close()
+    # templateE.close()
+
+
+
 if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
@@ -939,7 +1043,10 @@ if __name__ == '__main__':
     # print(ini())
 
     # execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
-    execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
+    # execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
+
+    compareData(tradingSession=["1月月集中1"], seller_name=["河北1#1机组"], period_time_coding=None, startDate="2023-01-01",
+                endDate="2023-01-31")
 
 
     pass

@@ -4,14 +4,14 @@ import pymysql
 
 class MysqlTool:
 
-    def __init__(self,host=None,port=None,user=None,password=None,database=None,chatset=None):
+    def __init__(self,host="127.0.0.1",port=3306,user="root",password="123456",database="hebei_sql",charset="utf8"):
 
-        host = "127.0.0.1"
-        port = 3306
-        user = "root"
-        password = "123456"
-        database = "hebei_sql"
-        charset = "utf8"
+        host = host
+        port = port
+        user = user
+        password = password
+        database = database
+        charset = charset
 
         try:
             self.db = pymysql.connect(host=host,port=port,user=user,password=password,database=database,charset=charset)
@@ -39,6 +39,102 @@ class MysqlTool:
             cursor.close()
 
         return wrapper
+
+    def queryCalendar(self,dic):
+        cursor = self.db.cursor()
+
+        sql = "select id from mlt_calendar_data"
+
+        l = []
+
+        for key in dic.keys():
+                ll = []
+                for k in dic[key]:
+                    ll.append(key + "=" + '"' + k + '"')
+
+                l.append(
+                    "(" + (" or ".join(ll)) + ")"
+                )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [
+            data[0] for data in res
+        ]
+
+    def queryTestContractData(self,dic):
+        cursor = self.db.cursor()
+
+        sql = "select id from mlt_contract"
+
+        l = []
+
+        for key in dic.keys():
+            ll = []
+            for k in dic[key]:
+                ll.append(key + "=" + '"' + k + '"')
+
+            l.append(
+                "(" + (" or ".join(ll)) + ")"
+            )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [
+            data[0] for data in res
+        ]
+
+    def queryTestContractDetail(self,dic):
+        cursor = self.db.cursor()
+
+        sql = "select * from mlt_contract_details"
+
+        l = []
+
+        for key in dic.keys():
+            ll = []
+            for k in dic[key]:
+                ll.append(key + "=" + '"' + k + '"')
+
+            l.append(
+                "(" + (" or ".join(ll)) + ")"
+            )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header, row)) for row in res]
 
     # @cursorOperate
     def insertContract(self,dic):
