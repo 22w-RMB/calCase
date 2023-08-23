@@ -990,7 +990,9 @@ def compareData(tradingSession=None, seller_name=None, period_time_coding=None, 
             if eleTestData != eleCalData:
                 resultList.append(
                     [data["trading_session"],data["seller_name"],data["month"],data["period_time_coding"],
-                     str(dateStr),"电量",i+1,eleTestData,eleCalData,str(contractDetailRes[0]["ele"]),str(data["ele"])]
+                     str(dateStr),"电量",i+1,eleTestData,eleCalData,str(contractDetailRes[0]["ele"]),str(data["ele"]),
+                     contractDetailRes[0]["id"],contractDetailRes[0]["contract_id"],
+                     ]
                 )
             break
 
@@ -1003,7 +1005,9 @@ def compareData(tradingSession=None, seller_name=None, period_time_coding=None, 
             if priceTestData != priceCalData:
                 resultList.append(
                     [data["trading_session"], data["seller_name"], data["month"], data["period_time_coding"], str(dateStr),
-                     "电价", i + 1, priceTestData, priceCalData, str(contractDetailRes[0]["price"]), str(data["price"])]
+                     "电价", i + 1, priceTestData, priceCalData, str(contractDetailRes[0]["price"]), str(data["price"]),
+                     contractDetailRes[0]["id"],contractDetailRes[0]["contract_id"],
+                     ]
                 )
             break
 
