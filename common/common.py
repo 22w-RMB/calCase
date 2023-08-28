@@ -58,7 +58,7 @@ class CommonClass:
         if loginInfo['publicKey_url'] is not None:
             publicKeyUrl = domain + loginInfo['publicKey_url']
 
-            key = session1.request(method="GET", url=publicKeyUrl ).json()['data']
+            key = session1.request(method="GET", url=publicKeyUrl ,verify=False).json()['data']
             password = CommonClass.encrpt(loginInfo['password'], key)
 
         loginData = {
@@ -70,11 +70,11 @@ class CommonClass:
         print(password)
 
         loginUrl = domain+loginInfo['login_url']
-        r1 = session1.request(method="POST", url=loginUrl, params=loginData)
+        r1 = session1.request(method="POST", url=loginUrl, params=loginData,verify=False)
         print(r1.json())
 
         switchUrl = domain + loginInfo['switch_url']
-        r2 = session1.request(method="GET", url=switchUrl)
+        r2 = session1.request(method="GET", url=switchUrl,verify=False)
         print(r2.json())
 
     @staticmethod
@@ -83,7 +83,7 @@ class CommonClass:
         if loginInfo['publicKey_url'] is not None:
             publicKeyUrl = domain + loginInfo['publicKey_url']
 
-            key = session1.request(method="GET", url=publicKeyUrl).json()['data']
+            key = session1.request(method="GET", url=publicKeyUrl,verify=False).json()['data']
             pwd = CommonClass.encrpt(password, key)
 
         loginData = {
@@ -95,14 +95,14 @@ class CommonClass:
         # print(password)
 
         loginUrl = domain + loginInfo['login_url']
-        r1 = session1.request(method="POST", url=loginUrl, params=loginData)
+        r1 = session1.request(method="POST", url=loginUrl, params=loginData,verify=False)
         print(r1.json())
 
 
     @staticmethod
     def switchTenantId(session1: requests.Session, domain , tenantId):
         switchUrl = domain + "/usercenter/web/switchTenant?tenantId=" + tenantId
-        r2 = session1.request(method="GET", url=switchUrl)
+        r2 = session1.request(method="GET", url=switchUrl,verify=False)
         print(r2.json())
 
 
@@ -122,7 +122,7 @@ class CommonClass:
     def execRequest(session, method, url,sleepTime=0.1,
             params=None, data=None, headers=None, cookies=None, files=None,
             auth=None, timeout=None, allow_redirects=True, proxies=None,
-            hooks=None, stream=None, verify=None, cert=None, json=None):
+            hooks=None, stream=None, verify=False, cert=None, json=None):
 
         while True:
             try:
