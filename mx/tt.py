@@ -114,6 +114,21 @@ class Mengxi:
         print(name,"接口返回：",res)
         print("=====", name, "执行完成...")
 
+    # 查询蒙西首页
+    def screenContract(self,name):
+
+
+        url = self.domain + "/mxgroup/fire/api/dashboard/index/province?provinceId=1111"
+
+        params = {
+            "provinceId": "111",
+        }
+        print("=====", name, "开始执行...")
+        res = CommonClass.execRequest(self.session, method="GET", url=url, params=params).json()
+        print(name, "接口返回：", res)
+        print("=====", name, "执行完成...")
+
+
     # 创建合同
     def createContract(self,name=1,unitId = None):
 
@@ -676,18 +691,26 @@ if __name__ == '__main__':
 
     privatePath = r"D:\code\python\calCase\mx\私有数据"
 
-    threadList = execImportPrivateDataThread(mx_test,privatePath)
+    threadList = []
     print(threadList)
+    mx_test.screenContract(1)
 
 
-
-    num = 2
-    # t = []
-    for i in range(0,num):
-        threadList.append(Thread(target=mx_test.queryContract, args=("线程"+str(i),)))
-
-    for i in threadList:
-        i.start()
+    # num = 2
+    # # t = []
+    # for i in range(0,num):
+    #     threadList.append(Thread(target=mx_test.queryContract, args=("合同查询线程"+str(i),)))
+    #
+    # reportNum = 2
+    # for i in range(0,reportNum):
+    #     threadList.append(Thread(target=mx_test.report, args=("报表下载线程"+str(i),)))
+    #
+    # queryScreenNum = 2
+    # for i in range(0,reportNum):
+    #     threadList.append(Thread(target=mx_test.screenContract, args=("大屏指标线程"+str(i),)))
+    #
+    # for i in threadList:
+    #     i.start()
         # print(i)
 
     # print(mx_test.getFireUnit())
