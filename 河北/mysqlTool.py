@@ -143,8 +143,8 @@ class MysqlTool:
 
         # sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele,price,date,start_date,end_date,update_time,create_time,month,trading_session) VALUES"
         sql = "insert into mlt_data_private(contract_name,buyer_name,seller_name,period_time_coding,ele," \
-              "price,date,start_date,end_date,update_time,create_time,month,trading_session,contract_type) " \
-              "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+              "price,date,start_date,end_date,update_time,create_time,month,trading_session,contract_type,trading_session_month) " \
+              "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 
         # l = [
@@ -177,6 +177,7 @@ class MysqlTool:
             dic["month"],
             dic["trading_session"],
             dic["contract_type"],
+            dic["trading_session_month"],
        ]
         # print(l)
         # lStr = str(l).lstrip("[").rstrip("]")

@@ -646,7 +646,7 @@ def calPeakRatio(dataList):
     return eleRes
 
 
-def importFile():
+def importFile(tradingSessionMonth):
 
 
     for categories in contractTypeEnum:
@@ -655,7 +655,7 @@ def importFile():
             # if contractType !="日集中竞价":
             #     continue
 
-            contractTypePath = CommonClass.mkDir("河北","导入文件",contractType,isGetStr=True)
+            contractTypePath = CommonClass.mkDir("河北","导入文件",tradingSessionMonth,contractType,isGetStr=True)
             if  os.path.exists(contractTypePath) == False:
                 continue
 
@@ -677,7 +677,7 @@ def importFile():
                     fileDataList = e.getAllData(enumD)
                     # print(fileDataList)
 
-                    execData(tradingSession,startDate,endDate,fileDataList,contractType,"卖出")
+                    execData(tradingSession,startDate,endDate,fileDataList,contractType,"卖出",tradingSessionMonth)
 
         # print(files)
 
@@ -702,20 +702,20 @@ def deleteContract(startDate,endDate,tradingSession):
     pass
 
 
-def execData(tradingSession,startDate,endDate,fileDataList,contractType,isSell):
+def execData(tradingSession,startDate,endDate,fileDataList,contractType,isSell,tradingSessionMonth):
 
     deleteContract(startDate, endDate, tradingSession)
 
     # 处理分时段标识配置的文件
     if contractType in ["日集中竞价","日滚动撮合"]:
-        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
+        execScrolData(fileDataList, tradingSession, startDate, endDate,contractType,isSell,tradingSessionMonth)
 
     else:
 
-        execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell)
+        execTData(fileDataList, tradingSession, startDate, endDate,contractType,isSell,tradingSessionMonth)
 
 
-def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell):
+def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell,tradingSessionMonth):
 
     sell = 1
 
@@ -747,10 +747,10 @@ def execTData(fileDataList,tradingSession,startDate,endDate,contractType,isSell)
 
         daysData = generate(sd,ed,onedayData)
         # print(daysData)
-        writeSql(data, tradingSession, month, daysData, startDate, endDate,contractType)
+        writeSql(data, tradingSession, month, daysData, startDate, endDate,contractType,tradingSessionMonth)
 
 #日滚动撮合、日集中竞价
-def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType,isSell):
+def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType,isSell,tradingSessionMonth):
     sell = 1
 
     if isSell != "卖出":
@@ -788,10 +788,10 @@ def execScrolData(fileDataList,tradingSession,startDate,endDate,contractType,isS
         }
 
         # print(daysData)
-        writeSql(data, tradingSession, month, daysData, startDate, startDate, contractType)
+        writeSql(data, tradingSession, month, daysData, startDate, startDate, contractType,tradingSessionMonth)
 
 
-def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType):
+def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType,tradingSessionMonth):
 
     db = MysqlTool()
 
@@ -819,6 +819,7 @@ def writeSql(data,tradingSession,month,daysData,startDate,endDate, contractType)
             "create_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "month": month,
             "contract_type": contractType,
+            "trading_session_month": tradingSessionMonth,
         }
 
         # print(d)
@@ -922,7 +923,7 @@ def generate(sd, ed, onedayData):
     pass
 
 
-def compareData(tradingSession=None, seller_name=None, period_time_coding=None, startDate="2023-01-01", endDate="2023-01-01"):
+def compareData(tradingSession=None, seller_name=None, period_time_coding=None, startDate=None, endDate=None):
     dataLists = queryContract(tradingSession=tradingSession, seller_name=seller_name, period_time_coding=period_time_coding, startDate=startDate,
                         endDate=endDate)
 
@@ -952,7 +953,7 @@ def compareData(tradingSession=None, seller_name=None, period_time_coding=None, 
     for data in dataLists:
 
         calendarQueryDict = {
-            "month": [data["month"]] ,
+            "month": [data["trading_session_month"]] ,
             "trade_name" :  [data["trading_session"]]
         }
         calendarQueryResIdList = mTool1.queryCalendar(calendarQueryDict)
@@ -989,7 +990,7 @@ def compareData(tradingSession=None, seller_name=None, period_time_coding=None, 
 
             if eleTestData != eleCalData:
                 resultList.append(
-                    [data["trading_session"],data["seller_name"],data["month"],data["period_time_coding"],
+                    [data["trading_session_month"],data["trading_session"], data["buyer_name"],data["seller_name"],data["month"],data["period_time_coding"],
                      str(dateStr),"电量",i+1,eleTestData,eleCalData,str(contractDetailRes[0]["ele"]),str(data["ele"]),
                      contractDetailRes[0]["id"],contractDetailRes[0]["contract_id"],
                      ]
@@ -1004,7 +1005,7 @@ def compareData(tradingSession=None, seller_name=None, period_time_coding=None, 
 
             if priceTestData != priceCalData:
                 resultList.append(
-                    [data["trading_session"], data["seller_name"], data["month"], data["period_time_coding"], str(dateStr),
+                    [data["trading_session_month"],data["trading_session"], data["buyer_name"], data["seller_name"], data["month"], data["period_time_coding"], str(dateStr),
                      "电价", i + 1, priceTestData, priceCalData, str(contractDetailRes[0]["price"]), str(data["price"]),
                      contractDetailRes[0]["id"],contractDetailRes[0]["contract_id"],
                      ]
@@ -1034,7 +1035,7 @@ if __name__ == '__main__':
 
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
-    # importFile()
+    # importFile("2023-08")
     # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
@@ -1049,8 +1050,9 @@ if __name__ == '__main__':
     # execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
     # execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
 
-    compareData(tradingSession=["1月月集中1"], seller_name=["河北1#1机组"], period_time_coding=None, startDate="2023-01-01",
-                endDate="2023-01-31")
+    compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )
+                # startDate="2023-01-01",
+                # endDate="2023-01-31"
 
 
     pass
