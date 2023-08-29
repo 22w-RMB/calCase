@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 from datetime import timedelta
@@ -104,15 +105,15 @@ class Mengxi:
         url = self.domain +"/mxgroup/fire/api/report/template/download"
 
         params = {
-            "templateId" :  "e4dc741e88374808018842a1260e001d"  ,
-            "startDate" :   "2023-05-01",
-            "endDate" :   "2023-05-15",
-            "reportName" :  "2132023-05-01～2023-05-15" ,
+            "templateId" :  "0000000088d1892b0188faf1a44f34b4"  ,
+            "startDate" :   "2023-08-28",
+            "endDate" :   "2023-08-28",
+            "reportName" :  "北方现货日出清预报表新2023-08-28～2023-08-28" ,
         }
-        print("=====",name,"开始执行...")
+        print("=====",name,"开始执行...","\n",end='')
         res = CommonClass.execRequest(self.session,method="GET",url=url,params=params).json()
-        print(name,"接口返回：",res)
-        print("=====", name, "执行完成...")
+        print(name,"接口返回：",res, "   时间：", datetime.datetime.now(),"\n",end='')
+        print("=====", name, "执行完成...","\n",end='')
 
     # 查询蒙西首页
     def screenContract(self,name):
@@ -123,10 +124,10 @@ class Mengxi:
         params = {
             "provinceId": "111",
         }
-        print("=====", name, "开始执行...")
+        print("=====", name, "开始执行...","\n",end='')
         res = CommonClass.execRequest(self.session, method="GET", url=url, params=params).json()
-        print(name, "接口返回：", res)
-        print("=====", name, "执行完成...")
+        print(name, "接口返回：", res, "   时间：", datetime.datetime.now(),"\n",end='')
+        print("=====", name, "执行完成...","\n",end='')
 
 
     # 创建合同
@@ -152,12 +153,11 @@ class Mengxi:
 
         url = self.domain +"/mxgroup/fire/api/mlt/trade/overview"
 
-        params = {"startDate":"2022-08-01","endDate":"2023-08-05","unitIds":["e4dc7401886b812901887b33eef90193","e4dc743c87fe5ac60187fe69913d0002","e4dc743b8a2a8f47018a2ac029060000","e4dc743b8a2a8f47018a2ac029800001","e4dc743b8a2a8f47018a2ac029ae0002","e4dc743b8a2a8f47018a2ac029da0003","e4dc743b8a2a8f47018a2ac02a020004","e4dc743b8a2a8f47018a2ac02a2b0005","e4dc743b8a2a8f47018a2ac02a5d0006","e4dc743b8a2a8f47018a2ac02a960007","e4dc743b8a2a8f47018a2ac02aca0008","e4dc743b8a2a8f47018a2ac02af40009","e4dc743b8a2a8f47018a2ac02b1b000a","e4dc743b8a2a8f47018a2ac02b4f000b","e4dc743b8a2a8f47018a2ac02b88000c","e4dc743b8a2a8f47018a2ac02bb1000d","e4dc743b8a2a8f47018a2ac02be6000e","e4dc743b8a2a8f47018a2ac02c18000f","e4dc743b8a2a8f47018a2ac02c7c0010","e4dc743b8a2a8f47018a2ac02cab0011","e4dc743b8a2a8f47018a2ac02ccf0012","e4dc743b8a2a8f47018a2ac02cf80013","e4dc743b8a2a8f47018a2ac02d1f0014","e4dc743b8a2a8f47018a2ac02d4f0015","e4dc743b8a2a8f47018a2ac02d770016","e4dc743b8a2a8f47018a2ac02d9f0017","e4dc743b8a2a8f47018a2ac02dd20018","e4dc743b8a2a8f47018a2ac02df70019","e4dc743b8a2a8f47018a2ac02e1a001a","e4dc743b8a2a8f47018a2ac02e44001b","e4dc743b8a2a8f47018a2ac02e8d001c","e4dc743b8a2a8f47018a2ac02eb2001d","e4dc743b8a2a8f47018a2ac02ed6001e","e4dc743b8a2a8f47018a2ac02efa001f","e4dc743b8a2a8f47018a2ac02f1e0020","e4dc743b8a2a8f47018a2ac02f470021","e4dc743b8a2a8f47018a2ac02f6d0022","e4dc743b8a2a8f47018a2ac02f930023","e4dc743b8a2a8f47018a2ac02fb90024","e4dc743b8a2a8f47018a2ac02fe90025","e4dc743b8a2a8f47018a2ac0300f0026","e4dc743b8a2a8f47018a2ac0303e0027","e4dc743b8a2a8f47018a2ac030630028","e4dc743b8a2a8f47018a2ac0308a0029","e4dc743b8a2a8f47018a2ac030b4002a","e4dc743b8a2a8f47018a2ac0310b002b","e4dc743b8a2a8f47018a2ac0314f002c","e4dc743b8a2a8f47018a2ac03170002d","e4dc743b8a2a8f47018a2ac03193002e","e4dc743b8a2a8f47018a2ac031bc002f","e4dc743b8a2a8f47018a2ac031df0030","e4dc743b8a2a8f47018a2ac032040031","e4dc743b8a2a8f47018a2ac032260032","e4dc743b8a2a8f47018a2ac032490033","e4dc743b8a2a8f47018a2ac0326c0034","e4dc743b8a2a8f47018a2ac032900035","e4dc743b8a2a8f47018a2ac033a40036","e4dc743b8a2a8f47018a2ac033c60037","e4dc743b8a2a8f47018a2ac0341b0038","e4dc743b8a2a8f47018a2ac0343f0039","e4dc743b8a2a8f47018a2ac03462003a","e4dc743b8a2a8f47018a2ac03486003b","e4dc743b8a2a8f47018a2ac034ad003c","e4dc743b8a2a8f47018a2ac034d2003d","e4dc743b8a2a8f47018a2ac03500003e","e4dc743b8a2a8f47018a2ac03536003f"]}
-
-        print("=====",name,"开始执行...")
+        params = {"startDate":"2023-08-21","endDate":"2023-08-28","unitIds":["e4c3dd6082a9a74c0182aa9764400064","e4c3dd6082a9a74c0182aa9785ea0065","e4c3dd6082a9a74c0182aa943caa005a","e4c3dd6082a9a74c0182aa945e45005b","e4c3dd6082a9a74c0182aa980a250066","e4c3dd6082a9a74c0182aa98280e0067","e4c3dd6082a9a74c0182aa96d10f0062","e4c3dd6082a9a74c0182aa96f04b0063","e4c3dd6082a9a74c0182aa9897de0068","e4c3dd6082a9a74c0182aa98bad70069","e4c3dd6082a9a74c0182aa745a35004c","e4c3dd6082a9a74c0182aa74a058004d","0000000085a0d56f0185b87542c918c0","0000000085a0d56f0185b875ca7e18c1","e4c3dd6082a9a74c0182aa9a145e006b","e4c3dd6082a9a74c0182aa9a3a70006c","e4c3dd6082a9a74c0182aa9a73be006d","e4c3dd6082a9a74c0182aa9aabaf006e","e4c3dd6082a9a74c0182aa9951f8006a","e4da07d782ce944e0182d2ee416c0237","e4c3dd6082a9a74c0182aa90f3d50052","e4c3dd6082a9a74c0182aa911c7c0053","e4c3dd6082a9a74c0182aa91440a0054","e4c3dd6082a9a74c0182aa9165ed0055","e4c3dd6082a9a74c0182aa9185470056","e4c3dd6082a9a74c0182aa91aa730057","e4c3dd6082a9a74c0182aa91f99d0058","e4c3dd6082a9a74c0182aa9227cb0059","e4c3dd6082a9a74c0182aa95796c005e","e4c3dd6082a9a74c0182aa9599ff005f","e4da07d782ce944e0182d412011a0389","e4da07d782ce944e0182d41242590391","e4c3dd6082a9a74c0182aa96329c0060","e4c3dd6082a9a74c0182aa965a2e0061","e4c3dd6082a9a74c0182aa8f4b670050","e4c3dd6082a9a74c0182aa8f7d9e0051","0000000085a0d56f0185b86b844818ba","e4c3dd6082a9a74c0182aa9b88f8006f","e4c3dd6082a9a74c0182aa9bac670070","e4c3dd6082a9a74c0182aa9be5730071","e4c3dd6082a9a74c0182aa9c114b0072","e4c3dd6082a9a74c0182aa9d96610075","e4c3dd6082a9a74c0182aa9c86970073","e4c3dd6082a9a74c0182aa9d054a0074","0000000086b6c61d0186e45acbd33a65","0000000086b6c61d0186e45b2ab33a66","0000000086b6c61d0186e45b83c93a67","e4c3dd6082a9a74c0182aa9e2bdc0077","e4c3dd6082a9a74c0182aa9ed2df007a","e4c3dd6082a9a74c0182aa9f3d0d007c","e4c3dd6082a9a74c0182aa9f742f007d","e4c3dd6082a9a74c0182aa9faccf007e","e4c3dd6082a9a74c0182aaa18c0e0080","e4c3dd6082a9a74c0182aaa1bcc00081","e4c3dd6082a9a74c0182aaa1fcf20082","e4c3dd6082a9a74c0182aaa238500083","000000008702e346018707470a47072b","00000000877a59c201878e0e535f1fbc","0000000087c0872f0187c2053c9c01e4","0000000087c0872f0187c205804501e5","0000000087c0872f0187c205bad701e6","0000000087c0872f0187c205f26901e7","00000000886b84250188bccea6e36633","0000000089ab1b6f0189ab226f9a0b68"]}
+        print("=====",name,"开始执行...","\n",end='')
         res = CommonClass.execRequest(self.session,method="POST",url=url,json=params).json()
-        print(name,"接口返回：",res)
-        print("=====", name, "执行完成...")
+        print(name,"接口返回：",res , "   时间：", datetime.datetime.now(),"\n",end='')
+        print("=====", name, "执行完成...","\n",end='')
 
     def importPrivateData(self , fileName, filePath):
 
@@ -683,7 +683,7 @@ if __name__ == '__main__':
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    mx_test = Mengxi(testSession,yamlData,"test")
+    mx_test = Mengxi(testSession,yamlData,"hn")
 
     mx_test.login()
 
@@ -693,24 +693,24 @@ if __name__ == '__main__':
 
     threadList = []
     print(threadList)
-    mx_test.screenContract(1)
+    # mx_test.screenContract(1)
 
+    #
+    num = 2
+    # t = []
+    for i in range(0,num):
+        threadList.append(Thread(target=mx_test.queryContract, args=("合同查询线程"+str(i),)))
 
-    # num = 2
-    # # t = []
-    # for i in range(0,num):
-    #     threadList.append(Thread(target=mx_test.queryContract, args=("合同查询线程"+str(i),)))
-    #
-    # reportNum = 2
-    # for i in range(0,reportNum):
-    #     threadList.append(Thread(target=mx_test.report, args=("报表下载线程"+str(i),)))
-    #
+    reportNum = 2
+    for i in range(0,reportNum):
+        threadList.append(Thread(target=mx_test.report, args=("报表下载线程"+str(i),)))
+
     # queryScreenNum = 2
     # for i in range(0,reportNum):
     #     threadList.append(Thread(target=mx_test.screenContract, args=("大屏指标线程"+str(i),)))
-    #
-    # for i in threadList:
-    #     i.start()
+
+    for i in threadList:
+        i.start()
         # print(i)
 
     # print(mx_test.getFireUnit())
