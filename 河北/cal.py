@@ -973,6 +973,7 @@ def compareData(tradingSession=None, seller_name=None, period_time_coding=None, 
         contractDetailQueryDict = {
             "contract_id" : contractQueryResIdList,
             "run_date" : [dateStr],
+            "period_name" : [data["period_time_coding"]],
         }
 
         contractDetailRes = mTool2.queryTestContractDetail(contractDetailQueryDict)
