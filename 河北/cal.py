@@ -261,8 +261,6 @@ def buildOutputData(units,startDate,endDate):
         all["汇总"][t]["持仓均价"] = calRes["price"]
         all["汇总"][t]["总电量"] = calRes["eleSum"]
         all["汇总"][t]["总均价"] = calRes["priceSum"]
-        ["汇总", ]
-    print(allType)
     for unit in units:
         all[unit] = ini()
 
@@ -286,7 +284,7 @@ def buildOutputData(units,startDate,endDate):
             buildResList.append(priceList)
 
     print(buildResList)
-    return  buildResList
+    return buildResList
 
 # 输出到excel
 def outputData(units,startDate,endDate):
@@ -295,6 +293,8 @@ def outputData(units,startDate,endDate):
     ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
 
     resData = {}
+
+    resData["24点汇总"] = buildOutputData(units, startDate, endDate)
 
     while sd <= ed:
         dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
@@ -311,7 +311,7 @@ def outputData(units,startDate,endDate):
 
     print(resData)
 
-    savePath = CommonClass.mkDir("河北","导出模板","结果.xlsx",isGetStr=True)
+    savePath = CommonClass.mkDir("河北","导出模板","持仓总览结果.xlsx",isGetStr=True)
     e = ExcelHepler()
     for date in resData:
         e.newExcel(sheetName=date,templateStyle=template)
@@ -1037,7 +1037,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile("2023-08")
-    # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
+    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
 
@@ -1051,7 +1051,7 @@ if __name__ == '__main__':
     # execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
     # execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
 
-    compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )
+    # compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )
                 # startDate="2023-01-01",
                 # endDate="2023-01-31"
 
