@@ -152,7 +152,7 @@ def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,s
 
     queryRes = db.queryContract(d)
 
-    print(queryRes)
+    # print(queryRes)
     db.close()
 
 
@@ -283,7 +283,7 @@ def buildOutputData(units,startDate,endDate):
             buildResList.append(eleList)
             buildResList.append(priceList)
 
-    print(buildResList)
+    # print(buildResList)
     return buildResList
 
 # 输出到excel
@@ -309,7 +309,7 @@ def outputData(units,startDate,endDate):
     template = templateE.getTemplateStyle("Sheet1")
     templateE.close()
 
-    print(resData)
+    # print(resData)
 
     savePath = CommonClass.mkDir("河北","导出模板","持仓总览结果.xlsx",isGetStr=True)
     e = ExcelHepler()
