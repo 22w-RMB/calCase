@@ -180,6 +180,8 @@ def cal24Info(dataList):
 
             if ele[i] == None:
                 continue
+            if price[i] == None:
+                continue
 
             if eleRes[i] == None:
                 eleRes[i] = ele[i]
@@ -322,8 +324,8 @@ def outputData(units,startDate,endDate):
     pass
 
 
-# 构建持仓总览输出的数据
-def execAnalysisData(units,startDate,endDate):
+# 构建合同分析输出的数据
+def execAnalysisData(units,startDate,endDate,tradingSession=None,contractType=None):
 
     sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
     ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
@@ -349,8 +351,8 @@ def execAnalysisData(units,startDate,endDate):
 
         for unit in units:
 
-            queryRes = queryContract(tradingSession=None, seller_name=[unit], period_time_coding=None, startDate=dateStr,
-                                     endDate=dateStr, contractType=None)
+            queryRes = queryContract(tradingSession=tradingSession, seller_name=[unit], period_time_coding=None, startDate=dateStr,
+                                     endDate=dateStr, contractType=contractType)
             calRes = cal24Info(queryRes)
 
             clearing = PrivateData.queryClearingData(unit=[unit], startDate=dateStr, endDate=dateStr, dataType=["dayAhead"])
@@ -400,18 +402,6 @@ def execAnalysisData(units,startDate,endDate):
         calContractDataRes = cal24Info(calContractDataList)
         calClearingDataRes = cal24Info(calClearingDataList)
 
-        # print(calContractDataRes["eleSum"])
-        # print(calContractDataRes["price"])
-        # print(calContractDataRes["ele"])
-        # print(calClearingDataRes)
-
-        # resData[dateStr] = {
-        #     "合同电费": calContractDataRes["fee"],
-        #     "合同结算电价": calContractDataRes["price"],
-        #     "合同日前加权均价": calClearingDataRes["price"],
-        #     "合同电量": calContractDataRes["ele"],
-        #     "现货电费": calClearingDataRes["fee"],
-        # }
 
         aa =  [dateStr,None,None,"合同电量（MWh）", ]
 
@@ -427,7 +417,12 @@ def execAnalysisData(units,startDate,endDate):
         dd.extend(calContractDataRes["fee"] )
         ee.extend(calClearingDataRes["fee"] )
 
-        ffData = [ calContractDataRes["fee"][i]-calClearingDataRes["fee"][i]    for i in range(0,24) ]
+        ffData = []
+        for i in range(0, 24):
+            if (calContractDataRes["fee"][i] == None) or (calClearingDataRes["fee"][i] ==None):
+                ffData.append(None)
+                continue
+            ffData.append(calContractDataRes["fee"][i]-calClearingDataRes["fee"][i])
         ff.extend(ffData)
 
         resData["收益分析"].append(dd)
@@ -1037,7 +1032,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile("2023-08")
-    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
+    # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
 
@@ -1048,7 +1043,7 @@ if __name__ == '__main__':
     # calPeakRatio(res)
     # print(ini())
 
-    # execAnalysisData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-02")
+    execAnalysisData(["河北1#1机组"],"2023-01-01","2023-01-31",["1月第一次周交易"],["周滚动撮合"])
     # execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
 
     # compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )
