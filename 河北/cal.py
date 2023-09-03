@@ -298,13 +298,33 @@ def outputData(units,startDate,endDate):
 
     resData["24点汇总"] = buildOutputData(units, startDate, endDate)
 
+    dateResData = []
+    dateResData.append(
+        ["机组"	,"合约类型","电量/电价",	"合计/均值"],
+    )
+
+
     while sd <= ed:
         dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+        dateResData[0].append(dateStr)
 
         resData[dateStr] = buildOutputData(units, dateStr, dateStr)
 
         # 日期 +1
         sd += timedelta(days=1)
+
+
+    for date in resData:
+
+        if len(dateResData)-1 < len(resData[date]):
+            for data in resData[date]:
+                dateResData.append(data[0:4])
+            continue
+
+        for i in range(0,len(resData[date])):
+            dateResData[i+1].append(resData[date][i][3])
+
+
 
     tempPath = CommonClass.mkDir("河北","导出模板","模板.xlsx",isGetStr=True)
     templateE = ExcelHepler(tempPath)
@@ -318,6 +338,9 @@ def outputData(units,startDate,endDate):
     for date in resData:
         e.newExcel(sheetName=date,templateStyle=template)
         e.writeData(savePath,resData[date],date)
+
+    e.newExcel(sheetName="日维度", templateStyle=None)
+    e.writeData(savePath, dateResData, "日维度",beginRow=1)
 
     e.close()
 
@@ -1032,7 +1055,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile("2023-08")
-    # outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
+    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
     # queryDataT()
     # queryDataPeak()
 
@@ -1043,7 +1066,7 @@ if __name__ == '__main__':
     # calPeakRatio(res)
     # print(ini())
 
-    execAnalysisData(["河北1#1机组"],"2023-01-01","2023-01-31",["1月第一次周交易"],["周滚动撮合"])
+    # execAnalysisData(["河北1#1机组"],"2023-01-01","2023-01-31",["1月第一次周交易"],["周滚动撮合"])
     # execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
 
     # compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )

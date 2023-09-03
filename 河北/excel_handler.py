@@ -29,6 +29,8 @@ class ExcelHepler:
 
         if sheetName != "Sheet1":
             self.wb.sheets.add(sheetName)
+        if templateStyle == None:
+            return
 
         self.wb.sheets[sheetName].range("A1").options(expand="table").value = templateStyle
 
@@ -55,12 +57,12 @@ class ExcelHepler:
         self.saveFile(savePath)
 
 
-    def writeData(self,savePath,dataList,sheetName="Sheet1"):
+    def writeData(self,savePath,dataList,sheetName="Sheet1",beginRow=2):
 
         ws = self.wb.sheets[sheetName]
 
 
-        ws.range((2,1),(1000,28)).value = dataList
+        ws.range((beginRow,1),(1000,100)).value = dataList
 
 
         self.saveFile(savePath)
