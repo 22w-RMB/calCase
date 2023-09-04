@@ -228,18 +228,18 @@ def buildOutputData(units,startDate,endDate):
     buildResList = []
     rankType=[
         "中长期总体",
-        "市场代购电",
         "中长期市场化",
+        "市场代购电",
+        "日集中竞价",
+        "日滚动撮合",
+        "周滚动撮合",
+        "月度集中竞价",
+        "年度双边协商",
         "月度代理购电",
         "月内代理购电",
         "上下调交易",
         "题材电量挂牌",
         "张河湾抽水电量",
-        "年度双边协商",
-        "月度集中竞价",
-        "周滚动撮合",
-        "日滚动撮合",
-        "日集中竞价",
     ]
 
     allType = {
@@ -1055,7 +1055,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile("2023-08")
-    outputData(["河北1#1机组"],"2023-01-01","2023-01-02")
+    outputData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-31")
     # queryDataT()
     # queryDataPeak()
 
