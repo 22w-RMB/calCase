@@ -1083,6 +1083,9 @@ def getContractDetail(tradingSession,
     dateData = {
 
     }
+    monthData = {
+
+    }
 
     while sd <= ed:
         dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
@@ -1091,6 +1094,14 @@ def getContractDetail(tradingSession,
         dateData[dateStr] = {
             "ele" : [None for i in range(0,24)],
             "price" : [None for i in range(0,24)],
+        }
+
+    for i in range(1,13):
+
+        month = "2023-"+ str(i).rjust(2,"0")
+        monthData[month] = {
+            "ele": [None for i in range(0, 24)],
+            "price": [None for i in range(0, 24)],
         }
 
     for r in res:
@@ -1102,12 +1113,20 @@ def getContractDetail(tradingSession,
             "ele" : r["ele"],
             "price" : r["price"],
         }
-
         cal24Res = cal24Info([sourceData,currentData])
+
         dateData[dateStr]["ele"] = cal24Res["ele"]
         dateData[dateStr]["price"] = cal24Res["price"]
         dateData[dateStr]["eleSum"] = cal24Res["eleSum"]
         dateData[dateStr]["priceSum"] = cal24Res["priceSum"]
+
+        monthSourceData = monthData[dateStr[:7]]
+        cal24Res = cal24Info([monthSourceData, currentData])
+
+        monthData[dateStr[:7]]["ele"] = cal24Res["ele"]
+        monthData[dateStr[:7]]["price"] = cal24Res["price"]
+        monthData[dateStr[:7]]["eleSum"] = cal24Res["eleSum"]
+        monthData[dateStr[:7]]["priceSum"] = cal24Res["priceSum"]
 
 
     # print(dateData)
@@ -1124,6 +1143,19 @@ def getContractDetail(tradingSession,
         dateDataList.append(priceList)
 
 
+    monthDataList = [
+        ["月份"],
+        ["电量"],
+        ["电价"]
+    ]
+
+    for month in monthData:
+        monthDataList[0].append(month)
+        monthDataList[1].append(monthData[month]["eleSum"])
+        monthDataList[2].append(monthData[month]["priceSum"])
+
+
+
     # print(dateDataList)
 
     tempPath = CommonClass.mkDir("河北", "导出模板", "电量明细模板.xlsx", isGetStr=True)
@@ -1137,6 +1169,9 @@ def getContractDetail(tradingSession,
     e.newExcel(sheetName="Sheet1", templateStyle=template)
     e.writeData(savePath, dateDataList, "Sheet1")
 
+
+    e.newExcel(sheetName="月维度", templateStyle=None)
+    e.writeData(savePath, monthDataList, "月维度",beginRow=1)
 
     e.close()
 
@@ -1162,9 +1197,9 @@ if __name__ == '__main__':
     # execAnalysisData(["河北1#1机组"],"2023-01-01","2023-01-31",["1月第一次周交易"],["周滚动撮合"])
     # execAnalysisData(["上安电厂1号机"],"2023-01-01","2023-01-02")
 
-    # compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )
-                # startDate="2023-01-01",
-                # endDate="2023-01-31"
+    # compareData(tradingSession=["交易场次名称（年度双边协商）"], seller_name=["上安电厂1号机"], period_time_coding=None,
+    #             startDate="2023-01-01",
+    #             endDate="2023-12-31")
 
     getContractDetail(tradingSession=["交易场次名称（年度双边协商）"],
                       buyer_name=["华能河北能源售电"],seller_name=["上安电厂1号机"],
@@ -1172,6 +1207,7 @@ if __name__ == '__main__':
                       endDate="2023-12-31",
                       trading_session_month = ["2023-08"]
                       )
+
 
 
     pass
