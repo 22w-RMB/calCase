@@ -136,16 +136,18 @@ def queryDataPeak():
     print(d)
     return d
 
-def queryContract(tradingSession=None,seller_name=None,period_time_coding=None,startDate=None,endDate=None,contractType=None):
+def queryContract(tradingSession=None,buyer_name=None,trading_session_month=None,seller_name=None,period_time_coding=None,startDate=None,endDate=None,contractType=None):
 
 
     d = {
         "trading_session": tradingSession,
+        "buyer_name": buyer_name,
         "seller_name": seller_name,
         "period_time_coding": period_time_coding,
         "start_date": startDate,
         "end_date": endDate,
         "contract_type": contractType,
+        "trading_session_month": trading_session_month,
     }
 
     db = MysqlTool()
@@ -590,7 +592,7 @@ def calTRatio(dataList):
             continue
         eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
 
-    print(eleRes)
+    # print(eleRes)
     return eleRes
 
 # 计算峰平谷占比
@@ -660,7 +662,7 @@ def calPeakRatio(dataList):
             continue
         eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
 
-    print(eleRes)
+    # print(eleRes)
     return eleRes
 
 
@@ -1063,6 +1065,82 @@ def outComareData(resultList):
     e.close()
     # templateE.close()
 
+def getContractDetail(tradingSession,
+                      buyer_name,seller_name,
+                      startDate,
+                      endDate,
+                      trading_session_month
+                      ):
+
+    res = queryContract(tradingSession=tradingSession, buyer_name=buyer_name,seller_name=seller_name,
+                        startDate=startDate, endDate=endDate,trading_session_month=trading_session_month)
+
+    # print(res)
+
+    sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
+
+    dateData = {
+
+    }
+
+    while sd <= ed:
+        dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+        sd += timedelta(days=1)
+
+        dateData[dateStr] = {
+            "ele" : [None for i in range(0,24)],
+            "price" : [None for i in range(0,24)],
+        }
+
+    for r in res:
+
+        dateStr = datetime.datetime.strftime(r["date"], "%Y-%m-%d")
+
+        sourceData = dateData[dateStr]
+        currentData = {
+            "ele" : r["ele"],
+            "price" : r["price"],
+        }
+
+        cal24Res = cal24Info([sourceData,currentData])
+        dateData[dateStr]["ele"] = cal24Res["ele"]
+        dateData[dateStr]["price"] = cal24Res["price"]
+        dateData[dateStr]["eleSum"] = cal24Res["eleSum"]
+        dateData[dateStr]["priceSum"] = cal24Res["priceSum"]
+
+
+    # print(dateData)
+
+
+    dateDataList = []
+
+    for date in dateData:
+        eleList = [date,"电量",dateData[dateStr]["eleSum"],]
+        eleList.extend(dateData[date]["ele"])
+        priceList = [date, "电价",dateData[dateStr]["priceSum"],]
+        priceList.extend(dateData[date]["price"])
+        dateDataList.append(eleList)
+        dateDataList.append(priceList)
+
+
+    # print(dateDataList)
+
+    tempPath = CommonClass.mkDir("河北", "导出模板", "电量明细模板.xlsx", isGetStr=True)
+    templateE = ExcelHepler(tempPath)
+    template = templateE.getTemplateStyle("Sheet1")
+    templateE.close()
+
+    name = res[0]["contract_name"]
+    savePath = CommonClass.mkDir("河北", "导出模板", name+"电量明细结果.xlsx", isGetStr=True)
+    e = ExcelHepler()
+    e.newExcel(sheetName="Sheet1", templateStyle=template)
+    e.writeData(savePath, dateDataList, "Sheet1")
+
+
+    e.close()
+
+    pass
 
 
 if __name__ == '__main__':
@@ -1070,7 +1148,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile("2023-08")
-    outputData(["上安电厂1号机","上安电厂2号机","上安电厂3号机","上安电厂4号机","上安电厂5号机","上安电厂6号机",],"2023-01-01","2023-12-31")
+    # outputData(["上安电厂1号机","上安电厂2号机","上安电厂3号机","上安电厂4号机","上安电厂5号机","上安电厂6号机",],"2023-01-01","2023-12-31")
     # queryDataT()
     # queryDataPeak()
 
@@ -1087,6 +1165,13 @@ if __name__ == '__main__':
     # compareData(tradingSession=["交易场次名称（月度代理购电挂牌）"], seller_name=["上安电厂6号机"], period_time_coding=None, )
                 # startDate="2023-01-01",
                 # endDate="2023-01-31"
+
+    getContractDetail(tradingSession=["交易场次名称（年度双边协商）"],
+                      buyer_name=["华能河北能源售电"],seller_name=["上安电厂1号机"],
+                      startDate="2023-01-01",
+                      endDate="2023-12-31",
+                      trading_session_month = ["2023-08"]
+                      )
 
 
     pass
