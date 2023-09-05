@@ -308,7 +308,7 @@ def outputData(units,startDate,endDate):
         dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
         dateResData[0].append(dateStr)
 
-        resData[dateStr] = buildOutputData(units, dateStr, dateStr)
+        # resData[dateStr] = buildOutputData(units, dateStr, dateStr)
 
         # 日期 +1
         sd += timedelta(days=1)
@@ -339,8 +339,8 @@ def outputData(units,startDate,endDate):
         e.newExcel(sheetName=date,templateStyle=template)
         e.writeData(savePath,resData[date],date)
 
-    e.newExcel(sheetName="日维度", templateStyle=None)
-    e.writeData(savePath, dateResData, "日维度",beginRow=1)
+    # e.newExcel(sheetName="日维度", templateStyle=None)
+    # e.writeData(savePath, dateResData, "日维度",beginRow=1)
 
     e.close()
 
@@ -670,7 +670,7 @@ def importFile(tradingSessionMonth):
     for categories in contractTypeEnum:
         for contractType in contractTypeEnum[categories]:
 
-            # if contractType !="日集中竞价":
+            # if contractType !="月度集中竞价":
             #     continue
 
             contractTypePath = CommonClass.mkDir("河北","导入文件",tradingSessionMonth,contractType,isGetStr=True)
@@ -695,7 +695,22 @@ def importFile(tradingSessionMonth):
                     fileDataList = e.getAllData(enumD)
                     # print(fileDataList)
 
-                    execData(tradingSession,startDate,endDate,fileDataList,contractType,"卖出",tradingSessionMonth)
+                    bugList = [
+                        "日集中竞价",
+                        # "日滚动撮合",
+                        "周滚动撮合",
+                        "月度集中竞价",
+                        # "年度双边协商",
+                        # "月度代理购电",
+                        "月内代理购电",
+                        # "上下调交易",
+                        "题材电量挂牌",
+                        "张河湾抽水电量",
+                    ]
+
+                    status = "买入" if contractType in bugList else "卖出"
+
+                    execData(tradingSession,startDate,endDate,fileDataList,contractType,status,tradingSessionMonth)
 
         # print(files)
 
@@ -1055,7 +1070,7 @@ if __name__ == '__main__':
     # writeDataT(dataTyaml)
     # writeDataPeak(dataPeakyaml)
     # importFile("2023-08")
-    outputData(["河北1#1机组","河北1#2机组"],"2023-01-01","2023-01-31")
+    outputData(["上安电厂1号机","上安电厂2号机","上安电厂3号机","上安电厂4号机","上安电厂5号机","上安电厂6号机",],"2023-01-01","2023-12-31")
     # queryDataT()
     # queryDataPeak()
 
