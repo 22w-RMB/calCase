@@ -24,6 +24,9 @@ class ExcelHepler:
 
         return self.wb.sheets[sheetName].range("A1").expand().value
 
+    def copySheet(self,sourceSheetName,resSheetName):
+        self.wb.sheets[sourceSheetName].copy(name=resSheetName)
+
     def newExcel(self, sheetName="Sheet1", templateStyle=None):
 
         # self.wb = self.app.books.add()
@@ -132,6 +135,29 @@ class ExcelHepler:
             dateData[strFormat]['D-2原始功率预测'] = d2List
 
         return dateData
+
+
+    def writePriceData(self,sheetName,beginRow,col,dataList):
+        ws = self.wb.sheets[sheetName]
+        ws.range((beginRow, col), (beginRow + 95, col)).value = dataList
+
+    def writeDetailData(self,detailDataList,sheetName):
+        enumStr = {
+            "date" : "日期",
+            "info" : "详细信息",
+            "result" : "结果",
+            "versionName" : "版本名称",
+        }
+        outputList = []
+        header = [enumStr[key] for key in enumStr]
+        outputList.append(header)
+        for data in detailDataList:
+            tempL = [data[key] for key in data]
+            outputList.append(tempL)
+
+
+        ws = self.wb.sheets[sheetName]
+        ws.range((1, 1), (1000, 20)).value = outputList
 
 
     def saveFile(self, savePath = None):

@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 
 import requests
@@ -196,7 +197,6 @@ class Gansu:
         print("线程【"+str(i) +"】时间：",endTime-startTime)
 
 
-
     def uploadPrivateData(self):
 
 
@@ -229,19 +229,258 @@ class Gansu:
 
                     print(filename,"上传情况：",res)
 
+    # def getPriceVersionData(self,startDate,endDate):
+    #
+    #     getVersionUrl = self.domain + "/tads/gansu/api/public/data/version/info"
+    #     getVersionMethod = "GET"
+    #     getVersionParam = {
+    #         "date" : "2023-03-01",
+    #         "provinceAreaId" : "062",
+    #         "dataType" : "DAY_AHEAD",
+    #         "curveTypes" : "PARTITION_PRICE_FORECAST",
+    #     }
+    #
+    #     getVersionRes = CommonClass.execRequest(session=self.session,method=getVersionMethod,url=getVersionUrl,params=getVersionParam).json()
+    #
+    #     print(getVersionRes)
+    #
+    #     firstVersion = ""
+    #     firstVersionDate = ""
+    #     try:
+    #         firstVersion = getVersionRes["data"][0]["versionNo"]
+    #         firstVersionDate = getVersionRes["data"][0]["versionName"][:10]
+    #         print(firstVersion)
+    #         print(firstVersionDate)
+    #
+    #     except Exception :
+    #
+    #         print("该日期无价格预测版本")
+    #
+    #         return
+    #
+    #     priceType = ["HE_XI","HE_DONG"]
+    #
+    #     for t in priceType:
+    #
+    #         getPriceDataUrl = self.domain + "/tads/gansu/api/public/data/partition/price"
+    #         getPriceDataMethod = "GET"
+    #         getPriceDataParam = {
+    #             "startDate" :  "2023-03-01",
+    #             "endDate" :  "2023-03-01",
+    #             "provinceAreaId" :  "062",
+    #             "timeSegment" :  "SEG_96",
+    #             "valueType" :  "AVG",
+    #             "partition" :  t,
+    #             "versionNo" :  firstVersion,
+    #         }
+    #
+    #         getPriceDataRes = CommonClass.execRequest(session=self.session, method=getPriceDataMethod, url=getPriceDataUrl,
+    #                                                 params=getPriceDataParam).json()
+    #
+    #         print(getPriceDataRes)
+    #
+    #
+    #
+    #
+    #
+    #
+    #     pass
 
+    def getPriceVersionData(self, startDate, endDate):
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        detailRes = [
+
+        ]
+        outputDataLsit = []
+
+        while sd <= ed:
+            dateStr = datetime.strftime(sd, "%Y-%m-%d")
+            dateStr1 = datetime.strftime(sd, "%m%d")
+            sd += timedelta(days=1)
+
+            getVersionUrl = self.domain + "/tads/gansu/api/public/data/version/info"
+            getVersionMethod = "GET"
+            getVersionParam = {
+                "date": dateStr,
+                "provinceAreaId": "062",
+                "dataType": "DAY_AHEAD",
+                "curveTypes": "PARTITION_PRICE_FORECAST",
+            }
+
+            getVersionRes = CommonClass.execRequest(session=self.session, method=getVersionMethod, url=getVersionUrl,
+                                                    params=getVersionParam).json()
+
+            # print(dateStr, "版本返回：",getVersionRes)
+
+            firstVersion = ""
+            firstVersionName = ""
+            firstVersionDate = ""
+            firstVersionDateStr = ""
+
+
+            onedayRes = {
+            }
+            detailRes.append(onedayRes)
+
+            try:
+                firstVersion = getVersionRes["data"][0]["versionNo"]
+                firstVersionName = getVersionRes["data"][0]["versionName"][:10]
+                # print(firstVersion)
+                # print(firstVersionName)
+            except Exception:
+                onedayRes["date"] = dateStr
+                onedayRes["info"] = "该日期没有价格预测版本"
+                onedayRes["result"] = "False"
+
+
+            try:
+                firstVersionDate = datetime.strptime(firstVersionName, "%Y-%m-%d")
+                firstVersionDateStr = firstVersionDate.strftime("%m%d")
+                firstVersionDate += timedelta(days=2)
+                if firstVersionDate == sd:
+                    onedayRes["date"] = dateStr
+                    onedayRes["info"] = "该日期最新的价格版本名称是D-1"
+                    onedayRes["result"] = "True"
+                    onedayRes["versionName"] = getVersionRes["data"][0]["versionName"]
+                else:
+                    onedayRes["date"] = dateStr
+                    onedayRes["info"] = "该日期最新的价格版本名称不是D-1"
+                    onedayRes["result"] = "False"
+                    onedayRes["versionName"] = getVersionRes["data"][0]["versionName"]
+
+            except Exception:
+                print(dateStr, "该日期的版本名称不包含日期")
+                onedayRes["date"] = dateStr
+                onedayRes["info"] = "该日期最新的价格版本名称不包含日期"
+                onedayRes["result"] = "False"
+                onedayRes["versionName"] = getVersionRes["data"][0]["versionName"]
+
+            outputDataDic = {
+                "sheetName": dateStr1 + "(" + firstVersionDateStr + "预测)",
+                "date": {
+                    "col": 1,
+                    "dataList": [[dateStr] for i in range(0, 96)]
+                },
+                "hexiDayAheadPrice": {
+                    "col": 3,
+                    "dataList": [[None] for i in range(0, 96)]
+                },
+                "hexiDayAheadForecastPrice": {
+                    "col": 4,
+                    "dataList": [[None] for i in range(0, 96)]
+                },
+                "heDongDayAheadPrice": {
+                    "col": 6,
+                    "dataList": [[None] for i in range(0, 96)]
+                },
+                "heDongDayAheadForecastPrice": {
+                    "col": 7,
+                    "dataList": [[None] for i in range(0, 96)]
+                },
+            }
+
+            priceType = {
+                "HE_XI" : ["hexiDayAheadPrice","hexiDayAheadForecastPrice"],
+                "HE_DONG" : ["heDongDayAheadPrice","heDongDayAheadForecastPrice"],
+            }
+
+
+
+            for t in priceType.keys():
+                getPriceDataUrl = self.domain + "/tads/gansu/api/public/data/partition/price"
+                getPriceDataMethod = "GET"
+                getPriceDataParam = {
+                    "startDate": dateStr,
+                    "endDate": dateStr,
+                    "provinceAreaId": "062",
+                    "timeSegment": "SEG_96",
+                    "valueType": "AVG",
+                    "partition": t,
+
+                }
+
+                if firstVersion !="":
+                    getPriceDataParam["versionNo"] = firstVersion
+
+                getPriceDataRes = CommonClass.execRequest(session=self.session, method=getPriceDataMethod,
+                                                          url=getPriceDataUrl,
+                                                          params=getPriceDataParam).json()
+
+                dayAheadPrice = priceType[t][0]
+                dayAheadForecastPrice = priceType[t][1]
+
+                # 日前价格
+                dayAheadPriceList = getPriceDataRes["data"]["dataList"][0]["dayAheadPrice"]
+                # 日前价格预测
+                dayAheadForecastPriceList = getPriceDataRes["data"]["dataList"][0]["dayAheadForecastPrice"]
+                print(t, "日前价格为：", dayAheadPriceList)
+                print(t, "日前价格预测为：", dayAheadForecastPriceList)
+
+                if dayAheadPriceList != [] and dayAheadPriceList != None :
+                    outputDataDic[dayAheadPrice]["dataList"] = [[dayAheadPriceList[i]] for i in range(0,96)]
+                if dayAheadForecastPriceList != [] and dayAheadForecastPriceList != None :
+                    outputDataDic[dayAheadForecastPrice]["dataList"] = [[dayAheadForecastPriceList[i]] for i in range(0,96)]
+
+
+
+            # print(json.dumps(outputDataDic,indent=4))
+            print(outputDataDic)
+            outputDataLsit.append(outputDataDic)
+        print(detailRes)
+
+        self.outputPriceFile(outputDataLsit,detailRes)
+
+
+        pass
+
+    def outputPriceFile(self,outputPriceList,detailRes):
+
+        tempPath = CommonClass.mkDir("gs", "muban", "价格情况统计模板.xlsx", isGetStr=True)
+        # templateE = ExcelHepler(tempPath)
+        # template = templateE.getTemplateStyle("模板")
+        # templateE.close()
+        savePath = CommonClass.mkDir("gs", "导出", "价格情况统计.xlsx", isGetStr=True)
+        e = ExcelHepler(tempPath)
+        for oneDay in outputPriceList:
+
+            sheetName = oneDay["sheetName"]
+
+            # e.newExcel(sheetName=sheetName, templateStyle=template)
+            e.copySheet("模板",sheetName)
+            for key in oneDay:
+                if key =="sheetName":
+                    continue
+                col = oneDay[key]["col"]
+                dataList = oneDay[key]["dataList"]
+                e.writePriceData(sheetName,2,col,dataList)
+
+        e.saveFile(savePath)
+        e.close()
+
+        detailSavePath = CommonClass.mkDir("gs", "导出", "价格结果详情.xlsx", isGetStr=True)
+        detailE = ExcelHepler()
+        detailE.writeDetailData(detailRes,"Sheet1")
+        detailE.saveFile(detailSavePath)
+        detailE.close()
 
 if __name__ == '__main__':
     testSession = requests.Session()
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    gs_test = Gansu(testSession, yamlData, "test")
+    gs_test = Gansu(testSession, yamlData, "tcloud")
 
     gs_test.login()
 
-    startDate = "2023-03-03"
-    endDate = "2023-06-28"
+    startDate = "2023-07-08"
+    endDate = "2023-09-08"
+
+    gs_test.getPriceVersionData(startDate,endDate)
+
+
 
     # data = gs_test.getContractData(startDate,startDate)
     # gs_test.writeContractReport(data)
@@ -249,18 +488,18 @@ if __name__ == '__main__':
 
     # gs_test.uploadPrivateData()
 
-    threadList = []
-
-    count = 1
-
-    for i in range(0,count):
-        t =  Thread(target=gs_test.requestReport,args=(i,))
-        t.start()
-        print("线程【", t , "】正在执行.....")
-        threadList.append( t)
-
-    for i in range(0, count):
-
-        threadList[i].join()
-
-    print("多线程结束")
+    # threadList = []
+    #
+    # count = 1
+    #
+    # for i in range(0,count):
+    #     t =  Thread(target=gs_test.requestReport,args=(i,))
+    #     t.start()
+    #     print("线程【", t , "】正在执行.....")
+    #     threadList.append( t)
+    #
+    # for i in range(0, count):
+    #
+    #     threadList[i].join()
+    #
+    # print("多线程结束")
