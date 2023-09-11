@@ -1135,9 +1135,9 @@ def getContractDetail(tradingSession,
     dateDataList = []
 
     for date in dateData:
-        eleList = [date,"电量",dateData[dateStr]["eleSum"],]
+        eleList = [date,"电量",dateData[date]["eleSum"],]
         eleList.extend(dateData[date]["ele"])
-        priceList = [date, "电价",dateData[dateStr]["priceSum"],]
+        priceList = [date, "电价",dateData[date]["priceSum"],]
         priceList.extend(dateData[date]["price"])
         dateDataList.append(eleList)
         dateDataList.append(priceList)
