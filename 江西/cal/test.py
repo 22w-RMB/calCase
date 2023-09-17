@@ -1,7 +1,44 @@
 import pandas
 from 江西.cal.excel_handler import ExcelHepler
 from 江西.cal.mysqlTool import MysqlTool
+from common.common import CommonClass
+import re
 
+unitYamlPath = CommonClass.mkDir("江西","config","unit_config.yaml",isGetStr=True)
+unitInfoConfig = CommonClass.readYaml(unitYamlPath)
+
+
+# 根据账单别名和交易名称获取机组
+def getUnitByOtherName(otherNameType,otherName,tenantName):
+
+    unitsInfo = unitInfoConfig[tenantName]
+
+    res = {
+        "units" : [],
+        "count" : 0,
+    }
+
+    delimiters = [';', '；']
+
+    if otherNameType == "账单别名":
+
+        for unit in unitsInfo:
+            # 分割多种符号
+            unitShortNameList = re.split('|'.join(map(re.escape, delimiters)), unit["unitShortName"])
+            if otherName in unitShortNameList:
+                res["units"].append(unit["unitName"])
+                res["count"] += 1
+
+    if otherNameType == "交易单元名称":
+
+        for unit in unitsInfo:
+            # 分割多种符号
+            controlUnitNameList = re.split('|'.join(map(re.escape, delimiters)), unit["controlUnitName"])
+            if otherName in controlUnitNameList:
+                res["units"].append(unit["unitName"])
+                res["count"] += 1
+
+    return res
 
 # 将查询到的合同计算成24点结果
 def cal24Info(dataList):
@@ -9,7 +46,6 @@ def cal24Info(dataList):
     eleRes = [None for i in range(0,24)]
     priceRes = [None for i in range(0,24)]
     feeRes = [None for i in range(0,24)]
-
 
     for data in dataList:
 
@@ -63,7 +99,7 @@ def cal24Info(dataList):
         "feeSum" : feeSum,
     }
 
-def dayEleDetailCheck(rowData):
+def dayEleDetailCheck(rowData,tenantName):
     keyNotNoneList = [
         "合同类型",
         "交易序列名称",
@@ -76,49 +112,58 @@ def dayEleDetailCheck(rowData):
         "代理购电": ["年度代理购电挂牌", "月度交易", "d-3日24时段滚动撮合"],
     }
 
-
+    # 判断字段是否为空
     for key in keyNotNoneList:
-
         if rowData[key] == "":
-
             return {
                     "row": rowData.name + 1,
                     "info": "字段【" + key + "】为空",
                     "isContinue": True,
                 }
 
-        contractType1 = rowData["合同类型"]
+    sell_name = rowData["售方名称"]
+    unitInfo = getUnitByOtherName("账单别名",sell_name,tenantName)
+    if unitInfo["count"] == 0 :
+        return {
+            "row": rowData.name + 1,
+            "info": "售方名称【" + key + "】匹配不到机组",
+            "isContinue": True,
+        }
 
-        if contractType1 not in keyIncludeField.keys():
+    # 判断合同类型是否正确
+    contractType1 = rowData["合同类型"]
+    if contractType1 not in keyIncludeField.keys():
+        return {
+            "row": rowData.name + 1,
+            "info": "合同类型【" + key + "】不存在",
+            "isContinue": True,
+        }
+    contractType2List = keyIncludeField[contractType1]
+    contractType2 = None
+    for i in range(0,len(contractType2List)+1):
+        if i == len(contractType2List):
             return {
-                "row": rowData.name + 1,
-                "info": "合同类型【" + key + "】不存在",
-                "isContinue": True,
-            }
+            "row": rowData.name + 1,
+            "info": "合同序列【" + key + "】不包含对应关键字",
+            "isContinue": True,
+        }
+        contractType2 = keyIncludeField[contractType1][i]
+        if contractType2 in rowData["交易序列名称"]:
+            break
 
-        contractType2List = keyIncludeField[contractType1]
-        contractType2 = None
-        for i in range(0,len(contractType2List)+1):
-            if i == len(contractType2List):
-                return {
-                "row": rowData.name + 1,
-                "info": "合同序列【" + key + "】不包含对应关键字",
-                "isContinue": True,
-            }
 
-            contractType2 = keyIncludeField[contractType1][i]
-
-            if contractType2 in rowData["交易序列名称"]:
-                break
 
 
     return {
         "contractType1":  contractType1,
         "contractType2":  contractType2,
+        "unitInfo":  unitInfo,
         "isContinue":  False,
     }
 
-def execDayEleDetail(filePath=None,sheetName=0,**kwargs):
+def execDayEleDetail(filePath,fileName,sheetName,**kwargs):
+    tenantName = "江西电厂1"
+
     header = [
         "序号",
         "合同名称",
@@ -131,7 +176,6 @@ def execDayEleDetail(filePath=None,sheetName=0,**kwargs):
         "日合计-电量",
         "日合计-均价",
     ]
-
     for i in range(1,25):
         header.append(str(i)+"-电量")
         header.append(str(i)+"-电价")
@@ -150,7 +194,7 @@ def execDayEleDetail(filePath=None,sheetName=0,**kwargs):
 
         print("=============正在执行第" , row , "条")
 
-        checkRes = dayEleDetailCheck(df.iloc[row])
+        checkRes = dayEleDetailCheck(df.iloc[row],tenantName)
         if checkRes["isContinue"] :
             errorInfoList.append(checkRes)
             continue
@@ -161,6 +205,7 @@ def execDayEleDetail(filePath=None,sheetName=0,**kwargs):
         date = df.iloc[row]["合同日期"]
         transactionSequenceName = df.iloc[row]["交易序列名称"]
         buyer_name = df.iloc[row]["购方名称"]
+        unitName = checkRes["unitInfo"]["units"][0]
 
         uniqueId = contractType1+sell_name+date+transactionSequenceName
         contractName = sell_name+buyer_name+transactionSequenceName
@@ -186,6 +231,7 @@ def execDayEleDetail(filePath=None,sheetName=0,**kwargs):
                 "transactionSequenceName" : transactionSequenceName,
                 "ele" : ele,
                 "price" : price,
+                "unitName" : unitName,
             }
 
         else:
@@ -213,7 +259,7 @@ def writeContract(resultDataList):
         writeSqlList.append(
             (
                 data["contractName"],
-                None,
+                data["unitName"],
                 None if data["contractName"]=="" else data["contractName"],
                 data["sell_name"],
                 str(data["ele"]),
@@ -233,4 +279,8 @@ def writeContract(resultDataList):
 if __name__ == '__main__':
     path = r"D:\code\python\calCase\江西\导入文件\xx电厂-合同日电量明细-YYYY.xls"
 
-    execDayEleDetail(path,"合同分月查询结果")
+    execDayEleDetail(path,"111","合同分月查询结果")
+
+    # getUnitByOtherName(1, 2)
+
+
