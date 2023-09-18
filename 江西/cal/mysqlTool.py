@@ -22,101 +22,6 @@ class MysqlTool:
 
         pass
 
-    def queryCalendar(self,dic):
-        cursor = self.db.cursor()
-
-        sql = "select id from mlt_calendar_data"
-
-        l = []
-
-        for key in dic.keys():
-                ll = []
-                for k in dic[key]:
-                    ll.append(key + "=" + '"' + k + '"')
-
-                l.append(
-                    "(" + (" or ".join(ll)) + ")"
-                )
-
-        if l != []:
-            if len(l) == 1:
-                sql = sql + (" where ") + l[0]
-            else:
-                sql = sql + (" where ") + (" and ".join(l))
-
-        print(sql)
-        cursor.execute(sql)
-
-        res = cursor.fetchall()
-        cursor.close()
-
-        return [
-            data[0] for data in res
-        ]
-
-    def queryTestContractData(self,dic):
-        cursor = self.db.cursor()
-
-        sql = "select id from mlt_contract"
-
-        l = []
-
-        for key in dic.keys():
-            ll = []
-            for k in dic[key]:
-                ll.append(key + "=" + '"' + k + '"')
-
-            l.append(
-                "(" + (" or ".join(ll)) + ")"
-            )
-
-        if l != []:
-            if len(l) == 1:
-                sql = sql + (" where ") + l[0]
-            else:
-                sql = sql + (" where ") + (" and ".join(l))
-
-        print(sql)
-        cursor.execute(sql)
-
-        res = cursor.fetchall()
-        cursor.close()
-
-        return [
-            data[0] for data in res
-        ]
-
-    def queryTestContractDetail(self,dic):
-        cursor = self.db.cursor()
-
-        sql = "select * from mlt_contract_details"
-
-        l = []
-
-        for key in dic.keys():
-            ll = []
-            for k in dic[key]:
-                ll.append(key + "=" + '"' + k + '"')
-
-            l.append(
-                "(" + (" or ".join(ll)) + ")"
-            )
-
-        if l != []:
-            if len(l) == 1:
-                sql = sql + (" where ") + l[0]
-            else:
-                sql = sql + (" where ") + (" and ".join(l))
-
-        print(sql)
-        cursor.execute(sql)
-
-        header = [col[0] for col in cursor.description]
-
-        res = cursor.fetchall()
-        cursor.close()
-
-        return [dict(zip(header, row)) for row in res]
 
     def insertContract(self,datalist):
 
@@ -131,7 +36,7 @@ class MysqlTool:
         cursor.executemany(sql,datalist)
         self.db.commit()
         cursor.close()
-
+        print("插入语句执行成功")
         # @cursorOperate
 
     def queryContract(self,dic):
@@ -146,18 +51,18 @@ class MysqlTool:
 
             if dic[key] != None:
                 if key == "start_date":
-                    l.append("date" + ">=" + '"'+dic[key]+'"')
+                    l.append("date" + ">=" + '"' + dic[key] + '"')
                     continue
 
                 if key == "end_date":
-                    l.append("date" + "<=" + '"'+dic[key]+'"')
+                    l.append("date" + "<=" + '"' + dic[key] + '"')
                     continue
                 ll = []
                 for k in dic[key]:
-                    ll.append( key + "=" + '"'+k+'"' )
+                    ll.append(key + "=" + '"' + k + '"')
 
                 l.append(
-                    "("+ (" or ".join(ll)) +")"
+                    "(" + (" or ".join(ll)) + ")"
                 )
 
         if l != []:
@@ -207,9 +112,44 @@ class MysqlTool:
 
         cursor.close()
 
+    def queryRemoteContractData(self,dic):
+        cursor = self.db.cursor()
+
+        sql = "select ci.type as contract_type,ces.type as data_type,ces.date,ces.value as ele,ces.price , ci.name ,u.unit_name " \
+              "from contract_electricity_split ces " \
+              "left join contract_info ci on ces.contract_id = ci.id " \
+              "left join unit u on ci.org_id = u.id "
+
+        l = []
+
+        for key in dic.keys():
+            ll = []
+            for k in dic[key]:
+                ll.append(key + "=" + '"' + k + '"')
+
+            l.append(
+                "(" + (" or ".join(ll)) + ")"
+            )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header, row)) for row in res]
+
 
     def close(self):
-        self.db.close()
+            self.db.close()
 
 if __name__ == '__main__':
 

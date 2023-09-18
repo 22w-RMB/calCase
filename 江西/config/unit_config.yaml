@@ -1,11 +1,17 @@
 江西电厂1:
   -
     unitName : 测试#1机组
-    unitShortName : 瑞金二期厂/20kV.#3机;瑞金厂/20kV.#2机
-    controlUnitName : 江西电厂1;测试#1机组;瑞金二期
+    unitShortName : 瑞金二期厂/20kV.#3机
+    controlUnitName : 瑞金二期
 
-  - unitName: 测试#1机组
-    unitShortName: 瑞金厂/20kV.#1机;瑞金二期厂/20kV.#4机
-    controlUnitName: 江西电厂1;测试#1机组;瑞金二期
+  - unitName: 测试#2机组
+    unitShortName: 瑞金二期厂/20kV.#4机
+    controlUnitName: 瑞金二期
 
+  - unitName: 测试#3机组
+    unitShortName: 瑞金厂/20kV.#1机
+    controlUnitName: 瑞金电厂
 
+  - unitName: 测试#4机组
+    unitShortName: 瑞金厂/20kV.#2机
+    controlUnitName: 瑞金电厂

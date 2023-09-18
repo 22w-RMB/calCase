@@ -4,12 +4,13 @@ import pandas as pd
 class ExcelHepler:
 
 
-    def __init__(self , filePath=None,sheetName=0,header=None,**kwargs):
+    def __init__(self , filePath=None,sheetName=0,header=None):
 
         if filePath != None:
-
-            self.df = pd.read_excel(io=filePath,sheet_name=sheetName,index_col=None,header=None,names=header,keep_default_na=False,*kwargs)
+            # print(header)
+            self.df = pd.read_excel(io=filePath,sheet_name=sheetName,index_col=False ,header=None,names=header,keep_default_na=False)
             # print(self.df)
+            # self.df.columns = header
             # print(dataFrame["1-电量"])
             # for row in self.df.itertuples(index=False):
                 # print(getattr(row,"1-电量"))
@@ -19,6 +20,9 @@ class ExcelHepler:
 
         return self.df
 
+    def getMonthEleDetail(self):
+
+        return self.df
 
 
 
