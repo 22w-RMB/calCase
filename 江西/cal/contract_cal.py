@@ -1,8 +1,9 @@
 import copy
 import os
+from datetime import datetime, timedelta
 
 import pandas
-from 江西.cal.excel_handler import ExcelHepler
+from 江西.cal.excel_handler import ExcelHepler,ExcelHeplerXlwing
 from 江西.cal.mysqlTool import MysqlTool
 from common.common import CommonClass
 import re
@@ -466,7 +467,18 @@ def execMonthEleDetail(filePath,fileName,sheetName,tenantName,year):
     # print(errorInfoList)
     writeContract(finalDataDic)
 
+def generateDayMonthData(resultDataList):
 
+    dayDataDic = {}
+    monthDataDic = {}
+
+    for key in resultDataList:
+        data = resultDataList[key]
+        dayDataKey = "-".join([data["contractName"] , data["unitName"] , data["date"][:7] ,  data["contractType1"] , data["contractType2"]])
+        monthDataKey = "-".join([data["contractName"] , data["unitName"] , data["date"][:7] ,  data["contractType1"], data["contractType2"]])
+
+
+    pass
 
 # 写入到数据库
 def writeContract(resultDataList):
@@ -476,12 +488,11 @@ def writeContract(resultDataList):
     for key in resultDataList:
         data = resultDataList[key]
 
-
         writeSqlList.append(
             (
                 data["contractName"],
                 data["unitName"],
-                None if data["contractName"]=="" else data["contractName"],
+                None if data["buyer_name"]=="" else data["buyer_name"],
                 data["sell_name"],
                 str(data["ele"]),
                 str(data["price"]),
@@ -671,6 +682,118 @@ def compareContract(unitName,contractName,contractType1,contractType2,startDate,
     pass
 
 # 导入入口
+def getContractDetail(contractName,unitName,contractType1,startDate,endDate):
+
+    res = queryLocalContract(unitName=unitName, contractName=contractName,contractType1=contractType1,contractType2=None,
+                        startDate=startDate, endDate=endDate,dataType=["24时"])
+
+
+    sd = datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+    dateData = {
+
+    }
+    monthData = {
+
+    }
+
+    while sd <= ed:
+        dateStr = datetime.strftime(sd, "%Y-%m-%d")
+        sd += timedelta(days=1)
+
+        dateData[dateStr] = {
+            "ele" : [None for i in range(0,24)],
+            "price" : [None for i in range(0,24)],
+        }
+
+    for i in range(1,13):
+
+        month = "2023-"+ str(i).rjust(2,"0")
+        monthData[month] = {
+            "ele": [None for i in range(0, 24)],
+            "price": [None for i in range(0, 24)],
+        }
+
+    for r in res:
+
+        dateStr = datetime.strftime(r["date"], "%Y-%m-%d")
+
+        sourceData = dateData[dateStr]
+        currentData = {
+            "ele" : r["ele"],
+            "price" : r["price"],
+        }
+        cal24Res = cal24Info([sourceData,currentData])
+
+        dateData[dateStr]["ele"] = cal24Res["ele"]
+        dateData[dateStr]["price"] = cal24Res["price"]
+        dateData[dateStr]["eleSum"] = cal24Res["eleSum"]
+        dateData[dateStr]["priceSum"] = cal24Res["priceSum"]
+
+        monthSourceData = monthData[dateStr[:7]]
+        cal24Res = cal24Info([monthSourceData, currentData])
+
+        monthData[dateStr[:7]]["ele"] = cal24Res["ele"]
+        monthData[dateStr[:7]]["price"] = cal24Res["price"]
+        monthData[dateStr[:7]]["eleSum"] = cal24Res["eleSum"]
+        monthData[dateStr[:7]]["priceSum"] = cal24Res["priceSum"]
+
+
+    # print(dateData)
+
+
+    dateDataList = []
+
+    for date in dateData:
+        # print(dateData[date])
+
+        if "eleSum" not in dateData[date].keys():
+            continue
+
+        eleList = [date,"电量",dateData[date]["eleSum"],]
+        eleList.extend(dateData[date]["ele"])
+        priceList = [date, "电价",dateData[date]["priceSum"],]
+        priceList.extend(dateData[date]["price"])
+        dateDataList.append(eleList)
+        dateDataList.append(priceList)
+
+
+    monthDataList = [
+        ["月份"],
+        ["电量"],
+        ["电价"]
+    ]
+
+    for month in monthData:
+
+        if "eleSum" not in monthData[month].keys():
+            continue
+
+        monthDataList[0].append(month)
+        monthDataList[1].append(monthData[month]["eleSum"])
+        monthDataList[2].append(monthData[month]["priceSum"])
+
+
+
+    tempPath = CommonClass.mkDir("江西", "导出模板", "电量明细模板.xlsx", isGetStr=True)
+    templateE = ExcelHeplerXlwing(tempPath)
+    template = templateE.getTemplateStyle("Sheet1")
+    templateE.close()
+
+    savePath = CommonClass.mkDir("江西", "导出模板", contractName[0]+"电量明细结果.xlsx", isGetStr=True)
+    e = ExcelHeplerXlwing()
+    e.newExcel(sheetName="Sheet1", templateStyle=template)
+    e.writeData(savePath, dateDataList, "Sheet1")
+
+
+    e.newExcel(sheetName="月维度", templateStyle=None)
+    e.writeData(savePath, monthDataList, "月维度",beginRow=1)
+
+    e.close()
+
+    pass
+
 def importContract():
     improtPath = CommonClass.mkDir("江西", "导入文件", "合同", isGetStr=True)
 
@@ -684,17 +807,17 @@ def importContract():
             year = filename.split("-")[2]
 
             if fileType == "合同日电量明细":
-                continue
                 execDayEleDetail(filePath, file, "合同分月查询结果", tenantName,year)
             if fileType == "合同分月查询":
-
                 execMonthEleDetail(filePath, file, "Sheet1", tenantName, year)
 
 
 
 if __name__ == '__main__':
 
-    importContract()
+    # importContract()
     # getUnitByOtherName(1, 2)
     # compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
     # queryRemoteContract(["测试#1机组"])
+    getContractDetail(["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],["测试#1机组"],
+                      ["市场化"],"2023-01-01","2023-01-31")
