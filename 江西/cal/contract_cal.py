@@ -3,6 +3,8 @@ import os
 from datetime import datetime, timedelta
 
 import pandas
+import pandas as pd
+
 from 江西.cal.excel_handler import ExcelHepler,ExcelHeplerXlwing
 from 江西.cal.mysqlTool import MysqlTool
 from common.common import CommonClass
@@ -20,10 +22,10 @@ contractTypeEnum ={
         "省间外送" : ["7","省间外送电"],
     },
     "代理购电": {
-        "年度代理购电挂牌": ["1", "年度代理购电"],
-        "月度交易": ["2", "月度交易"],
-        "月内连续融合": ["3", "月内连续交易"],
-        "d-3日24时段滚动撮合": ["6", "d-3日24时段滚动撮合"],
+        "年度代理购电挂牌": ["8", "年度代理购电"],
+        "月度交易": ["9", "月度交易"],
+        "月内连续融合": ["10", "月内连续交易"],
+        "d-3日24时段滚动撮合": ["11", "d-3日24时段滚动撮合"],
     },
 }
 dataTypeEnum = {
@@ -80,20 +82,32 @@ def cal24Info(dataList,lenght=24):
 
         for i in range(0,lenght):
 
-            if ele[i] == None:
-                continue
-            if price[i] == None:
-                continue
 
-            if eleRes[i] == None:
-                eleRes[i] = ele[i]
-                priceRes[i] = price[i]
-                feeRes[i] = eleRes[i]*priceRes[i]
-            else:
-                eleRes[i] += ele[i]
-                feeRes[i] += (ele[i] * price[i])
-                if eleRes[i] != 0 :
-                    priceRes[i] = feeRes[i] / eleRes[i]
+
+            if ele[i] != None :
+                eleRes[i] = ele[i] + (0 if eleRes[i] == None else eleRes[i])
+
+            if ele[i] != None  and price[i] != None :
+                feeRes[i] = (ele[i] * price[i]) + (0 if feeRes[i] == None else feeRes[i])
+
+            if eleRes[i] != None  and feeRes[i] != None :
+                priceRes[i] = feeRes[i] / eleRes[i]
+
+            #
+            # price[i] = 0 if price[i] == None else price[i]
+            #
+            # if eleRes[i] == None:
+            #     eleRes[i] = ele[i]
+            # if  feeRes[i] == None:
+            #     feeRes[i] += (ele[i] * price[i])
+            # if priceRes[i] == None:
+            #     priceRes[i] = price[i]
+            #     feeRes[i] = None
+            # else:
+            #     eleRes[i] += ele[i]
+            #     feeRes[i] += (ele[i] * price[i])
+            #     if eleRes[i] != 0 :
+            #         priceRes[i] = feeRes[i] / eleRes[i]
 
     eleSum = 0
     priceSum = 0
@@ -209,6 +223,7 @@ def execDayEleDetail(filePath,fileName,sheetName,tenantName,year):
     e = ExcelHepler(filePath,sheetName,header)
     df = e.getDayEleDetail()
 
+
     resultDataList = {}
     errorInfoList = []
 
@@ -230,10 +245,10 @@ def execDayEleDetail(filePath,fileName,sheetName,tenantName,year):
         sell_name = df.iloc[row]["售方名称"]
         date = df.iloc[row]["合同日期"]
         transactionSequenceName = df.iloc[row]["交易序列名称"]
-        buyer_name = df.iloc[row]["购方名称"]
+        buyer_name = df.iloc[row]["购方名称"] if df.iloc[row]["购方名称"]!=None else ""
         unitName = checkRes["unitInfo"]["units"][0]
 
-        uniqueId = contractType1+sell_name+date+transactionSequenceName
+        uniqueId = "-".join([contractType1,sell_name,date,transactionSequenceName,buyer_name])
         contractName = sell_name+buyer_name+transactionSequenceName
         ele = [None for i in range(0,24)]
         price = [None for i in range(0,24)]
@@ -252,7 +267,7 @@ def execDayEleDetail(filePath,fileName,sheetName,tenantName,year):
                 "contractType1" : contractType1,
                 "contractType2" : contractType2,
                 "sell_name" : sell_name,
-                "buyer_name" : sell_name,
+                "buyer_name" : buyer_name,
                 "date" : date,
                 "transactionSequenceName" : transactionSequenceName,
                 "ele" : ele,
@@ -270,6 +285,8 @@ def execDayEleDetail(filePath,fileName,sheetName,tenantName,year):
 
             resultDataList[uniqueId]["ele"] = calRes["ele"]
             resultDataList[uniqueId]["price"] = calRes["price"]
+
+
 
     # print(resultDataList)
     writeContract(resultDataList)
@@ -385,10 +402,10 @@ def execMonthEleDetail(filePath,fileName,sheetName,tenantName,year):
         contractType2 = checkRes["contractType2"]
         sell_name = df.iloc[row]["售方名称"]
         transactionSequenceName = df.iloc[row]["交易序列名称"]
-        buyer_name = df.iloc[row]["购方名称"]
+        buyer_name = df.iloc[row]["购方名称"] if df.iloc[row]["购方名称"]!=None else ""
         unitInfo = checkRes["unitInfo"]
 
-        uniqueId = contractType1+sell_name+transactionSequenceName
+        uniqueId = contractType1+sell_name+transactionSequenceName+buyer_name
         contractName = sell_name+buyer_name+transactionSequenceName
         ele = [None for i in range(0,12)]
         price = [None for i in range(0,12)]
@@ -407,7 +424,7 @@ def execMonthEleDetail(filePath,fileName,sheetName,tenantName,year):
                 "contractType1" : contractType1,
                 "contractType2" : contractType2,
                 "sell_name" : sell_name,
-                "buyer_name" : sell_name,
+                "buyer_name" : buyer_name,
                 "transactionSequenceName" : transactionSequenceName,
                 "ele" : ele,
                 "price" : price,
@@ -488,6 +505,10 @@ def writeContract(resultDataList):
     for key in resultDataList:
         data = resultDataList[key]
 
+        # if "瑞金二期厂/20kV.#3机国网江西电力江西电力市场2023年年度代理购电挂牌交易（正式）" == data["contractName"]:
+        #     print(resultDataList[key])
+
+
         writeSqlList.append(
             (
                 data["contractName"],
@@ -563,17 +584,18 @@ def queryRemoteContract(unitName):
 def compareContract(unitName,contractName,contractType1,contractType2,startDate,endDate,dataType):
 
     errorDetail = {
-        "date" :[],
-        "dataType" :[],
-        "dataDimension" :[],
-        "errorInfo" :[],
-        "contractName" :[],
-        "contractType" :[],
-        "errorLocatValue" :[],
-        "errorRemoteValue" :[],
-        "errorLocation" :[],
-        "localData" :[],
-        "remoteData" :[],
+        "日期" :[],
+        "类型" :[],
+        "维度" :[],
+        "错误信息" :[],
+        "合同名称" :[],
+        "合同品种" :[],
+        "合同类型" :[],
+        "算例单点数据" :[],
+        "系统单点数据" :[],
+        "错误位置" :[],
+        "算例所有数据" :[],
+        "系统所有数据" :[],
     }
 
     localDataList = queryLocalContract(unitName, contractName, contractType1, contractType2, startDate, endDate, dataType)
@@ -590,20 +612,21 @@ def compareContract(unitName,contractName,contractType1,contractType2,startDate,
         cName = "" if remoteData["name"] ==None else remoteData["name"]
         dType = ""
 
+
+
         if remoteData["data_type"] == "1":
-            dType = "24时"
+            dType = "月"
         elif remoteData["data_type"] == "2":
             dType = "日"
         elif remoteData["data_type"] == "3":
-            dType = "月"
+            dType = "24时"
 
         key = "-".join([cType,cName,dateStr,dType])
         remoteDataDic[key] = remoteData
 
-    # for key in remoteDataDic:
-    #     print(key,remoteDataDic[key])
 
-    # 合同类型+合同名称+日期+数据类型
+
+
 
     for localData in localDataList:
 
@@ -619,18 +642,23 @@ def compareContract(unitName,contractName,contractType1,contractType2,startDate,
 
         key = "-".join([cType,cName,dateStr,dType])
 
-        if key not in remoteDataDic:
-            errorDetail["date"].append(dateStr)
-            errorDetail["dataType"].append(None)
-            errorDetail["dataDimension"].append(None)
-            errorDetail["errorInfo"].append("系统数据库找不到该合同")
-            errorDetail["contractName"].append(cName)
-            errorDetail["contractType"].append(cTypeName)
-            errorDetail["errorLocatValue"].append(None)
-            errorDetail["errorRemoteValue"].append(None)
-            errorDetail["errorLocation"].append(None)
-            errorDetail["localData"].append(None)
-            errorDetail["remoteData"].append(None)
+
+        if key not in remoteDataDic.keys():
+            errorDetail["日期"].append(dateStr)
+            errorDetail["类型"].append(None)
+            errorDetail["维度"].append(None)
+            errorDetail["错误信息"].append("系统数据库找不到该合同")
+            errorDetail["合同名称"].append(cName)
+            errorDetail["合同品种"].append(ct1)
+            errorDetail["合同类型"].append(cTypeName)
+            errorDetail["算例单点数据"].append(None)
+            errorDetail["系统单点数据"].append(None)
+            errorDetail["错误位置"].append(None)
+            errorDetail["算例所有数据"].append(None)
+            errorDetail["系统所有数据"].append(None)
+
+
+
             continue
 
         localEleList = localData["ele"]
@@ -643,42 +671,51 @@ def compareContract(unitName,contractName,contractType1,contractType2,startDate,
 
         for i in range(0,len(localEleList)):
 
-            localEleData = round(localEleList[i],6) if localEleList[i] != None else None
-            remoteEleData = round(remoteEleList[i],6) if remoteEleList[i] != None else None
-            localPriceData = round(localPriceList[i],6) if localPriceList[i] != None else None
-            remotePriceData = round(remotePriceList[i],6) if remotePriceList[i] != None else None
+            localEleData = round(localEleList[i],4) if localEleList[i] != None else None
+            remoteEleData = round(remoteEleList[i],4) if remoteEleList[i] != None else None
+            localPriceData = round(localPriceList[i],4) if localPriceList[i] != None else None
+            remotePriceData = round(remotePriceList[i],4) if remotePriceList[i] != None else None
 
             if localEleData != remoteEleData and isEleError == False:
-                errorDetail["date"].append(  dateStr )
-                errorDetail["dataType"].append("电量")
-                errorDetail["dataDimension"].append(dataTypeEnum[dType])
-                errorDetail["errorInfo"].append("电量不一致")
-                errorDetail["contractName"].append(cName)
-                errorDetail["contractType"].append(cTypeName)
-                errorDetail["errorLocatValue"].append(localEleData)
-                errorDetail["errorRemoteValue"].append(remoteEleData)
-                errorDetail["errorLocation"].append(i+1)
-                errorDetail["localData"].append(localEleList)
-                errorDetail["remoteData"].append(remoteEleList)
+                errorDetail["日期"].append(  dateStr )
+                errorDetail["类型"].append("电量")
+                errorDetail["维度"].append(dType)
+                errorDetail["错误信息"].append("电量不一致")
+                errorDetail["合同名称"].append(cName)
+                errorDetail["合同品种"].append(ct1)
+                errorDetail["合同类型"].append(cTypeName)
+                errorDetail["算例单点数据"].append(localEleData)
+                errorDetail["系统单点数据"].append(remoteEleData)
+                errorDetail["错误位置"].append(i+1)
+                errorDetail["算例所有数据"].append(localEleList)
+                errorDetail["系统所有数据"].append(remoteEleList)
+
 
                 isEleError = True
 
             if localPriceData != remotePriceData and isPriceError == False:
-                errorDetail["date"].append(dateStr)
-                errorDetail["dataType"].append("电价")
-                errorDetail["dataDimension"].append(dataTypeEnum[dType])
-                errorDetail["errorInfo"].append("电价不一致")
-                errorDetail["contractName"].append(cName)
-                errorDetail["contractType"].append(cTypeName)
-                errorDetail["errorLocatValue"].append(localPriceData)
-                errorDetail["errorRemoteValue"].append(remotePriceData)
-                errorDetail["errorLocation"].append(i + 1)
-                errorDetail["localData"].append(localEleList)
-                errorDetail["remoteData"].append(remoteEleList)
+                errorDetail["日期"].append(dateStr)
+                errorDetail["类型"].append("电价")
+                errorDetail["维度"].append(dType)
+                errorDetail["错误信息"].append("电价不一致")
+                errorDetail["合同名称"].append(cName)
+                errorDetail["合同品种"].append(ct1)
+                errorDetail["合同类型"].append(cTypeName)
+                errorDetail["算例单点数据"].append(localPriceData)
+                errorDetail["系统单点数据"].append(remotePriceData)
+                errorDetail["错误位置"].append(i + 1)
+                errorDetail["算例所有数据"].append(localPriceList)
+                errorDetail["系统所有数据"].append(remotePriceList)
 
                 isPriceError = True
 
+    dd = pd.DataFrame(errorDetail)
     # print(len(errorDetail["errorInfo"]))
+
+    errorPath = CommonClass.mkDir("江西","导出模板","对比结果.xlsx",isGetStr=True)
+    print(errorPath)
+    dd.to_excel(errorPath,index=False)
+    print(dd)
     pass
 
 # 导入入口
@@ -815,9 +852,9 @@ def importContract():
 
 if __name__ == '__main__':
 
-    # importContract()
+    importContract()
     # getUnitByOtherName(1, 2)
-    # compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
+    compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
     # queryRemoteContract(["测试#1机组"])
-    getContractDetail(["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],["测试#1机组"],
-                      ["市场化"],"2023-01-01","2023-01-31")
+    # getContractDetail(["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],["测试#1机组"],
+    #                   ["市场化"],"2023-01-01","2023-01-31")
