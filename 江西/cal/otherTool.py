@@ -203,6 +203,8 @@ class Tool:
             begin = time96Enum[tempList[0]]-1
             end = time96Enum[tempList[1]]-1
 
+
+
             while begin <= end:
                 time96List[begin] = 1
                 begin += 1

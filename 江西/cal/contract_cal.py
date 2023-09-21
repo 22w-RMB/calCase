@@ -1,4 +1,5 @@
 import copy
+import math
 import os
 from datetime import datetime, timedelta
 
@@ -867,6 +868,7 @@ def calPeakRatio(dataList):
         for key in allPeak[dateStr]:
             allPeak[dateStr][key] = Tool.time96To96list( allPeak[dateStr][key] )['time96List']
 
+
     def max_leq(nums, max_value):
         return max(filter(lambda x: x <= max_value, nums))
 
@@ -900,7 +902,7 @@ def calPeakRatio(dataList):
 
             for i in range(0,96):
 
-                dataEleIndex = i%4
+                dataEleIndex = math.floor(i/4)
 
                 if datePeak[peakType][i] == 1:
                     if data["ele"][dataEleIndex] == None:
@@ -1315,9 +1317,11 @@ if __name__ == '__main__':
     # print(calPeakRatio(res))
 
     #
-    # execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
-    #                   contractName=["测试1江西和惠配售电有限公司(增量配电网)年度双边协商交易（2至12月）"],
-    #                   unitName=["开封#1"],
-    #                   contractType1=["市场化"])
+    execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
+                      contractName=[
+                          "测试1江西和惠配售电有限公司(增量配电网)年度代理购电挂牌交易（2至12月）",
+                      ],
+                      unitName=["开封#1"],
+                      contractType1=["代理购电"])
 
-    outputData(["开封#1"], startDate="2023-03-15", endDate="2023-03-16")
+    # outputData(["开封#1"], startDate="2023-03-15", endDate="2023-03-16")
