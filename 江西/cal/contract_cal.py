@@ -38,6 +38,22 @@ dataTypeEnum = {
     "月" : "3",
 }
 
+
+contractTypeEnum1 = {
+    "市场化":
+        ["市场化,年度双边协商" ,
+        "市场化,月度交易" ,
+        "市场化,月内连续融合" ,
+        "市场化,d-3日24时段滚动撮合" ,
+        "市场化,省间外送" ],
+    "代理购电":
+        ["代理购电,年度代理购电挂牌" ,
+        "代理购电,月度交易" ,
+        "代理购电,月内连续融合" ,
+        "代理购电,d-3日24时段滚动撮合" ]
+}
+
+
 # 根据账单别名和交易名称获取机组
 def getUnitByOtherName(otherNameType,otherName,tenantName):
 
@@ -65,7 +81,7 @@ def getUnitByOtherName(otherNameType,otherName,tenantName):
     if otherNameType == "交易单元名称":
 
         for unit in unitsInfo:
-            unitShortNameList = []
+            controlUnitNameList = []
             if unit["controlUnitName"] != None:
                 # 分割多种符号
                 controlUnitNameList = re.split('|'.join(map(re.escape, delimiters)), unit["controlUnitName"])
@@ -1075,6 +1091,191 @@ def outputAnalysisData(resData):
     pass
 
 
+def ini():
+
+    d = {
+        "中长期总体": {
+            "持仓电量": None,
+            "持仓均价": None,
+            "总电量": None,
+            "总均价": None,
+        },
+    }
+
+    for key in contractTypeEnum1:
+        d[key] = {
+                "持仓电量": None,
+                "持仓均价": None,
+                "总电量": None,
+                "总均价": None,
+            }
+        for t in contractTypeEnum1[key]:
+            d[t] = {
+                "持仓电量": None,
+                "持仓均价": None,
+                "总电量": None,
+                "总均价": None,
+            }
+
+    return d
+
+
+# 构建持仓总览输出的数据
+def buildOutputData(units,startDate,endDate):
+    buildResList = []
+    rankType=[
+        "中长期总体",
+        "市场化",
+        "代理购电",
+        "市场化,年度双边协商",
+        "市场化,月度交易",
+        "市场化,月内连续融合",
+        "市场化,d-3日24时段滚动撮合",
+        "市场化,省间外送",
+        "代理购电,年度代理购电挂牌",
+        "代理购电,月度交易",
+        "代理购电,月内连续融合",
+        "代理购电,d-3日24时段滚动撮合",
+    ]
+
+    allType = {
+        "中长期总体": []
+    }
+    for key in contractTypeEnum1:
+        allType[key] = contractTypeEnum1[key]
+        allType["中长期总体"].extend(contractTypeEnum1[key])
+        for t in contractTypeEnum1[key]:
+            allType[t] = [t]
+
+    all = {
+        "汇总" : ini()
+    }
+    for t in allType:
+        print("=========",t)
+        contractType1 = None
+        contractType2 = None
+
+        if t == "市场化" or t == "代理购电":
+            contractType1 = [t]
+            contractType2 = [ kk.split(",")[1] for kk in contractTypeEnum1[t] ]
+        elif t == "中长期总体":
+            pass
+        else:
+            contractType1 = [t.split(",")[0]]
+            contractType2 = [t.split(",")[1]]
+
+
+        queryRes = queryLocalContract(unitName=units,
+                                 contractName=None,
+                                 contractType1=contractType1,
+                                 contractType2=contractType2,
+                                 startDate=startDate, endDate=endDate, dataType=["24时"])
+
+        calRes = cal24Info(queryRes)
+        all["汇总"][t]["持仓电量"] = calRes["ele"]
+        all["汇总"][t]["持仓均价"] = calRes["price"]
+        all["汇总"][t]["总电量"] = calRes["eleSum"]
+        all["汇总"][t]["总均价"] = calRes["priceSum"]
+    for unit in units:
+        all[unit] = ini()
+
+        for t in allType:
+            contractType1 = None
+            contractType2 = None
+            if t == "中长期总体":
+                pass
+            if t == "市场化" or t == "代理购电":
+                contractType1 = [t]
+                contractType2 = [kk.split(",")[1] for kk in contractTypeEnum1[t]]
+            elif t == "中长期总体":
+                pass
+            else:
+                contractType1 = [t.split(",")[0]]
+                contractType2 = [t.split(",")[1]]
+
+            queryRes = queryLocalContract(unitName=[unit],
+                                          contractName=None,
+                                          contractType1=contractType1,
+                                          contractType2=contractType2,
+                                          startDate=startDate, endDate=endDate, dataType=["24时"])
+
+            calRes = cal24Info(queryRes)
+            all[unit][t]["持仓电量"] = calRes["ele"]
+            all[unit][t]["持仓均价"] = calRes["price"]
+            all[unit][t]["总电量"] = calRes["eleSum"]
+            all[unit][t]["总均价"] = calRes["priceSum"]
+
+    for unit in all:
+        for t in rankType:
+            eleList = [unit,t,"持仓电量",all[unit][t]["总电量"]]
+            eleList.extend(all[unit][t]["持仓电量"])
+            priceList = [unit, t, "持仓均价", all[unit][t]["总均价"]]
+            priceList.extend(all[unit][t]["持仓均价"])
+            buildResList.append(eleList)
+            buildResList.append(priceList)
+
+    # print(buildResList)
+    return buildResList
+
+# 输出到excel
+def outputData(units,startDate,endDate):
+
+    sd = datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+    resData = {}
+
+    resData["24点汇总"] = buildOutputData(units, startDate, endDate)
+
+    dateResData = []
+    dateResData.append(
+        ["机组"	,"合约类型","电量/电价",	"合计/均值"],
+    )
+
+    while sd <= ed:
+        dateStr = datetime.strftime(sd, "%Y-%m-%d")
+        dateResData[0].append(dateStr)
+
+        resData[dateStr] = buildOutputData(units, dateStr, dateStr)
+
+        # 日期 +1
+        sd += timedelta(days=1)
+
+
+    for date in resData:
+
+        if len(dateResData)-1 < len(resData[date]):
+            for data in resData[date]:
+                dateResData.append(data[0:4])
+            continue
+
+        for i in range(0,len(resData[date])):
+            dateResData[i+1].append(resData[date][i][3])
+
+
+
+    tempPath = CommonClass.mkDir("江西","导出模板","持仓总览模板.xlsx",isGetStr=True)
+    templateE = ExcelHeplerXlwing(tempPath)
+    template = templateE.getTemplateStyle("Sheet1")
+    templateE.close()
+
+    # print(resData)
+
+    savePath = CommonClass.mkDir("江西","导出模板","持仓总览结果.xlsx",isGetStr=True)
+    e = ExcelHeplerXlwing()
+    for date in resData:
+        e.newExcel(sheetName=date,templateStyle=template)
+        e.writeData(savePath,resData[date],date)
+
+    e.newExcel(sheetName="日维度", templateStyle=None)
+    e.writeData(savePath, dateResData, "日维度",beginRow=1)
+
+    e.close()
+
+    pass
+
+
+
 # 导入入口
 def importContract():
     improtPath = CommonClass.mkDir("江西", "导入文件", "电厂3", isGetStr=True)
@@ -1097,7 +1298,7 @@ def importContract():
 
 if __name__ == '__main__':
 
-    importContract()
+    # importContract()
     # getUnitByOtherName(1, 2)
     # compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
     # queryRemoteContract(["测试#1机组"])
@@ -1113,7 +1314,10 @@ if __name__ == '__main__':
     # print(res)
     # print(calPeakRatio(res))
 
-    execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
-                      contractName=["测试1江西和惠配售电有限公司(增量配电网)年度双边协商交易（2至12月）"],
-                      unitName=["开封#1"],
-                      contractType1=["市场化"])
+    #
+    # execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
+    #                   contractName=["测试1江西和惠配售电有限公司(增量配电网)年度双边协商交易（2至12月）"],
+    #                   unitName=["开封#1"],
+    #                   contractType1=["市场化"])
+
+    outputData(["开封#1"], startDate="2023-03-15", endDate="2023-03-16")
