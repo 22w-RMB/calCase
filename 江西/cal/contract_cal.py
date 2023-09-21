@@ -7,11 +7,13 @@ import pandas as pd
 
 from 江西.cal.excel_handler import ExcelHepler,ExcelHeplerXlwing
 from 江西.cal.mysqlTool import MysqlTool
+from 江西.cal.otherTool import Tool
 from common.common import CommonClass
 import re
 import calendar
 
 unitYamlPath = CommonClass.mkDir("江西","config","unit_config.yaml",isGetStr=True)
+dataPeakyamlPath = CommonClass.mkDir("河北","config","峰平谷.yaml",isGetStr=True)
 unitInfoConfig = CommonClass.readYaml(unitYamlPath)
 contractTypeEnum ={
     "市场化" : {
@@ -718,7 +720,7 @@ def compareContract(unitName,contractName,contractType1,contractType2,startDate,
     print(dd)
     pass
 
-# 导入入口
+# 获取合同电量明细
 def getContractDetail(contractName,unitName,contractType1,startDate,endDate):
 
     res = queryLocalContract(unitName=unitName, contractName=contractName,contractType1=contractType1,contractType2=None,
@@ -831,6 +833,115 @@ def getContractDetail(contractName,unitName,contractType1,startDate,endDate):
 
     pass
 
+# 计算峰平谷占比
+def calPeakRatio(dataList):
+
+    eleRes = {
+        "sum": [0,100],
+        "tip": [None,None],
+        "peak": [None,None],
+        "flat": [None,None],
+        "valley": [None,None],
+    }
+
+    allPeak = CommonClass.readYaml(dataPeakyamlPath)
+    for dateStr in allPeak:
+        for key in allPeak[dateStr]:
+            allPeak[dateStr][key] = Tool.time96To96list( allPeak[dateStr][key] )['time96List']
+
+    def max_leq(nums, max_value):
+        return max(filter(lambda x: x <= max_value, nums))
+
+
+
+    for data in dataList:
+        # 计算总电量
+        for i in range(0, 24):
+
+            if data["ele"][i] == None:
+                continue
+
+            if eleRes["sum"][0] == None:
+                eleRes["sum"][0] = data["ele"][i]
+            else:
+                eleRes["sum"][0] += data["ele"][i]
+
+
+        dateStr = datetime.strftime(data["date"], "%Y-%m-%d")
+
+        if dateStr <= min(allPeak.keys()):
+            continue
+
+        dateStr = max_leq( allPeak.keys(),dateStr)
+
+        datePeak = allPeak[dateStr]
+
+        for peakType in eleRes:
+
+            if peakType not in datePeak.keys():
+                continue
+
+            for i in range(0,96):
+
+                dataEleIndex = i%4
+
+                if datePeak[peakType][i] == 1:
+                    if data["ele"][dataEleIndex] == None:
+                        continue
+
+                    if eleRes[peakType][0] == None:
+                        eleRes[peakType][0] = data["ele"][dataEleIndex]/4
+                    else:
+                        eleRes[peakType][0] += data["ele"][dataEleIndex]/4
+
+            pass
+
+    # 计算峰平谷占比
+    for key in eleRes:
+        if key == "sum":
+            continue
+
+        if eleRes[key][0] ==None :
+            continue
+        eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
+
+    # print(eleRes)
+    return eleRes
+
+
+# 构建合同分析输出的数据
+def execAnalysisData(units,startDate,endDate,contractName=None,unitName=None,contractType1=None):
+
+    sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
+
+    resData = {
+        "收益分析" : [],
+        "盈亏分析" : [],
+        "电量分析" : [],
+        "汇总统计" : [],
+        "峰平谷统计" : [],
+    }
+
+    dataList = []
+    contractDataList = []
+    clearingDataList = []
+
+    while sd <= ed:
+
+        calContractDataList = []
+        calClearingDataList = []
+
+        dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+
+        for unit in units:
+            pass
+
+
+    return  resData
+
+
+# 导入入口
 def importContract():
     improtPath = CommonClass.mkDir("江西", "导入文件", "合同", isGetStr=True)
 
@@ -852,9 +963,18 @@ def importContract():
 
 if __name__ == '__main__':
 
-    importContract()
+    # importContract()
     # getUnitByOtherName(1, 2)
     compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
     # queryRemoteContract(["测试#1机组"])
     # getContractDetail(["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],["测试#1机组"],
     #                   ["市场化"],"2023-01-01","2023-01-31")
+
+    # res = queryLocalContract(unitName=["测试#1机组"],
+    #                          contractName=["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],
+    #                          contractType1=["市场化"],
+    #                          contractType2=None,
+    #                          startDate="2023-01-01", endDate="2023-01-31", dataType=["24时"])
+    #
+    # print(res)
+    # print(calPeakRatio(res))
