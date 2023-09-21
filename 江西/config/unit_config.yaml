@@ -15,3 +15,15 @@
   - unitName: 测试#4机组
     unitShortName: 瑞金厂/20kV.#2机
     controlUnitName: 瑞金电厂
+
+
+江西电厂3:
+  - unitName: 开封#1
+    unitShortName: 测试1
+    controlUnitName:
+  - unitName: 开封#2
+    unitShortName: 测试2
+    controlUnitName:
+  - unitName: 开封#3
+    unitShortName:
+    controlUnitName:

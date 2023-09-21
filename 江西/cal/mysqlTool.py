@@ -147,6 +147,75 @@ class MysqlTool:
 
         return [dict(zip(header, row)) for row in res]
 
+    # @cursorOperate
+    def insertClearingData(self,dic):
+
+        cursor = self.db.cursor()
+
+        sql = "replace into clearing_data(date,unit,ele,power,price,clearing_type,update_time,create_time) VALUES"
+
+
+        l = [
+            dic["date"],
+            dic["unit"],
+            dic["ele"],
+            dic["power"],
+            dic["price"],
+            dic["dataType"],
+            dic["update_time"],
+            dic["create_time"],
+             ]
+
+        lStr = str(l).lstrip("[").rstrip("]")
+
+        sql +=  "("+  lStr  +");"
+
+        print(sql)
+        cursor.execute(sql)
+        cursor.close()
+
+    def queryClearingData(self,dic):
+
+        cursor = self.db.cursor()
+
+        sql = "select * from clearing_data"
+
+        l = []
+
+        for key in dic.keys():
+
+            if dic[key] != None:
+                if key == "start_date":
+                    l.append("date" + ">=" + '"'+dic[key]+'"')
+                    continue
+
+                if key == "end_date":
+                    l.append("date" + "<=" + '"'+dic[key]+'"')
+                    continue
+                ll = []
+                for k in dic[key]:
+                    ll.append( key + "=" + '"'+k+'"' )
+
+                l.append(
+                    "("+ (" or ".join(ll)) +")"
+                )
+
+        if l != []:
+            if len(l) == 1:
+                sql = sql + (" where ") + l[0]
+            else:
+                sql = sql + (" where ") + (" and ".join(l))
+
+        print(sql)
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header, row)) for row in res]
+
 
     def close(self):
             self.db.close()

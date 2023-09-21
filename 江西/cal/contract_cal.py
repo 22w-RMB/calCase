@@ -12,8 +12,10 @@ from common.common import CommonClass
 import re
 import calendar
 
+from 江西.cal.private_data import PrivateData
+
 unitYamlPath = CommonClass.mkDir("江西","config","unit_config.yaml",isGetStr=True)
-dataPeakyamlPath = CommonClass.mkDir("河北","config","峰平谷.yaml",isGetStr=True)
+dataPeakyamlPath = CommonClass.mkDir("江西","config","峰平谷.yaml",isGetStr=True)
 unitInfoConfig = CommonClass.readYaml(unitYamlPath)
 contractTypeEnum ={
     "市场化" : {
@@ -51,8 +53,10 @@ def getUnitByOtherName(otherNameType,otherName,tenantName):
     if otherNameType == "账单别名":
 
         for unit in unitsInfo:
-            # 分割多种符号
-            unitShortNameList = re.split('|'.join(map(re.escape, delimiters)), unit["unitShortName"])
+            unitShortNameList = []
+            if unit["unitShortName"] != None:
+                # 分割多种符号
+                unitShortNameList = re.split('|'.join(map(re.escape, delimiters)), unit["unitShortName"])
             unitShortNameList.append(unit["unitName"])
             if otherName in unitShortNameList:
                 res["units"].append(unit["unitName"])
@@ -61,8 +65,10 @@ def getUnitByOtherName(otherNameType,otherName,tenantName):
     if otherNameType == "交易单元名称":
 
         for unit in unitsInfo:
-            # 分割多种符号
-            controlUnitNameList = re.split('|'.join(map(re.escape, delimiters)), unit["controlUnitName"])
+            unitShortNameList = []
+            if unit["controlUnitName"] != None:
+                # 分割多种符号
+                controlUnitNameList = re.split('|'.join(map(re.escape, delimiters)), unit["controlUnitName"])
             controlUnitNameList.append(unit["unitName"])
             if otherName in controlUnitNameList:
                 res["units"].append(unit["unitName"])
@@ -71,7 +77,7 @@ def getUnitByOtherName(otherNameType,otherName,tenantName):
     return res
 
 # 将查询到的合同计算成24点结果
-def cal24Info(dataList,lenght=24):
+def cal24Info(dataList,lenght=24,isFilterNone=False):
 
     eleRes = [None for i in range(0,lenght)]
     priceRes = [None for i in range(0,lenght)]
@@ -84,7 +90,9 @@ def cal24Info(dataList,lenght=24):
 
         for i in range(0,lenght):
 
-
+            if isFilterNone:
+                if ele[i] == None or price[i]==None:
+                    continue
 
             if ele[i] != None :
                 eleRes[i] = ele[i] + (0 if eleRes[i] == None else eleRes[i])
@@ -628,8 +636,6 @@ def compareContract(unitName,contractName,contractType1,contractType2,startDate,
 
 
 
-
-
     for localData in localDataList:
 
         dateStr = localData["date"].strftime("%Y-%m-%d")
@@ -779,9 +785,6 @@ def getContractDetail(contractName,unitName,contractType1,startDate,endDate):
         monthData[dateStr[:7]]["priceSum"] = cal24Res["priceSum"]
 
 
-    # print(dateData)
-
-
     dateDataList = []
 
     for date in dateData:
@@ -825,7 +828,6 @@ def getContractDetail(contractName,unitName,contractType1,startDate,endDate):
     e.newExcel(sheetName="Sheet1", templateStyle=template)
     e.writeData(savePath, dateDataList, "Sheet1")
 
-
     e.newExcel(sheetName="月维度", templateStyle=None)
     e.writeData(savePath, monthDataList, "月维度",beginRow=1)
 
@@ -852,8 +854,6 @@ def calPeakRatio(dataList):
     def max_leq(nums, max_value):
         return max(filter(lambda x: x <= max_value, nums))
 
-
-
     for data in dataList:
         # 计算总电量
         for i in range(0, 24):
@@ -869,12 +869,13 @@ def calPeakRatio(dataList):
 
         dateStr = datetime.strftime(data["date"], "%Y-%m-%d")
 
-        if dateStr <= min(allPeak.keys()):
+        if dateStr < min(allPeak.keys()):
             continue
 
         dateStr = max_leq( allPeak.keys(),dateStr)
 
         datePeak = allPeak[dateStr]
+
 
         for peakType in eleRes:
 
@@ -905,15 +906,15 @@ def calPeakRatio(dataList):
             continue
         eleRes[key][1] =  eleRes[key][0] / eleRes["sum"][0] * 100
 
-    # print(eleRes)
+    print("==========",eleRes)
     return eleRes
 
 
 # 构建合同分析输出的数据
-def execAnalysisData(units,startDate,endDate,contractName=None,unitName=None,contractType1=None):
+def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractType1=None):
 
-    sd = datetime.datetime.strptime(startDate, "%Y-%m-%d")
-    ed = datetime.datetime.strptime(endDate, "%Y-%m-%d")
+    sd = datetime.strptime(startDate, "%Y-%m-%d")
+    ed = datetime.strptime(endDate, "%Y-%m-%d")
 
     resData = {
         "收益分析" : [],
@@ -932,18 +933,151 @@ def execAnalysisData(units,startDate,endDate,contractName=None,unitName=None,con
         calContractDataList = []
         calClearingDataList = []
 
-        dateStr = datetime.datetime.strftime(sd, "%Y-%m-%d")
+        dateStr = datetime.strftime(sd, "%Y-%m-%d")
 
-        for unit in units:
-            pass
+        for unit in unitName:
+
+            queryRes =  queryLocalContract(unitName=[unit],
+                             contractName=contractName,
+                             contractType1=contractType1,
+                             contractType2=None,
+                             startDate=dateStr, endDate=dateStr, dataType=["24时"])
+            calRes = cal24Info(queryRes)
+
+            clearing = PrivateData.queryClearingData(unit=[unit], startDate=dateStr, endDate=dateStr, dataType=["dayAhead"])
+            # print("===========",clearing)
+
+            contractDataList.append(
+                {
+                    "ele": calRes["ele"],
+                    "price": calRes["price"],
+                }
+            )
+            clearingDataList.append(
+                {
+                    "ele": calRes["ele"],
+                    "price": [None for i in range(0, 24)] if len(clearing) == 0 else clearing[0]["price"],
+                }
+            )
+
+            dataList.extend(
+                queryRes
+            )
+
+            calContractDataList.append(
+                {
+                    "ele" : calRes["ele"],
+                    "price" : calRes["price"],
+                }
+            )
+
+            calClearingDataList.append(
+                {
+                    "ele" : calRes["ele"],
+                    "price" : [None for i in range(0,24)] if len(clearing)==0 else clearing[0]["price"],
+                }
+            )
+
+            # data["持仓电量"] = calRes["ele"]
+            # data["持仓均价"] = calRes["price"]
+            # data["费用"] = calRes["fee"]
+            # data["总电量"] = calRes["eleSum"]
+            # data["总均价"] = calRes["priceSum"]
+            # data["总费用"] = calRes["feeSum"]
+            # data["日前出清电价"] = clearing["price"]
+            #
+            # dataList.append(data)
+
+        calContractDataRes = cal24Info(calContractDataList)
+        calClearingDataRes = cal24Info(calClearingDataList,isFilterNone=True)
 
 
+        aa =  [dateStr,None,None,"合同电量（MWh）", ]
+
+        bb =  [dateStr,None,None,"合同价格（元/MWh）", ]
+        cc =  [dateStr,None,None,"合同日前加权价格（元/MWh）", ]
+        dd =  [dateStr,None,None,"合同电费", ]
+        ee =  [dateStr,None,None,"现货电费（元）", ]
+        ff =  [dateStr,None,None,"中长期对比日前盈亏（元）", ]
+
+        aa.extend(calContractDataRes["ele"])
+        bb.extend(calContractDataRes["price"])
+        cc.extend(calClearingDataRes["price"])
+        dd.extend(calContractDataRes["fee"] )
+        ee.extend(calClearingDataRes["fee"] )
+
+        ffData = []
+        for i in range(0, 24):
+            if (calContractDataRes["fee"][i] == None) or (calClearingDataRes["fee"][i] ==None):
+                ffData.append(None)
+                continue
+            ffData.append(calContractDataRes["fee"][i]-calClearingDataRes["fee"][i])
+        ff.extend(ffData)
+
+        resData["收益分析"].append(dd)
+        resData["收益分析"].append(bb)
+        resData["收益分析"].append(aa)
+        resData["盈亏分析"].append(ff)
+        resData["盈亏分析"].append(ee)
+        resData["电量分析"].append(aa)
+        resData["电量分析"].append(bb)
+        resData["电量分析"].append(cc)
+
+
+        # 日期 +1
+        sd += timedelta(days=1)
+
+
+    pRatio = calPeakRatio(dataList)
+
+    resData["峰平谷统计"].append(
+        ["数据","尖峰","高峰","平段","低谷"]
+    )
+    resData["峰平谷统计"].append(
+        ["电量（MWh）",pRatio['tip'][0],pRatio['peak'][0],pRatio['flat'][0],pRatio['valley'][0],
+         ]
+    )
+    resData["峰平谷统计"].append(
+        ["占比（%）",pRatio['tip'][1],pRatio['peak'][1],pRatio['flat'][1],pRatio['valley'][1],
+         ]
+    )
+
+    contractDataRes = cal24Info(contractDataList)
+    clearingDataRes = cal24Info(clearingDataList)
+    resData["汇总统计"].append(
+        ["数值", contractDataRes["feeSum"] / 10000, clearingDataRes["feeSum"] / 10000,
+         (contractDataRes["feeSum"] - clearingDataRes["feeSum"]) / 10000, contractDataRes["eleSum"],
+         contractDataRes["priceSum"], clearingDataRes["priceSum"]
+         ]
+    )
+
+    outputAnalysisData(resData)
     return  resData
+
+
+# 输出到excel
+def outputAnalysisData(resData):
+
+    print(resData)
+    tempPath = CommonClass.mkDir("江西","导出模板","合同分析模板.xlsx",isGetStr=True)
+
+
+    savePath = CommonClass.mkDir("江西","导出模板","合同分析结果.xlsx",isGetStr=True)
+    e = ExcelHeplerXlwing(tempPath)
+
+
+    for sheetName in resData:
+        print("============",sheetName)
+        e.writeData(savePath,resData[sheetName],sheetName)
+
+    e.close()
+    # templateE.close()
+    pass
 
 
 # 导入入口
 def importContract():
-    improtPath = CommonClass.mkDir("江西", "导入文件", "合同", isGetStr=True)
+    improtPath = CommonClass.mkDir("江西", "导入文件", "电厂3", isGetStr=True)
 
     for root, dirs, files in os.walk(improtPath):
 
@@ -963,18 +1097,23 @@ def importContract():
 
 if __name__ == '__main__':
 
-    # importContract()
+    importContract()
     # getUnitByOtherName(1, 2)
-    compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
+    # compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
     # queryRemoteContract(["测试#1机组"])
     # getContractDetail(["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],["测试#1机组"],
     #                   ["市场化"],"2023-01-01","2023-01-31")
-
+    #
     # res = queryLocalContract(unitName=["测试#1机组"],
     #                          contractName=["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],
     #                          contractType1=["市场化"],
     #                          contractType2=None,
     #                          startDate="2023-01-01", endDate="2023-01-31", dataType=["24时"])
-    #
+    # #
     # print(res)
     # print(calPeakRatio(res))
+
+    execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
+                      contractName=["测试1江西和惠配售电有限公司(增量配电网)年度双边协商交易（2至12月）"],
+                      unitName=["开封#1"],
+                      contractType1=["市场化"])
