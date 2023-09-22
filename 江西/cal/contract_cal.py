@@ -929,7 +929,7 @@ def calPeakRatio(dataList):
 
 
 # 构建合同分析输出的数据
-def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractType1=None):
+def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractType1=None,contractType2=None,fileName=None):
 
     sd = datetime.strptime(startDate, "%Y-%m-%d")
     ed = datetime.strptime(endDate, "%Y-%m-%d")
@@ -958,7 +958,7 @@ def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractT
             queryRes =  queryLocalContract(unitName=[unit],
                              contractName=contractName,
                              contractType1=contractType1,
-                             contractType2=None,
+                             contractType2=contractType2,
                              startDate=dateStr, endDate=dateStr, dataType=["24时"])
             calRes = cal24Info(queryRes)
 
@@ -1010,13 +1010,14 @@ def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractT
         calClearingDataRes = cal24Info(calClearingDataList,isFilterNone=True)
 
 
-        aa =  [dateStr,None,None,"合同电量（MWh）", ]
+        aa =  [dateStr,None,calContractDataRes["eleSum"],"合同电量（MWh）", ]
 
-        bb =  [dateStr,None,None,"合同价格（元/MWh）", ]
-        cc =  [dateStr,None,None,"合同日前加权价格（元/MWh）", ]
-        dd =  [dateStr,None,None,"合同电费", ]
-        ee =  [dateStr,None,None,"现货电费（元）", ]
+        bb =  [dateStr,None,calContractDataRes["priceSum"],"合同价格（元/MWh）", ]
+        cc =  [dateStr,None,calClearingDataRes["priceSum"],"合同日前加权价格（元/MWh）", ]
+        dd =  [dateStr,None,calContractDataRes["feeSum"],"合同电费", ]
+        ee =  [dateStr,None,calClearingDataRes["feeSum"],"现货电费（元）", ]
         ff =  [dateStr,None,None,"中长期对比日前盈亏（元）", ]
+        gg =  [dateStr,None,calContractDataRes["priceSum"]-calClearingDataRes["priceSum"],"中长期持仓均价-中长期折算日前加权均价）", ]
 
         aa.extend(calContractDataRes["ele"])
         bb.extend(calContractDataRes["price"])
@@ -1032,11 +1033,23 @@ def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractT
             ffData.append(calContractDataRes["fee"][i]-calClearingDataRes["fee"][i])
         ff.extend(ffData)
 
+        ggData = []
+        for i in range(0, 24):
+            if (calContractDataRes["price"][i] == None) or (calClearingDataRes["price"][i] ==None):
+                ggData.append(None)
+                continue
+            ggData.append(calContractDataRes["price"][i]-calClearingDataRes["price"][i])
+        gg.extend(ggData)
+
+
         resData["收益分析"].append(dd)
-        resData["收益分析"].append(bb)
         resData["收益分析"].append(aa)
-        resData["盈亏分析"].append(ff)
+        resData["收益分析"].append(bb)
+        resData["收益分析"].append(cc)
+        resData["收益分析"].append(gg)
+        resData["盈亏分析"].append(dd)
         resData["盈亏分析"].append(ee)
+        resData["盈亏分析"].append(ff)
         resData["电量分析"].append(aa)
         resData["电量分析"].append(bb)
         resData["电量分析"].append(cc)
@@ -1069,18 +1082,54 @@ def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractT
          ]
     )
 
-    outputAnalysisData(resData)
+    outputAnalysisData(resData,fileName)
     return  resData
 
+def execAllTypeAnalysisData(startDate,endDate,unitName=None):
+
+    allType = {
+        "中长期总体": []
+    }
+    for key in contractTypeEnum1:
+        allType[key] = contractTypeEnum1[key]
+        allType["中长期总体"].extend(contractTypeEnum1[key])
+        for t in contractTypeEnum1[key]:
+            allType[t] = [t]
+
+    for t in allType:
+        print("=========",t)
+        contractType1 = None
+        contractType2 = None
+
+        if t == "市场化" or t == "代理购电":
+            contractType1 = [t]
+            contractType2 = [ kk.split(",")[1] for kk in contractTypeEnum1[t] ]
+        elif t == "中长期总体":
+            pass
+        else:
+            contractType1 = [t.split(",")[0]]
+            contractType2 = [t.split(",")[1]]
+
+        execAnalysisData(unitName=unitName,
+                             contractName=None,
+                             contractType1=contractType1,
+                             contractType2=contractType2,
+                             startDate=startDate, endDate=endDate,fileName=t)
+
+
+    pass
 
 # 输出到excel
-def outputAnalysisData(resData):
+def outputAnalysisData(resData,fileName=None):
+    fileN = ""
+    if fileName != None:
+        fileN =  fileName
 
     print(resData)
     tempPath = CommonClass.mkDir("江西","导出模板","合同分析模板.xlsx",isGetStr=True)
 
 
-    savePath = CommonClass.mkDir("江西","导出模板","合同分析结果.xlsx",isGetStr=True)
+    savePath = CommonClass.mkDir("江西","导出模板",fileN+"合同分析结果.xlsx",isGetStr=True)
     e = ExcelHeplerXlwing(tempPath)
 
 
@@ -1091,7 +1140,6 @@ def outputAnalysisData(resData):
     e.close()
     # templateE.close()
     pass
-
 
 def ini():
 
@@ -1317,11 +1365,14 @@ if __name__ == '__main__':
     # print(calPeakRatio(res))
 
     #
-    execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
-                      contractName=[
-                          "测试1江西和惠配售电有限公司(增量配电网)年度代理购电挂牌交易（2至12月）",
-                      ],
-                      unitName=["开封#1"],
-                      contractType1=["代理购电"])
+    # execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
+    #                   contractName=[
+    #                       "测试1江西和惠配售电有限公司(增量配电网)年度代理购电挂牌交易（2至12月）",
+    #                   ],
+    #                   unitName=["开封#1"],
+    #                   contractType1=["代理购电"])
 
-    # outputData(["开封#1"], startDate="2023-03-15", endDate="2023-03-16")
+    # outputData(["开封#1","开封#2"], startDate="2023-03-15", endDate="2023-03-16")
+
+    execAllTypeAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
+                      unitName=["开封#1","开封#2"])
