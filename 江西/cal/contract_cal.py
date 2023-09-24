@@ -1096,6 +1096,8 @@ def execAllTypeAnalysisData(startDate,endDate,unitName=None):
         for t in contractTypeEnum1[key]:
             allType[t] = [t]
 
+    totalDetail = []
+
     for t in allType:
         print("=========",t)
         contractType1 = None
@@ -1110,14 +1112,33 @@ def execAllTypeAnalysisData(startDate,endDate,unitName=None):
             contractType1 = [t.split(",")[0]]
             contractType2 = [t.split(",")[1]]
 
-        execAnalysisData(unitName=unitName,
+        res = execAnalysisData(unitName=unitName,
                              contractName=None,
                              contractType1=contractType1,
                              contractType2=contractType2,
                              startDate=startDate, endDate=endDate,fileName=t)
+        rrr = []
+        rrr.append(t)
+        rrr.append(res["汇总统计"][0][1])
+        rrr.append(res["汇总统计"][0][2])
+        rrr.append(res["汇总统计"][0][3])
+        rrr.append(res["汇总统计"][0][4])
+        rrr.append(res["汇总统计"][0][5])
+        rrr.append(res["汇总统计"][0][6])
+        if res["汇总统计"][0][5] == None or res["汇总统计"][0][6] == None:
+            rrr.append(None)
+        else:
+            rrr.append(res["汇总统计"][0][5]-res["汇总统计"][0][6])
+        totalDetail.append(
+            rrr
+        )
 
 
-    pass
+    savePath = CommonClass.mkDir("江西","导出模板","中长期总体合同分析结果.xlsx",isGetStr=True)
+    e = ExcelHeplerXlwing(savePath)
+    e.writeData(savePath,totalDetail,"Sheet1")
+
+    e.close()
 
 # 输出到excel
 def outputAnalysisData(resData,fileName=None):
