@@ -1009,50 +1009,7 @@ def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractT
         calContractDataRes = cal24Info(calContractDataList)
         calClearingDataRes = cal24Info(calClearingDataList,isFilterNone=True)
 
-
-        aa =  [dateStr,None,calContractDataRes["eleSum"],"合同电量（MWh）", ]
-
-        bb =  [dateStr,None,calContractDataRes["priceSum"],"合同价格（元/MWh）", ]
-        cc =  [dateStr,None,calClearingDataRes["priceSum"],"合同日前加权价格（元/MWh）", ]
-        dd =  [dateStr,None,calContractDataRes["feeSum"],"合同电费", ]
-        ee =  [dateStr,None,calClearingDataRes["feeSum"],"现货电费（元）", ]
-        ff =  [dateStr,None,None,"中长期对比日前盈亏（元）", ]
-        gg =  [dateStr,None,calContractDataRes["priceSum"]-calClearingDataRes["priceSum"],"中长期持仓均价-中长期折算日前加权均价）", ]
-
-        aa.extend(calContractDataRes["ele"])
-        bb.extend(calContractDataRes["price"])
-        cc.extend(calClearingDataRes["price"])
-        dd.extend(calContractDataRes["fee"] )
-        ee.extend(calClearingDataRes["fee"] )
-
-        ffData = []
-        for i in range(0, 24):
-            if (calContractDataRes["fee"][i] == None) or (calClearingDataRes["fee"][i] ==None):
-                ffData.append(None)
-                continue
-            ffData.append(calContractDataRes["fee"][i]-calClearingDataRes["fee"][i])
-        ff.extend(ffData)
-
-        ggData = []
-        for i in range(0, 24):
-            if (calContractDataRes["price"][i] == None) or (calClearingDataRes["price"][i] ==None):
-                ggData.append(None)
-                continue
-            ggData.append(calContractDataRes["price"][i]-calClearingDataRes["price"][i])
-        gg.extend(ggData)
-
-
-        resData["收益分析"].append(dd)
-        resData["收益分析"].append(aa)
-        resData["收益分析"].append(bb)
-        resData["收益分析"].append(cc)
-        resData["收益分析"].append(gg)
-        resData["盈亏分析"].append(dd)
-        resData["盈亏分析"].append(ee)
-        resData["盈亏分析"].append(ff)
-        resData["电量分析"].append(aa)
-        resData["电量分析"].append(bb)
-        resData["电量分析"].append(cc)
+        addDatainToList(resData, dateStr, calContractDataRes, calClearingDataRes)
 
 
         # 日期 +1
@@ -1082,8 +1039,58 @@ def execAnalysisData(startDate,endDate,contractName=None,unitName=None,contractT
          ]
     )
 
+    addDatainToList(resData, "汇总", contractDataRes, clearingDataRes)
+
+
     outputAnalysisData(resData,fileName)
     return  resData
+
+
+def addDatainToList(resData,dateStr,calContractDataRes,calClearingDataRes):
+    aa = [dateStr, None, calContractDataRes["eleSum"], "合同电量（MWh）", ]
+
+    bb = [dateStr, None, calContractDataRes["priceSum"], "合同价格（元/MWh）", ]
+    cc = [dateStr, None, calClearingDataRes["priceSum"], "合同日前加权价格（元/MWh）", ]
+    dd = [dateStr, None, calContractDataRes["feeSum"], "合同电费", ]
+    ee = [dateStr, None, calClearingDataRes["feeSum"], "现货电费（元）", ]
+    ff = [dateStr, None, None, "中长期对比日前盈亏（元）", ]
+    gg = [dateStr, None, calContractDataRes["priceSum"] - calClearingDataRes["priceSum"], "中长期持仓均价-中长期折算日前加权均价）", ]
+
+    aa.extend(calContractDataRes["ele"])
+    bb.extend(calContractDataRes["price"])
+    cc.extend(calClearingDataRes["price"])
+    dd.extend(calContractDataRes["fee"])
+    ee.extend(calClearingDataRes["fee"])
+
+    ffData = []
+    for i in range(0, 24):
+        if (calContractDataRes["fee"][i] == None) or (calClearingDataRes["fee"][i] == None):
+            ffData.append(None)
+            continue
+        ffData.append(calContractDataRes["fee"][i] - calClearingDataRes["fee"][i])
+    ff.extend(ffData)
+
+    ggData = []
+    for i in range(0, 24):
+        if (calContractDataRes["price"][i] == None) or (calClearingDataRes["price"][i] == None):
+            ggData.append(None)
+            continue
+        ggData.append(calContractDataRes["price"][i] - calClearingDataRes["price"][i])
+    gg.extend(ggData)
+
+    resData["收益分析"].append(dd)
+    resData["收益分析"].append(aa)
+    resData["收益分析"].append(bb)
+    resData["收益分析"].append(cc)
+    resData["收益分析"].append(gg)
+    resData["盈亏分析"].append(dd)
+    resData["盈亏分析"].append(ee)
+    resData["盈亏分析"].append(ff)
+    resData["电量分析"].append(aa)
+    resData["电量分析"].append(bb)
+    resData["电量分析"].append(cc)
+
+
 
 def execAllTypeAnalysisData(startDate,endDate,unitName=None):
 
