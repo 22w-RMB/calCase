@@ -42,16 +42,20 @@ dataTypeEnum = {
 
 contractTypeEnum1 = {
     "市场化":
-        ["市场化,年度双边协商" ,
+        [
+        "市场化,年度双边协商" ,
         "市场化,月度交易" ,
         "市场化,月内连续融合" ,
         "市场化,d-3日24时段滚动撮合" ,
-        "市场化,省间外送" ],
+        "市场化,省间外送"
+        ],
     "代理购电":
-        ["代理购电,年度代理购电挂牌" ,
+        [
+        "代理购电,年度代理购电挂牌" ,
         "代理购电,月度交易" ,
         "代理购电,月内连续融合" ,
-        "代理购电,d-3日24时段滚动撮合" ]
+        "代理购电,d-3日24时段滚动撮合"
+         ]
 }
 
 
@@ -840,7 +844,7 @@ def getContractDetail(contractName,unitName,contractType1,startDate,endDate):
     template = templateE.getTemplateStyle("Sheet1")
     templateE.close()
 
-    savePath = CommonClass.mkDir("江西", "导出模板", contractName[0]+"电量明细结果.xlsx", isGetStr=True)
+    savePath = CommonClass.mkDir("江西", "导出模板", "电量明细结果.xlsx", isGetStr=True)
     e = ExcelHeplerXlwing()
     e.newExcel(sheetName="Sheet1", templateStyle=template)
     e.writeData(savePath, dateDataList, "Sheet1")
@@ -1051,23 +1055,23 @@ def addDatainToList(resData,dateStr,calContractDataRes,calClearingDataRes):
 
     bb = [dateStr, None, calContractDataRes["priceSum"], "合同价格（元/MWh）", ]
     cc = [dateStr, None, calClearingDataRes["priceSum"], "合同日前加权价格（元/MWh）", ]
-    dd = [dateStr, None, calContractDataRes["feeSum"], "合同电费", ]
-    ee = [dateStr, None, calClearingDataRes["feeSum"], "现货电费（元）", ]
-    ff = [dateStr, None, None, "中长期对比日前盈亏（元）", ]
+    dd = [dateStr, None, calContractDataRes["feeSum"]/10000, "合同电费", ]
+    ee = [dateStr, None, calClearingDataRes["feeSum"]/10000, "现货电费（元）", ]
+    ff = [dateStr, None, calContractDataRes["feeSum"]/10000-calClearingDataRes["feeSum"]/10000, "中长期对比日前盈亏（元）", ]
     gg = [dateStr, None, calContractDataRes["priceSum"] - calClearingDataRes["priceSum"], "中长期持仓均价-中长期折算日前加权均价）", ]
 
     aa.extend(calContractDataRes["ele"])
     bb.extend(calContractDataRes["price"])
     cc.extend(calClearingDataRes["price"])
-    dd.extend(calContractDataRes["fee"])
-    ee.extend(calClearingDataRes["fee"])
+    dd.extend(  [None if i==None else i/10000  for i in calContractDataRes["fee"]])
+    ee.extend( [None if i==None else i/10000  for i in calClearingDataRes["fee"]])
 
     ffData = []
     for i in range(0, 24):
         if (calContractDataRes["fee"][i] == None) or (calClearingDataRes["fee"][i] == None):
             ffData.append(None)
             continue
-        ffData.append(calContractDataRes["fee"][i] - calClearingDataRes["fee"][i])
+        ffData.append((calContractDataRes["fee"][i] - calClearingDataRes["fee"][i])/10000)
     ff.extend(ffData)
 
     ggData = []
@@ -1081,8 +1085,9 @@ def addDatainToList(resData,dateStr,calContractDataRes,calClearingDataRes):
     resData["收益分析"].append(dd)
     resData["收益分析"].append(aa)
     resData["收益分析"].append(bb)
-    resData["收益分析"].append(cc)
+    resData["收益分析"].append(ff)
     resData["收益分析"].append(gg)
+    resData["收益分析"].append(cc)
     resData["盈亏分析"].append(dd)
     resData["盈亏分析"].append(ee)
     resData["盈亏分析"].append(ff)
@@ -1380,8 +1385,8 @@ if __name__ == '__main__':
     # getUnitByOtherName(1, 2)
     # compareContract(["测试#1机组"],None,None,None,None,None,["24时"])
     # queryRemoteContract(["测试#1机组"])
-    # getContractDetail(["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],["测试#1机组"],
-    #                   ["市场化"],"2023-01-01","2023-01-31")
+    getContractDetail(["瑞金厂/20kV.#1机福建中燃电力销售有限公司江西电力市场2023年3月d-3日24时段滚动撮合交易"],["测试#3机组"],
+                      ["市场化"],"2023-03-25","2023-03-30")
     #
     # res = queryLocalContract(unitName=["测试#1机组"],
     #                          contractName=["瑞金二期华能江西能源销售有限责任公司江西电力市场2023年1月份月内连续融合交易"],
@@ -1393,14 +1398,12 @@ if __name__ == '__main__':
     # print(calPeakRatio(res))
 
     #
-    # execAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
-    #                   contractName=[
-    #                       "测试1江西和惠配售电有限公司(增量配电网)年度代理购电挂牌交易（2至12月）",
-    #                   ],
-    #                   unitName=["开封#1"],
-    #                   contractType1=["代理购电"])
+    # execAnalysisData( startDate="2023-03-01", endDate="2023-03-31",
+    #                   contractName=None,
+    #                   unitName=["开封#1","开封#2"],
+    #                   contractType1=["市场化"])
 
     # outputData(["开封#1","开封#2"], startDate="2023-03-15", endDate="2023-03-16")
 
-    execAllTypeAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
-                      unitName=["开封#1","开封#2"])
+    # execAllTypeAnalysisData( startDate="2023-03-15", endDate="2023-03-16",
+    #                   unitName=["开封#1","开封#2"])
