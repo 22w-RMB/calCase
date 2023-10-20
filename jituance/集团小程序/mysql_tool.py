@@ -27,7 +27,7 @@ class MysqlTool:
     def queryProvicneBetweenPrivateData(self):
         cursor = self.db.cursor()
 
-        sql = "select * from data_province_clearing_result dpcr left join unit u on dpcr.unit_id=u.id"
+        sql = "select * from data_province_clearing_result dpcr left join unit u on dpcr.unit_id=u.id where u.enable=1"
 
 
         print(sql)
@@ -43,7 +43,7 @@ class MysqlTool:
     def queryProvicneInnerPrivateData(self):
         cursor = self.db.cursor()
 
-        sql = "select * from group_spot_period_data gppd left join unit u on gppd.owmer_id=u.id"
+        sql = "select * from group_spot_period_data gppd left join unit u on gppd.owmer_id=u.id where u.enable=1"
 
 
         print(sql)
