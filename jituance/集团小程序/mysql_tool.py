@@ -24,10 +24,13 @@ class MysqlTool:
 
 
 
-    def queryProvicneBetweenPrivateData(self):
+    def queryProvicneBetweenPrivateData(self,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
-        sql = "select * from data_province_clearing_result dpcr left join unit u on dpcr.unit_id=u.id where u.enable=1"
+        sql = "select * from data_province_clearing_result dpcr left join unit u on dpcr.unit_id=u.id where u.enable=1 "
+        if startDate !=None and endDate!=None:
+            dateSql = 'and dpcr.date>="' + startDate + '" and dpcr.date<="' + endDate+ '"'
+            sql = sql + dateSql
 
 
         print(sql)
@@ -40,11 +43,13 @@ class MysqlTool:
 
         return [dict(zip(header, row)) for row in res]
 
-    def queryProvicneInnerPrivateData(self):
+    def queryProvicneInnerPrivateData(self,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
-        sql = "select * from group_spot_period_data gppd left join unit u on gppd.owmer_id=u.id where u.enable=1"
-
+        sql = "select * from group_spot_period_data gppd left join unit u on gppd.owner_id=u.id where u.enable=1 "
+        if startDate !=None and endDate!=None:
+            dateSql = 'and gppd.date>="' + startDate + '" and gppd.date<="' + endDate+ '"'
+            sql = sql + dateSql
 
         print(sql)
         cursor.execute(sql)
@@ -64,5 +69,5 @@ if __name__ == '__main__':
 
 
     db = MysqlTool()
-    print(db.queryProvicneBetweenPrivateData()[0])
+    print(db.queryProvicneBetweenPrivateData(startDate="2023-01-01",endDate="2023-01-02")[0])
 

@@ -9,9 +9,8 @@ class CommonCal:
         '''
 
         resultList = []
-
         def processList(l):
-            if l == None:
+            if l == None or l == []:
                 return
 
             if isinstance(l, int) or isinstance(l, float):
@@ -22,9 +21,9 @@ class CommonCal:
                     processList(data)
 
         processList(dataList)
-
-
         return resultList
+
+
 
     @staticmethod
     def getSum( dataList):
@@ -93,11 +92,12 @@ class CommonCal:
             }
 
         else:
+
             print("A、B中存在非列表，无法进行相减")
             return {
-                "diff" : [],
-                "positive_diff": [],
-                "negative_diff": [],
+                "diff" : [None for i in range(0,lenght)],
+                "positive_diff": [None for i in range(0,lenght)],
+                "negative_diff": [None for i in range(0,lenght)],
             }
 
     @staticmethod
@@ -118,9 +118,10 @@ class CommonCal:
 
 
         for i in range(0,len(noneToZero)):
-            if dataList[i] == None and noneToZero[i] ==1  :
+            if dataList[i] == None and noneToZero[i] == 1  :
                 dataList[i] = [0 for i in range(0,lenght)]
 
+        # 是否全部都是列表
         isAllList = True
         for i in range(0, len(dataList)):
             if isinstance(dataList[i], list) == False:
@@ -132,6 +133,7 @@ class CommonCal:
 
             for i in range(0, lenght):
                 for j in range(0, len(dataList)):
+
 
                     if dataList[j][i] == None and noneToZero[j] == 1:
                         dataList[j][i] = 0
@@ -146,46 +148,12 @@ class CommonCal:
                 "sumList": sumList,
             }
         else:
+
             print("A、B中存在非列表，无法进行相加")
             return {
-                "sumList": [],
+                "sumList": [None for i in range(0,lenght)],
             }
 
-
-        # if listA == None and A_NoneToZero:
-        #     listA = [0 for i in range(0,lenght)]
-        #
-        # if listB == None and B_NoneToZero:
-        #     listB = [0 for i in range(0,lenght)]
-        #
-        #
-        # if isinstance(listA,list) and isinstance(listB,list):
-        #
-        #     sumList = [None for i in range(0,lenght)]
-        #
-        #     for i in range(0,lenght):
-        #
-        #         if listA[i] == None and A_NoneToZero:
-        #             listA[i] = 0
-        #
-        #         if listB[i] == None and B_NoneToZero:
-        #             listB[i] = 0
-        #
-        #         if listA[i] == None or listB[i] == None:
-        #             pass
-        #         else:
-        #             sumList[i] = listA[i] - listB[i]
-        #
-        #
-        #     return {
-        #         "sumList" : sumList,
-        #     }
-        #
-        # else:
-        #     print("A、B中存在非列表，无法进行相加")
-        #     return {
-        #         "sumList" : [],
-        #     }
 
 
     @staticmethod
@@ -206,6 +174,46 @@ class CommonCal:
 
         return averageRes
 
+
+
+    @staticmethod
+    def spitWeightedMeanData(numeratorList, denominatorList, lenght=96):
+
+        numDicTemp = {}
+        for num in numeratorList:
+            for i in range(0,len(num)):
+                if i not in numDicTemp.keys():
+                    numDicTemp[i] = []
+                numDicTemp[i].append(num[i])
+
+        denDicTemp = {}
+        for num in denominatorList:
+            for i in range(0,len(num)):
+                if i not in denDicTemp.keys():
+                    denDicTemp[i] = []
+                denDicTemp[i].append(num[i])
+
+        numeratorResLists = []
+        denominatorResLists = []
+        for key in numDicTemp:
+            tempRes = CommonCal.weightedMean(numDicTemp[key],denDicTemp[key],lenght)
+            numeratorResLists.append(tempRes["numeratorList"])
+            denominatorResLists.append(tempRes["denominatorList"])
+
+
+        numerator = CommonCal.conductAdd(numeratorResLists,lenght=lenght)["sumList"]
+        denominator = CommonCal.conductAdd(denominatorResLists,lenght=lenght)["sumList"]
+
+
+        res = CommonCal.weightedMean([numerator], [denominator], lenght=lenght)
+
+
+        return res
+
+
+
+
+
     @staticmethod
     def weightedMean( numeratorList ,denominatorList,lenght=96):
         '''
@@ -215,40 +223,53 @@ class CommonCal:
         :param lenght: 数组长度
         :return:
         '''
+
+
         numeratorResList = [None for i in range(0,lenght)]
         denominatorResList = [None for i in range(0,lenght)]
         numeratorDividedenominatorResList = [None for i in range(0,lenght)]
-        for i in range(0, lenght):
-            for l in range(0,len(numeratorList)):
-                if numeratorList[l] == None:
+        numeratorSum = None
+        denominatorSum = None
+        divideSum = None
+
+        isMul = [True for i in range(0,lenght)]
+        # 判断分子或分母列表中是否存在None或[]
+        isNumOrDenListExistNone = False
+        for l in range(0, len(numeratorList)):
+            # 如果分子存在任意一项为空，则结果为空
+            if numeratorList[l] == None or numeratorList[l]==[]:
+                isNumOrDenListExistNone = True
+                break
+            for i in range(0,lenght):
+                if isMul[i] == False:
                     continue
                 # 如果分子存在任意一项为空，则结果为空
-
-                if numeratorList[l][i] == None:
-                    numeratorResList[i] = None
+                if numeratorList[l][i] == None :
+                    isMul[i] = False
                     continue
-
                 numeratorResList[i] = (1 if numeratorResList[i]==None else numeratorResList[i])*numeratorList[l][i]
 
-            for l in range(0, len(denominatorList)):
-                if denominatorList[l] == None:
+        for l in range(0, len(denominatorList)):
+            # 如果分子存在任意一项为空，则结果为空
+            if denominatorList[l] == None or denominatorList[l]==[]:
+                isNumOrDenListExistNone = True
+                break
+            for i in range(0,lenght):
+                if isMul[i] == False:
                     continue
-                # 如果分母存在任意一项为空，则结果为空
-                if denominatorList[l][i] == None:
-                    denominatorResList[i] = None
+                # 如果分子存在任意一项为空，则结果为空
+                if denominatorList[l][i] == None :
                     continue
-
                 denominatorResList[i] = (0 if denominatorResList[i] == None else denominatorResList[i]) + denominatorList[l][i]
 
+
+
+        for i in range(0, lenght):
             if numeratorResList[i] == None or denominatorResList[i]==None or denominatorResList[i]==0:
                 numeratorDividedenominatorResList[i] = None
             else:
                 numeratorDividedenominatorResList[i] = numeratorResList[i]/denominatorResList[i]
 
-        numeratorSum = None
-        denominatorSum = None
-        divideSum = None
-        for i in range(0, lenght):
             if numeratorResList[i] != None:
                 if numeratorSum == None:
                     numeratorSum = numeratorResList[i]
@@ -264,21 +285,31 @@ class CommonCal:
         if denominatorSum == None  or denominatorSum == 0  or numeratorSum==None:
             pass
         else:
-            print(numeratorSum)
-            print(denominatorSum)
+
             divideSum = numeratorSum/denominatorSum
 
-        return {
-            "numeratorList": numeratorResList,
-            "denominatorList": denominatorResList,
-            "divideList": numeratorDividedenominatorResList,
-            "numeratorSum": numeratorSum,
-            "denominatorSum": denominatorSum,
-            "divideSum": divideSum,
-        }
+        if isNumOrDenListExistNone:
+            return {
+                "numeratorList": [None for i in range(0,lenght)],
+                "denominatorList": [None for i in range(0,lenght)],
+                "divideList": [None for i in range(0,lenght)],
+                "numeratorSum": None,
+                "denominatorSum": None,
+                "divideSum": None,
+            }
+        else:
+            return {
+                "numeratorList": numeratorResList,
+                "denominatorList": denominatorResList,
+                "divideList": numeratorDividedenominatorResList,
+                "numeratorSum": numeratorSum,
+                "denominatorSum": denominatorSum,
+                "divideSum": divideSum,
+            }
 
     @staticmethod
     def filterNeedKeyFromDbData(dataList,keys):
+
         keysList = []
         if isinstance(keys,list):
             keysList.extend(keys)
@@ -291,7 +322,6 @@ class CommonCal:
             keyDict[key] = []
 
         for data in dataList:
-
             for key in keyDict:
                 if key in data.keys():
                     keyDict[key].append( data[key] )
