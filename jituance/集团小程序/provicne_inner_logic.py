@@ -18,7 +18,6 @@ class ProInLogic:
             "run_capacity_list": run_capacity_list,
         }
 
-
     # 变动成本
     @staticmethod
     def otherChangeCostProcess(dataList, lenght=96):
@@ -46,7 +45,6 @@ class ProInLogic:
             "change_cost_price_list": change_cost_price_list,
             "change_cost_fee_list": change_cost_fee_list,
         }
-
 
     # 中长期电量、电价、费用
     @staticmethod
@@ -235,14 +233,14 @@ class ProInLogic:
         ]
         getNeedKeyData = CommonCal.filterNeedKeyFromDbData(dataList, needKeys)
 
-        # 获取日前结算量价费
+        # 获取实时结算量价费
         realTime_ele_price_weightedmean = CommonCal.spitWeightedMeanData(
             numeratorList=[getNeedKeyData["real_time_ele"], getNeedKeyData["real_time_price"]],
             denominatorList=[getNeedKeyData["real_time_ele"]],
             lenght=lenght
         )
 
-        # 获取日前偏差电量
+        # 获取实时偏差电量
         realTime_diffEle = []
         realTime_positive_diffEle = []
         realTime_negative_diffEle = []
@@ -258,13 +256,13 @@ class ProInLogic:
                                                   getNeedKeyData["change_cost"][i], B_NoneToZero=True)
             realTime_price_sub_cost.append(diffPrice["diff"])
 
-        # 获取日前正偏差量价费
+        # 获取实时正偏差量价费
         realTime_positive_weightedmean = CommonCal.spitWeightedMeanData(
             numeratorList=[realTime_positive_diffEle, realTime_price_sub_cost],
             denominatorList=[realTime_positive_diffEle],
             lenght=lenght
         )
-        # 获取日前负偏差量价费
+        # 获取实时负偏差量价费
         realTime_negative_weightedmean = CommonCal.spitWeightedMeanData(
             numeratorList=[realTime_negative_diffEle, realTime_price_sub_cost],
             denominatorList=[realTime_negative_diffEle],
@@ -337,12 +335,12 @@ class ProInLogic:
 
     # 收益、综合价
     @staticmethod
-    def otherInComeProcess(dataList):
-        runCapacity = ProInLogic.runCapacityProcess(dataList)
-        changeCost = ProInLogic.otherChangeCostProcess(dataList)
-        mlt = ProInLogic.otherMltProcess(dataList)
-        dayAhead = ProInLogic.otherDayAheadProcess(dataList)
-        realTime = ProInLogic.otherRealTimeProcess(dataList)
+    def otherInComeProcess(dataList, lenght=96):
+        runCapacity = ProInLogic.runCapacityProcess(dataList,lenght)
+        changeCost = ProInLogic.otherChangeCostProcess(dataList,lenght)
+        mlt = ProInLogic.otherMltProcess(dataList,lenght)
+        dayAhead = ProInLogic.otherDayAheadProcess(dataList,lenght)
+        realTime = ProInLogic.otherRealTimeProcess(dataList,lenght)
 
         # 中长期收益
         mlt_income_list = mlt["mlt_diff_fee_list"]
@@ -450,7 +448,319 @@ class ProInLogic:
             "spot_incomeIncrease_lsit": spot_incomeIncrease_lsit,
         }
 
+    # 蒙西中长期电量、电价、费用
+    @staticmethod
+    def MXMltProcess(dataList, lenght=96):
 
+        needKeys = [
+            "mlt_ele",
+            "mlt_price",
+        ]
+        getNeedKeyData = CommonCal.filterNeedKeyFromDbData(dataList, needKeys)
+
+        mlt_ele_price_weightedmean = CommonCal.spitWeightedMeanData(
+            numeratorList=[getNeedKeyData["mlt_ele"], getNeedKeyData["mlt_price"]],
+            denominatorList=[getNeedKeyData["mlt_ele"]],
+            lenght=lenght
+        )
+
+
+        # 中长期电量*（中长期均价-统一出清均价）
+
+
+        # 中长期收入
+        mlt_ele_list = mlt_ele_price_weightedmean["denominatorList"]
+        mlt_ele_sum = mlt_ele_price_weightedmean["denominatorSum"]
+        mlt_price_list = mlt_ele_price_weightedmean["divideList"]
+        mlt_price_sum = mlt_ele_price_weightedmean["divideSum"]
+        mlt_fee_list = mlt_ele_price_weightedmean["numeratorList"]
+        mlt_fee_sum = mlt_ele_price_weightedmean["numeratorSum"]
+
+        return {
+            "mlt_ele_list": mlt_ele_list,
+            "mlt_ele_sum": mlt_ele_sum,
+            "mlt_price_list": mlt_price_list,
+            "mlt_price_sum": mlt_price_sum,
+            "mlt_fee_list": mlt_fee_list,
+            "mlt_fee_sum": mlt_fee_sum,
+        }
+
+    # 蒙西实时
+    @staticmethod
+    def MXRealTimeProcess(dataList, lenght=96):
+
+        needKeys = [
+            "mlt_ele",
+            "real_time_ele",
+            "real_time_price",
+            "change_cost",
+        ]
+        getNeedKeyData = CommonCal.filterNeedKeyFromDbData(dataList, needKeys)
+
+        # 获取日前结算量价费
+        realTime_ele_price_weightedmean = CommonCal.spitWeightedMeanData(
+            numeratorList=[getNeedKeyData["real_time_ele"], getNeedKeyData["real_time_price"]],
+            denominatorList=[getNeedKeyData["real_time_ele"]],
+            lenght=lenght
+        )
+
+        # 获取日前偏差电量
+        realTime_diffEle = []
+        realTime_positive_diffEle = []
+        realTime_negative_diffEle = []
+        realTime_price_sub_cost = []
+
+        for i in range(0,len( getNeedKeyData["real_time_ele"])):
+            diffEle = CommonCal.conductSubtract(getNeedKeyData["real_time_ele"][i], getNeedKeyData["mlt_ele"][i])
+            realTime_diffEle.append(diffEle["diff"])
+            realTime_positive_diffEle.append(diffEle["positive_diff"])
+            realTime_negative_diffEle.append(diffEle["negative_diff"])
+
+            diffPrice = CommonCal.conductSubtract(getNeedKeyData["real_time_price"][i],
+                                                  getNeedKeyData["change_cost"][i], B_NoneToZero=True)
+            realTime_price_sub_cost.append(diffPrice["diff"])
+
+        # 获取日前正偏差量价费
+        realTime_positive_weightedmean = CommonCal.spitWeightedMeanData(
+            numeratorList=[realTime_positive_diffEle, realTime_price_sub_cost],
+            denominatorList=[realTime_positive_diffEle],
+            lenght=lenght
+        )
+        # 获取日前负偏差量价费
+        realTime_negative_weightedmean = CommonCal.spitWeightedMeanData(
+            numeratorList=[realTime_negative_diffEle, realTime_price_sub_cost],
+            denominatorList=[realTime_negative_diffEle],
+            lenght=lenght
+        )
+
+
+
+        # 实时结算
+        realTime_ele_list = realTime_ele_price_weightedmean["denominatorList"]
+        realTime_ele_sum = realTime_ele_price_weightedmean["denominatorSum"]
+        realTime_price_list = realTime_ele_price_weightedmean["divideList"]
+        realTime_price_sum = realTime_ele_price_weightedmean["divideSum"]
+        realTime_fee_list = realTime_ele_price_weightedmean["numeratorList"]
+        realTime_fee_sum = realTime_ele_price_weightedmean["numeratorSum"]
+
+        # 实时正偏差
+        realTime_positive_ele_list = realTime_positive_weightedmean["denominatorList"]
+        realTime_positive_ele_sum = realTime_positive_weightedmean["denominatorSum"]
+        realTime_positive_price_sub_cost_list = realTime_positive_weightedmean["divideList"]
+        realTime_positive_price_sub_cost_sum = realTime_positive_weightedmean["divideSum"]
+        realTime_positive_fee_list = realTime_positive_weightedmean["numeratorList"]
+        realTime_positive_fee_sum = realTime_positive_weightedmean["numeratorSum"]
+
+        # 实时负偏差
+        realTime_negative_ele_list = realTime_negative_weightedmean["denominatorList"]
+        realTime_negative_ele_sum = realTime_negative_weightedmean["denominatorSum"]
+        realTime_negative_price_sub_cost_list = realTime_negative_weightedmean["divideList"]
+        realTime_negative_price_sub_cost_sum = realTime_negative_weightedmean["divideSum"]
+        realTime_negative_fee_list = realTime_negative_weightedmean["numeratorList"]
+        realTime_negative_fee_sum = realTime_negative_weightedmean["numeratorSum"]
+
+        return {
+            "realTime_ele_list": realTime_ele_list,
+            "realTime_ele_sum": realTime_ele_sum,
+            "realTime_price_list": realTime_price_list,
+            "realTime_price_sum": realTime_price_sum,
+            "realTime_fee_list": realTime_fee_list,
+            "realTime_fee_sum": realTime_fee_sum,
+            "realTime_positive_ele_list": realTime_positive_ele_list,
+            "realTime_positive_ele_sum": realTime_positive_ele_sum,
+            "realTime_positive_price_sub_cost_list": realTime_positive_price_sub_cost_list,
+            "realTime_positive_price_sub_cost_sum": realTime_positive_price_sub_cost_sum,
+            "realTime_positive_fee_list": realTime_positive_fee_list,
+            "realTime_positive_fee_sum": realTime_positive_fee_sum,
+            "realTime_negative_ele_list": realTime_negative_ele_list,
+            "realTime_negative_ele_sum": realTime_negative_ele_sum,
+            "realTime_negative_price_sub_cost_list": realTime_negative_price_sub_cost_list,
+            "realTime_negative_price_sub_cost_sum": realTime_negative_price_sub_cost_sum,
+            "realTime_negative_fee_list": realTime_negative_fee_list,
+            "realTime_negative_fee_sum": realTime_negative_fee_sum,
+        }
+
+    # 蒙西收益、综合价
+    @staticmethod
+    def MXInComeProcess(dataList, lenght=96):
+        runCapacity = ProInLogic.runCapacityProcess(dataList,lenght)
+        changeCost = ProInLogic.otherChangeCostProcess(dataList,lenght)
+        mlt = ProInLogic.MXMltProcess(dataList,lenght)
+        realTime = ProInLogic.MXRealTimeProcess(dataList,lenght)
+
+
+        # 中长期收入
+        mlt_fee_list = mlt["mlt_fee_sum"]
+        # 中长期量*（中长期价-统一出清价）费用
+        pass
+
+
+        # 实时出清电量
+        realTime_ele_list = realTime["realTime_ele_list"]
+        # 实时正偏差收益
+        realTime_positive_income_list = realTime["realTime_positive_fee_list"]
+        # 实时负偏差收益
+        realTime_negative_income_list = realTime["realTime_negative_fee_list"]
+        # 实时结算收益
+        realTime_settlement_income_list = CommonCal.conductAdd( [realTime_positive_income_list, realTime_negative_income_list] )["sumList"]
+        # 实时收益
+        realTime_income_list = None
+        # 实时正偏差电量*正偏差电价
+        realTime_positive_fee_list = realTime["realTime_positive_diff_fee_list"]
+        # 实时负偏差电量*负偏差电价
+        realTime_negative_fee_list = realTime["realTime_negative_diff_fee_list"]
+
+
+        # 计算综合价的费用
+        comprehensive_income_list = None
+
+        # 计算综合价的费用/实时出清电量
+        comprehensive = CommonCal.weightedMean([comprehensive_income_list],[realTime_ele_list])
+        # 综合电价
+        comprehensive_price_list = comprehensive["divideList"]
+
+        # 现货增收
+        spot_incomeIncrease_lsit = realTime_settlement_income_list
+
+        # 中长期收益
+        mlt_income_list = CommonCal.conductSubtract(realTime_income_list,spot_incomeIncrease_lsit)
+
+        return {
+            # 运行容量
+            "run_capacity_list": runCapacity["run_capacity_list"],
+
+            # 变动成本需要的电量
+            "change_cost_ele_list": changeCost["change_cost_ele_list"],
+            # 变动成本
+            "change_cost_price_list": changeCost["change_cost_price_list"],
+            # 变动成本费用
+            "change_cost_fee_list": changeCost["change_cost_fee_list"],
+
+            # 中长期电量
+            "mlt_ele_list": mlt["mlt_ele_list"],
+            # 中长期均价
+            "mlt_price_list": mlt["mlt_price_list"],
+            # 中长期费用
+            "mlt_fee_list": mlt["mlt_fee_list"],
+            # 中长期收益
+            "mlt_income_list": mlt_income_list,
+
+            # 日前出清电量
+            "dayAhead_ele_list": [None for i in range(0,lenght)],
+            # 日前出清均价
+            "dayAhead_price_list": [None for i in range(0,lenght)],
+            # 日前出清费用
+            "dayAhead_fee_list": [None for i in range(0,lenght)],
+            # 日前偏差收益
+            "dayAhead_settlement_income_list": [None for i in range(0,lenght)],
+            # 日前总收益
+            "dayAhead_income_list": [None for i in range(0,lenght)],
+
+            # 实时出清电量
+            "realTime_ele_list": realTime["realTime_ele_list"],
+            # 实时出清均价
+            "realTime_price_list": realTime["realTime_price_list"],
+            # 实时出清费用
+            "realTime_fee_list": realTime["realTime_fee_list"],
+            # 实时偏差收益
+            "realTime_settlement_income_list": realTime_settlement_income_list,
+            # 实时总收益
+            "realTime_income_list": realTime_income_list,
+
+            # 计算综合价的费用
+            "comprehensive_income_list": comprehensive_income_list,
+            # 计算综合价的电量
+            "comprehensive_ele_list": realTime_ele_list,
+            # 综合价
+            "comprehensive_price_list": comprehensive_price_list,
+            # 现货增收
+            "spot_incomeIncrease_lsit": spot_incomeIncrease_lsit,
+        }
+
+    @staticmethod
+    def addMultiIncome(inComeList):
+
+        change_cost_ele_list
+        change_cost_fee_list
+        mlt_ele_list
+        mlt_fee_list
+        mlt_income_list
+        dayAhead_ele_list
+        dayAhead_fee_list
+        dayAhead_settlement_income_list
+        realTime_ele_list
+        realTime_fee_list
+        realTime_settlement_income_list
+        comprehensive_income_list
+        comprehensive_ele_list
+        spot_incomeIncrease_lsit
+
+        return {
+            # 运行容量
+            "run_capacity_list": None,
+
+            # 变动成本需要的电量
+            "change_cost_ele_list": changeCost["change_cost_ele_list"],
+            # 变动成本
+            "change_cost_price_list": changeCost["change_cost_price_list"],
+            # 变动成本费用
+            "change_cost_fee_list": changeCost["change_cost_fee_list"],
+
+            # 中长期电量
+            "mlt_ele_list": mlt["mlt_ele_list"],
+            # 中长期均价
+            "mlt_price_list": mlt["mlt_price_list"],
+            # 中长期费用
+            "mlt_fee_list": mlt["mlt_fee_list"],
+            # 中长期收益
+            "mlt_income_list": mlt_income_list,
+
+            # 日前出清电量
+            "dayAhead_ele_list": [None for i in range(0,lenght)],
+            # 日前出清均价
+            "dayAhead_price_list": [None for i in range(0,lenght)],
+            # 日前出清费用
+            "dayAhead_fee_list": [None for i in range(0,lenght)],
+            # 日前偏差收益
+            "dayAhead_settlement_income_list": [None for i in range(0,lenght)],
+            # 日前总收益
+            "dayAhead_income_list": [None for i in range(0,lenght)],
+
+            # 实时出清电量
+            "realTime_ele_list": realTime["realTime_ele_list"],
+            # 实时出清均价
+            "realTime_price_list": realTime["realTime_price_list"],
+            # 实时出清费用
+            "realTime_fee_list": realTime["realTime_fee_list"],
+            # 实时偏差收益
+            "realTime_settlement_income_list": realTime_settlement_income_list,
+            # 实时总收益
+            "realTime_income_list": realTime_income_list,
+
+            # 计算综合价的费用
+            "comprehensive_income_list": comprehensive_income_list,
+            # 计算综合价的电量
+            "comprehensive_ele_list": realTime_ele_list,
+            # 综合价
+            "comprehensive_price_list": comprehensive_price_list,
+            # 现货增收
+            "spot_incomeIncrease_lsit": spot_incomeIncrease_lsit,
+        }
+
+    @staticmethod
+    def execEntry(dataList, lenght=96):
+
+        mxDataList = []
+        otherDataList = []
+
+        for data in dataList:
+            if data["province_id"] == "15":
+                mxDataList.append(data)
+            else:
+                otherDataList.append(data)
+
+        mxRes = ProInLogic.MXInComeProcess(mxDataList,lenght)
+        otherRes = ProInLogic.MXInComeProcess(otherDataList,lenght)
 
 
 

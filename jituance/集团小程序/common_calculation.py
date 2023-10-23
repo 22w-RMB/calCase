@@ -119,16 +119,23 @@ class CommonCal:
 
         for i in range(0,len(noneToZero)):
             if dataList[i] == None and noneToZero[i] == 1  :
-                dataList[i] = [0 for i in range(0,lenght)]
+                dataList[i] = [None for i in range(0,lenght)]
 
         # 是否全部都是列表
         isAllList = True
+        # 判断所有列表所有值是否都为None
+        isAllNone = True
         for i in range(0, len(dataList)):
             if isinstance(dataList[i], list) == False:
                 isAllList = False
-                break
+            else:
+                for j in dataList[i]:
+                    if j != None:
+                        isAllNone = False
+                        break
 
-        if isAllList:
+        # 只有都是列表 且 且其中存在数据时
+        if isAllList == True and isAllNone == False:
             sumList = [None for i in range(0, lenght)]
 
             for i in range(0, lenght):
