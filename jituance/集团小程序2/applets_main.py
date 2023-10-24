@@ -1,5 +1,5 @@
-from jituance.集团小程序.mysql_tool import MysqlTool
-from jituance.集团小程序.provicne_inner_logic import ProInLogic
+from jituance.集团小程序2.mysql_tool import MysqlTool
+from jituance.集团小程序2.provicne_inner_logic import ProInLogic
 from datetime import datetime
 
 businessTypeEnum = {
@@ -71,19 +71,18 @@ class Applkets:
 
 
 
-        d = ProInLogic.otherInComeProcess([])
-        print(d)
+        d = ProInLogic.execEntry(dataList,96)
 
         # d = ProInLogic.otherInComeProcess(dataList)
-        # print(d["mlt_ele_list"])
-        # print(d["dayAhead_ele_list"])
-        # print(d["realTime_ele_list"])
-        # print(d["mlt_price_list"])
-        # print(d["dayAhead_price_list"])
-        # print(d["realTime_price_list"])
-        # print(d["change_cost_price_list"])
-        # print(d["realTime_income_list"])
-        # print(d["spot_incomeIncrease_lsit"])
+        print(d["mlt_ele_list"])
+        print(d["dayAhead_ele_list"])
+        print(d["realTime_ele_list"])
+        print(d["mlt_price_list"])
+        print(d["dayAhead_price_list"])
+        print(d["realTime_price_list"])
+        print(d["change_cost_price_list"])
+        print(d["realTime_income_list"])
+        print(d["spot_incomeIncrease_lsit"])
 
         pass
 
@@ -142,6 +141,6 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("蒙西","全能源类型","2023-10-01","2023-10-01")
+    app.calProvicneInnerPrivateData("甘肃","全能源类型","2023-10-01","2023-10-01")
 
     pass
