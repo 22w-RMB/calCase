@@ -197,37 +197,46 @@ class CommonCal:
 
         if isNumOrDenNotNone:
 
-            isNotError = True
+            isNumNotError = True
+
 
             for l in range(0, len(numeratorList)):
 
                 if isinstance(numeratorList[l] ,list) == False:
-                    isNotError = False
+                    isNumNotError = False
                     break
                 if len(numeratorList[l])!=length  :
-                    isNotError = False
+                    isNumNotError = False
                     break
 
+            if isNumNotError == True:
                 for i in range(0,length):
-                    if numeratorList[l][i] == None :
+                    iIsNone = False
+
+                    for l in range(0, len(numeratorList)):
+
+                        if numeratorList[l][i] == None :
+                            iIsNone = True
+                            continue
+
+                        numeratorResList[i] = (1 if numeratorResList[i]==None else numeratorResList[i])*numeratorList[l][i]
+                    if iIsNone:
                         numeratorResList[i] = None
-                        continue
 
-                    numeratorResList[i] = (1 if numeratorResList[i]==None else numeratorResList[i])*numeratorList[l][i]
-
+            isDenNotError = True
             for l in range(0, len(denominatorList)):
                 if isinstance(denominatorList[l], list) == False:
-                    isNotError = False
+                    isDenNotError = False
                     break
                 if len(denominatorList[l]) != length:
-                    isNotError = False
+                    isDenNotError = False
                     break
                 for i in range(0, length):
                     if denominatorList[l][i] == None:
                         continue
                     denominatorResList[i] = (0 if denominatorResList[i] == None else denominatorResList[i]) + denominatorList[l][i]
 
-            if isNotError:
+            if isNumNotError == True and isDenNotError == True:
 
                 for i in range(0, length):
                     if numeratorResList[i] == None or denominatorResList[i]==None or denominatorResList[i]==0:
@@ -254,6 +263,9 @@ class CommonCal:
                     pass
                 else:
                     divideSum = numeratorSum/denominatorSum
+            if isNumNotError == False or isDenNotError == False:
+                numeratorResList = [None for i in range(0,length)]
+                denominatorResList = [None for i in range(0,length)]
 
         return {
             "numeratorList": numeratorResList,

@@ -60,7 +60,7 @@ class ProInLogic:
         # 计算日前偏差电量，日前-中长期，任意一个为空，则结果为空
         dayAhead_diffEle_cal_res = CommonCal.conductSubtract(data["day_ahead_ele"],data["mlt_ele"])
         # 计算日前电价-变动成本，日前电价为空时，结果为空，变动成本为空时，变动成本当0计算
-        dayAhead_diffPrice_cal_res = CommonCal.conductSubtract(data["day_ahead_price"],data["change_cost"],B_NoneToZero=True)
+        dayAhead_diffPrice_cal_res = CommonCal.conductSubtract(data["day_ahead_price"],data["change_cost"],B_NoneToZero=True)["diff"]
 
         # 日前偏差电量
         dayAhead_diff_ele_list = dayAhead_diffEle_cal_res["diff"]
@@ -131,7 +131,7 @@ class ProInLogic:
         # 计算实时偏差电量，实时-中长期，任意一个为空，则结果为空
         realTime_diffEle_cal_res = CommonCal.conductSubtract(data["real_time_ele"],data["day_ahead_ele"])
         # 计算实时电价-变动成本，实时电价为空时，结果为空，变动成本为空时，变动成本当0计算
-        realTime_diffPrice_cal_res = CommonCal.conductSubtract(data["real_time_price"],data["change_cost"],B_NoneToZero=True)
+        realTime_diffPrice_cal_res = CommonCal.conductSubtract(data["real_time_price"],data["change_cost"],B_NoneToZero=True)["diff"]
 
         # 实时偏差电量
         realTime_diff_ele_list = realTime_diffEle_cal_res["diff"]
@@ -164,8 +164,8 @@ class ProInLogic:
         realTime_negative_diff_income_list = realTime_negative_diff_res["numeratorList"]
         # 实时结算收益
         realTime_settlement_income_list = CommonCal.conductAdd([realTime_positive_diff_income_list,realTime_negative_diff_income_list])
-        # 日前收益
-        realTime_income_list = CommonCal.conductAdd([realTime_settlement_income_list,mlt_income_list])
+        # 实时收益
+        realTime_income_list = CommonCal.conductAdd([realTime_settlement_income_list,dayAhead_income_list])
 
         # 实时偏差电量*实时出清电价计算
         realTime_positive_diffeleMulPrice_res = CommonCal.weightedMean(
@@ -266,9 +266,9 @@ class ProInLogic:
             fieldDataDict[field] = []
 
         for data in dataList:
-            for field in data:
-                if field in fieldNameList:
-                    fieldDataDict[field].append(data[field])
+            for field in fieldNameList:
+                # if field in data.keys():
+                fieldDataDict[field].append(data[field])
 
         for field in fieldNameList:
             fieldDataDict[field] = CommonCal.conductAdd(fieldDataDict[field])

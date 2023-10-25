@@ -141,6 +141,6 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("甘肃","全能源类型","2023-10-01","2023-10-01")
+    app.calProvicneInnerPrivateData("山西","全能源类型","2023-10-01","2023-10-01")
 
     pass
