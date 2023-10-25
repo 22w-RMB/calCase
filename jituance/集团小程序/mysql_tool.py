@@ -46,8 +46,8 @@ class MysqlTool:
     def queryProvicneInnerPrivateData(self,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
-        sql = 'select gppd.*,u.business_type from group_spot_period_data gppd left join unit u on gppd.owner_id=u.id left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date where u.enable=1 '
-
+        sql = "select gppd.*,u.business_type,u.capacity,gpd.clearing_price " \
+              "from group_spot_period_data gppd left join unit u on gppd.owner_id=u.id left join group_public_data gpd on gppd.date=gpd.date and gppd.province_id=gpd.province_id and gpd.`type` =1 where u.enable=1 "
         if startDate !=None and endDate!=None:
             dateSql = 'and gppd.date>="' + startDate + '" and gppd.date<="' + endDate+ '"'
             sql = sql + dateSql
@@ -62,6 +62,23 @@ class MysqlTool:
 
         return [dict(zip(header, row)) for row in res]
 
+    def queryMXUnifiedPriceData(self,startDate=None,endDate=None):
+        cursor = self.db.cursor()
+
+        sql = 'select date,province_id,clearing_price from group_public_data gpd where province_id="15" '
+        if startDate != None and endDate != None:
+            dateSql = 'and date>="' + startDate + '" and date<="' + endDate + '"'
+            sql = sql + dateSql
+
+        print(sql)
+        cursor.execute(sql)
+
+        header = [col[0] for col in cursor.description]
+
+        res = cursor.fetchall()
+        cursor.close()
+
+        return [dict(zip(header, row)) for row in res]
 
     def close(self):
         self.db.close()
@@ -70,5 +87,5 @@ if __name__ == '__main__':
 
 
     db = MysqlTool()
-    print(db.queryProvicneBetweenPrivateData(startDate="2023-01-01",endDate="2023-01-02")[0])
+    print(db.queryProvicneInnerPrivateData(startDate="2023-10-01",endDate="2023-10-02"))
 

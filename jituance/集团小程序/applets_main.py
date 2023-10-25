@@ -57,6 +57,9 @@ class Applkets:
             if dataType == "省内私有数据":
                 dataList = self.transformStringToList(db.queryProvicneInnerPrivateData(startDate,endDate))
 
+            if dataType == "蒙西统一出清价格":
+                dataList = self.transformStringToList(db.queryMXUnifiedPriceData(startDate, endDate))
+
         except Exception as e:
             db.close()
 
@@ -67,23 +70,25 @@ class Applkets:
     def calProvicneInnerPrivateData(self,province,businessType,startDate,endDate):
 
         dataList = self.provicneInnerPrivateFilterCondititon(province,businessType,startDate,endDate)
+        print(len(dataList))
         print(dataList[0])
 
+        d = ProInLogic.execEntry(dataList)
 
-
-        d = ProInLogic.otherInComeProcess([])
-        print(d)
-
-        # d = ProInLogic.otherInComeProcess(dataList)
-        # print(d["mlt_ele_list"])
-        # print(d["dayAhead_ele_list"])
-        # print(d["realTime_ele_list"])
-        # print(d["mlt_price_list"])
-        # print(d["dayAhead_price_list"])
-        # print(d["realTime_price_list"])
-        # print(d["change_cost_price_list"])
-        # print(d["realTime_income_list"])
-        # print(d["spot_incomeIncrease_lsit"])
+        print(d["mlt_ele_list"])
+        print(d["dayAhead_ele_list"])
+        print(d["realTime_ele_list"])
+        print(d["mlt_price_list"])
+        print(d["dayAhead_price_list"])
+        print(d["realTime_price_list"])
+        print(d["change_cost_price_list"])
+        print(d["realTime_income_list"])
+        print(d["mlt_ele_sum"])
+        print(d["mlt_price_sum"])
+        print(d["mlt_income_sum"])
+        print(d["dayAhead_settlement_income_sum"])
+        print(d["realTime_settlement_income_sum"])
+        print(d["spot_incomeIncrease_sum"])
 
         pass
 
@@ -106,23 +111,24 @@ class Applkets:
 
         return dataList
 
-    # 筛选条件
+    # 省内私有数据筛选条件
     def provicneInnerPrivateFilterCondititon(self,province,businessType,startDate,endDate):
 
         # sd = datetime.strptime(startDate, "%Y-%m-%d")
         # ed = datetime.strptime(endDate, "%Y-%m-%d")
         sqlDataList = self.getSqlData("省内私有数据",startDate,endDate)
-        # print("数据库查询的数据",sqlDataList)
+        print(len(sqlDataList))
 
         provinceId = provinceIdEnum[province]
         businessType = businessTypeEnum[businessType]
 
         filterDataList = []
         for data in sqlDataList:
-            if data["province_id"] ==None:
+            if data["province_id"] == None:
                 continue
             if provinceId != "group" and int(data["province_id"]) != provinceId:
                 continue
+
             if businessType != "energy" and int(data["business_type"]) != businessType:
                 continue
 
@@ -136,12 +142,11 @@ class Applkets:
 
 
 
-
         pass
 
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("蒙西","全能源类型","2023-10-01","2023-10-01")
+    app.calProvicneInnerPrivateData("甘肃","全能源类型","2023-10-01","2023-10-01")
 
     pass
