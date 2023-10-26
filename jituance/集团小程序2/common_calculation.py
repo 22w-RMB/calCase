@@ -23,7 +23,6 @@ class CommonCal:
         processList(dataList)
         return resultList
 
-
     @staticmethod
     def getSum( dataList):
         '''
@@ -275,6 +274,24 @@ class CommonCal:
             "denominatorSum": denominatorSum,
             "divideSum": divideSum,
         }
+
+    @staticmethod
+    def conductAddMulField(fieldNameList, dataList, length=96):
+
+        fieldDataDict = {}
+
+        for field in fieldNameList:
+            fieldDataDict[field] = []
+
+        for data in dataList:
+            for field in fieldNameList:
+                # if field in data.keys():
+                fieldDataDict[field].append(data[field])
+
+        for field in fieldNameList:
+            fieldDataDict[field] = CommonCal.conductAdd(fieldDataDict[field], length=length)
+
+        return fieldDataDict
 
 if __name__ == '__main__':
     print(CommonCal.weightedMean(
