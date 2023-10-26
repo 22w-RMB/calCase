@@ -16,7 +16,6 @@ class MysqlTool:
         try:
             self.db = pymysql.connect(host=host,port=port,user=user,password=password,database=database,charset=charset)
             print("连接数据库成功")
-            self.db.autocommit(1)
         except:
             print("连接数据库失败")
 
@@ -24,14 +23,19 @@ class MysqlTool:
 
 
 
-    def queryProvicneBetweenPrivateData(self,startDate=None,endDate=None):
+    def queryProvicneBetweenPrivateData(self,provinceIdList,businessTypeList,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
         sql = "select * from data_province_clearing_result dpcr left join unit u on dpcr.unit_id=u.id where u.enable=1 "
         if startDate !=None and endDate!=None:
-            dateSql = 'and dpcr.date>="' + startDate + '" and dpcr.date<="' + endDate+ '"'
+            dateSql = ' and dpcr.date>="' + startDate + '" and dpcr.date<="' + endDate+ '"'
             sql = sql + dateSql
 
+        provinceIdSql = ' and u.province_id in ( ' + (",".join(provinceIdList)) + ')'
+        sql = sql + provinceIdSql
+
+        businessTypeSql = ' and u.business_type in ( ' + (",".join( businessTypeList ) ) +  ')'
+        sql = sql + businessTypeSql
 
         print(sql)
         cursor.execute(sql)
@@ -43,14 +47,28 @@ class MysqlTool:
 
         return [dict(zip(header, row)) for row in res]
 
-    def queryProvicneInnerPrivateData(self,startDate=None,endDate=None):
+    def queryProvicneInnerPrivateData(self,provinceIdList,businessTypeList,startDate=None,endDate=None,isNeedUnifiedPrice=True):
         cursor = self.db.cursor()
 
-        sql = 'select gppd.*,u.business_type from group_spot_period_data gppd left join unit u on gppd.owner_id=u.id left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date where u.enable=1 '
+        sql = 'select gppd.*,u.business_type from group_spot_period_data gppd left join unit u on gppd.owner_id=u.id  '
+
+        if isNeedUnifiedPrice:
+            sql = sql + "left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
+
+        whereSql = "where u.enable=1 "
+        sql += whereSql
+
 
         if startDate !=None and endDate!=None:
-            dateSql = 'and gppd.date>="' + startDate + '" and gppd.date<="' + endDate+ '"'
+            dateSql = ' and gppd.date>="' + startDate + '" and gppd.date<="' + endDate+ '"'
             sql = sql + dateSql
+
+        provinceIdSql = ' and u.province_id in ( ' + (",".join(provinceIdList)) + ')'
+        sql = sql + provinceIdSql
+
+        businessTypeSql = ' and u.business_type in ( ' + (",".join( businessTypeList ) ) +  ')'
+        sql = sql + businessTypeSql
+
 
         print(sql)
         cursor.execute(sql)
@@ -69,6 +87,6 @@ class MysqlTool:
 if __name__ == '__main__':
 
 
-    db = MysqlTool()
-    print(db.queryProvicneBetweenPrivateData(startDate="2023-01-01",endDate="2023-01-02")[0])
-
+    # db = MysqlTool()
+    # print(db.queryProvicneBetweenPrivateData(startDate="2023-01-01",endDate="2023-01-02")[0])
+    print(",".join([1, 2, 3]))

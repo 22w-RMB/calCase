@@ -4,40 +4,18 @@ from jituance.集团小程序2.provicne_between_logic import ProBeLogic
 from datetime import datetime
 
 businessTypeEnum = {
-    "全能源类型" :  "energy",
     "火电" :  1,
     "水电" :  2,
     "风电" :  4,
     "光伏" :  3,
 }
 
-provinceIdEnum = {
-    "天津": 12,
-    "河北": 13,
-    "山西": 14,
-    "蒙西": 15,
-    "蒙东": 150,
-    "辽宁": 21,
-    "吉林": 22,
-    "黑龙江": 23,
-    "福建": 35,
-    "四川": 51,
-    "西藏": 54,
-    "陕西": 61,
-    "甘肃": 62,
-    "青海": 63,
-    "宁夏": 64,
-    "新疆": 65,
+provinceInIdEnum = {
     "山西": 14,
     "广东": 44,
     "甘肃": 62,
     "山东": 37,
     "蒙西": 15,
-    "出清": 50,
-    "安徽": 34,
-    "浙江": 33,
-    "上海": 31,
-    "全集团" :"group",
 }
 
 provinceBetIdEnum = {
@@ -59,7 +37,6 @@ provinceBetIdEnum = {
     "西藏": 54,
     "重庆": 50,
     "湖北": 42,
-    "全集团" :"group",
 }
 
 
@@ -69,15 +46,42 @@ class Applkets:
 
         pass
 
-    def getSqlData(self,dataType,startDate,endDate):
+    def sqlQueryData(self, privateDataType,  provinceName ,businessTypeName,startDate,endDate):
+
+        provinceIdList = []
+        businessTypeList = []
+        provinceEnum = []
+
+        if privateDataType == "省间私有":
+            provinceEnum = provinceBetIdEnum
+        elif privateDataType == "省内私有":
+            provinceEnum = provinceInIdEnum
+
+        if provinceName == "全集团":
+            for p in provinceEnum:
+                provinceIdList.append(str(provinceEnum[p]))
+        else:
+            provinceIdList.append(str(provinceEnum[provinceName]))
+
+
+        if businessTypeName == "全能源类型":
+            for b in businessTypeEnum:
+                businessTypeList.append(str(businessTypeEnum[b]))
+        else:
+            businessTypeList.append(str(businessTypeEnum[businessTypeName]))
+
         db = MysqlTool()
         dataList = []
         try:
-            if dataType == "省间私有数据":
-                dataList = self.transformStringToList(db.queryProvicneBetweenPrivateData(startDate,endDate))
+            if privateDataType == "省间私有":
+                dataList = self.transformStringToList(
+                    db.queryProvicneBetweenPrivateData(provinceIdList,businessTypeList,startDate,endDate)
+                )
 
-            if dataType == "省内私有数据":
-                dataList = self.transformStringToList(db.queryProvicneInnerPrivateData(startDate,endDate))
+            if privateDataType == "省内私有":
+                dataList = self.transformStringToList(
+                    db.queryProvicneInnerPrivateData(provinceIdList,businessTypeList,startDate,endDate)
+                )
 
         except Exception as e:
             db.close()
@@ -105,80 +109,37 @@ class Applkets:
 
         return dataList
 
-    # 筛选条件
-    def provicneInnerPrivateFilterCondititon(self,province,businessType,startDate,endDate):
-
-        # sd = datetime.strptime(startDate, "%Y-%m-%d")
-        # ed = datetime.strptime(endDate, "%Y-%m-%d")
-        sqlDataList = self.getSqlData("省内私有数据",startDate,endDate)
-        # print("数据库查询的数据",sqlDataList)
-
-        provinceId = provinceIdEnum[province]
-        businessType = businessTypeEnum[businessType]
-
-        filterDataList = []
-        for data in sqlDataList:
-            if data["province_id"] ==None:
-                continue
-            if provinceId != "group" and int(data["province_id"]) != provinceId:
-                continue
-            if businessType != "energy" and int(data["business_type"]) != businessType:
-                continue
-
-            filterDataList.append(data)
-
-        return filterDataList
-
-    # 筛选条件
-    def provicneBetweenPrivateFilterCondititon(self,province,businessType,startDate,endDate):
-
-        # sd = datetime.strptime(startDate, "%Y-%m-%d")
-        # ed = datetime.strptime(endDate, "%Y-%m-%d")
-        sqlDataList = self.getSqlData("省间私有数据",startDate,endDate)
-        # print("数据库查询的数据",sqlDataList)
-
-        provinceId = provinceBetIdEnum[province]
-        businessType = businessTypeEnum[businessType]
-
-        filterDataList = []
-        for data in sqlDataList:
-            if data["province_id"] ==None:
-                continue
-            if provinceId != "group" and int(data["province_id"]) != provinceId:
-                continue
-            if businessType != "energy" and int(data["business_type"]) != businessType:
-                continue
-
-            filterDataList.append(data)
-
-        return filterDataList
 
     # 计算省内私有数据
-    def calProvicneInnerPrivateData(self,province,businessType,startDate,endDate):
+    def calProvicneInnerPrivateData(self,provinceName,businessTypeName,startDate,endDate):
 
-        dataList = self.provicneInnerPrivateFilterCondititon(province,businessType,startDate,endDate)
-        print(dataList[0])
+        dataList = self.sqlQueryData( "省内私有",  provinceName ,businessTypeName,startDate,endDate)
 
-        d = ProInLogic.execEntry(dataList,96)
 
-        # d = ProInLogic.otherInComeProcess(dataList)
-        print(d["mlt_ele_list"])
-        print(d["dayAhead_ele_list"])
-        print(d["realTime_ele_list"])
-        print(d["mlt_price_list"])
-        print(d["dayAhead_price_list"])
-        print(d["realTime_price_list"])
-        print(d["change_cost_price_list"])
-        print(d["realTime_income_list"])
-        print(d["spot_incomeIncrease_lsit"])
+        d = ProInLogic.getFrontPageRunCapacity(dataList)
+        print(d/10)
+
+
+        # d = ProInLogic.execEntry(dataList,96)
+        # print(d["mlt_ele_list"])
+        # print(d["dayAhead_ele_list"])
+        # print(d["realTime_ele_list"])
+        # print(d["mlt_price_list"])
+        # print(d["dayAhead_price_list"])
+        # print(d["realTime_price_list"])
+        # print(d["change_cost_price_list"])
+        # print(d["realTime_income_list"])
+        # print(d["spot_incomeIncrease_lsit"])
 
         pass
 
     # 计算间私有数据
-    def calProvicneBetweenPrivateData(self,province,businessType,startDate,endDate):
+    def calProvicneBetweenPrivateData(self,provinceName,businessTypeName,startDate,endDate):
 
-        dataList = self.provicneBetweenPrivateFilterCondititon(province,businessType,startDate,endDate)
-        print(dataList[0])
+
+        dataList = self.sqlQueryData( "省间私有",  provinceName ,businessTypeName,startDate,endDate)
+
+
         ProBeLogic.execEntry(dataList,length=96)
 
 
@@ -196,7 +157,7 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    # app.calProvicneInnerPrivateData("山西","全能源类型","2023-10-01","2023-10-01")
-    app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
+    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-09-01","2023-09-01")
+    # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
 
     pass

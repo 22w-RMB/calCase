@@ -6,6 +6,19 @@ from jituance.集团小程序2.common_calculation import CommonCal
 class ProInLogic:
 
 
+    @staticmethod
+    def getFrontPageRunCapacity(dataList):
+
+        run_capacity_sum = 0
+
+        for data in dataList:
+
+            unit_run_capacity_sum = CommonCal.getSum(data["run_capacity"])
+            if unit_run_capacity_sum == None:
+                continue
+            run_capacity_sum = run_capacity_sum + unit_run_capacity_sum
+
+        return run_capacity_sum/96
 
 
     @staticmethod
