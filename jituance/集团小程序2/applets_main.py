@@ -1,3 +1,5 @@
+import requests
+
 from jituance.集团小程序2.mysql_tool import MysqlTool
 from jituance.集团小程序2.provicne_inner_logic import ProInLogic
 from jituance.集团小程序2.provicne_between_logic import ProBeLogic
@@ -154,10 +156,30 @@ class Applkets:
 
         pass
 
+    def requestInterface(self):
+        loginurl = "http://ihntest.gzdevops3.tsintergy.com/adsswxapp/api/wx/loginController/bind"
+
+        loginparam = {"code": "wangming", "state": "STATE"}
+
+        s = requests.Session()
+        s.post(loginurl, json=loginparam)
+
+        url = "http://ihntest.gzdevops3.tsintergy.com/adsswxapp/api/group/routing/trade/data/day"
+        param = {
+            "startDate": "2020-04-27",
+            "endDate": "2020-04-27",
+            "provinceId": 15,
+            "unitType": 3,
+            "iHNDateType": 1,
+        }
+
+        res = s.get(url, params=param).json()
+        print(res)
+
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-09-01","2023-09-01")
+    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-10-01","2023-10-01")
     # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
 
     pass
