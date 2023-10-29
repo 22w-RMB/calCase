@@ -212,16 +212,16 @@ class ProInLogic:
         comprehensive_ele_list = copy.deepcopy(data["real_time_ele"])
 
         # 计算综合价的费用/实时出清电量
-        comprehensive = CommonCal.weightedMean(
-            numeratorList=[comprehensive_income_list],
-            denominatorList=[comprehensive_ele_list],
+        comprehensive = CommonCal.conductDivide(
+            listA=[comprehensive_income_list],
+            listB=[comprehensive_ele_list],
             length=length
         )
         # 综合电价
         comprehensive_price_list = comprehensive["divideList"]
 
         # 现货增收
-        spot_incomeIncrease_lsit = CommonCal.conductAdd(
+        spot_incomeIncrease_list = CommonCal.conductAdd(
             [dayAhead_settlement_income_list, realTime_settlement_income_list]
         )
 
@@ -240,12 +240,11 @@ class ProInLogic:
         data["realTime_income_list"] = realTime_income_list
         data["comprehensive_ele_list"] = comprehensive_ele_list
         data["comprehensive_income_list"] = comprehensive_income_list
-        data["spot_incomeIncrease_lsit"] = spot_incomeIncrease_lsit
+        data["spot_incomeIncrease_list"] = spot_incomeIncrease_list
 
 
     @staticmethod
     def MxProvinceCal(data, length=96):
-
 
 
 
@@ -271,7 +270,7 @@ class ProInLogic:
             "realTime_income_list",
             "comprehensive_ele_list",
             "comprehensive_income_list",
-            "spot_incomeIncrease_lsit",
+            "spot_incomeIncrease_list",
         ]
         fieldDataDict = {}
 
@@ -289,9 +288,9 @@ class ProInLogic:
 
 
         # 变动成本计算
-        cost_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["change_cost_fee_list"]],
-            denominatorList=[fieldDataDict["change_cost_ele_list"]],
+        cost_res = CommonCal.conductDivide(
+            listA=fieldDataDict["change_cost_fee_list"],
+            listB=fieldDataDict["change_cost_ele_list"],
             length=length
         )
         change_cost_price_list = cost_res["divideList"]
@@ -300,9 +299,9 @@ class ProInLogic:
 
 
         # 中长期计算
-        mlt_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["mlt_fee_list"]],
-            denominatorList=[fieldDataDict["mlt_ele_list"]],
+        mlt_res = CommonCal.conductDivide(
+            listA=fieldDataDict["mlt_fee_list"],
+            listB=fieldDataDict["mlt_ele_list"],
             length=length
         )
         mlt_price_list = mlt_res["divideList"]
@@ -311,9 +310,9 @@ class ProInLogic:
 
 
         # 日前计算
-        dayAhead_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["dayAhead_fee_list"]],
-            denominatorList=[fieldDataDict["dayAhead_ele_list"]],
+        dayAhead_res = CommonCal.conductDivide(
+            listA=fieldDataDict["dayAhead_fee_list"],
+            listB=fieldDataDict["dayAhead_ele_list"],
             length=length
         )
         dayAhead_price_list = dayAhead_res["divideList"]
@@ -322,9 +321,9 @@ class ProInLogic:
 
 
         # 实时计算
-        realTime_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["realTime_fee_list"]],
-            denominatorList=[fieldDataDict["realTime_ele_list"]],
+        realTime_res = CommonCal.conductDivide(
+            listA=fieldDataDict["realTime_fee_list"],
+            listB=fieldDataDict["realTime_ele_list"],
             length=length
         )
         realTime_price_list = realTime_res["divideList"]
@@ -333,9 +332,9 @@ class ProInLogic:
 
 
         # 综合收入计算
-        comprehensive_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["comprehensive_income_list"]],
-            denominatorList=[fieldDataDict["comprehensive_ele_list"]],
+        comprehensive_res = CommonCal.conductDivide(
+            listA=fieldDataDict["comprehensive_income_list"],
+            listB=fieldDataDict["comprehensive_ele_list"],
             length=length
         )
         comprehensive_price_list = comprehensive_res["divideList"]
@@ -349,8 +348,15 @@ class ProInLogic:
         # 实时收益
         realTime_income_sum = CommonCal.getSum(fieldDataDict["realTime_income_list"])
         # 现货增收合计
-        spot_incomeIncrease_sum = CommonCal.getSum(fieldDataDict["spot_incomeIncrease_lsit"])
-
+        spot_incomeIncrease_sum = CommonCal.getSum(fieldDataDict["spot_incomeIncrease_list"])
+        
+        mlt_ele_sum = CommonCal.getSum(fieldDataDict["mlt_ele_list"])
+        dayAhead_ele_sum = CommonCal.getSum(fieldDataDict["dayAhead_ele_list"])
+        realTime_ele_sum = CommonCal.getSum(fieldDataDict["realTime_ele_list"])
+        
+        
+        
+        
         return {
                 "change_cost_ele_list": fieldDataDict["change_cost_ele_list"],
                 "change_cost_price_list": change_cost_price_list,
@@ -372,14 +378,20 @@ class ProInLogic:
                 "comprehensive_ele_list": fieldDataDict["comprehensive_ele_list"],
                 "comprehensive_price_list": comprehensive_price_list,
                 "comprehensive_income_list": fieldDataDict["comprehensive_income_list"],
-                "spot_incomeIncrease_lsit": fieldDataDict["spot_incomeIncrease_lsit"],
+                "spot_incomeIncrease_list": fieldDataDict["spot_incomeIncrease_list"],
 
                 "change_cost_price_sum" :  change_cost_price_sum,
                 "change_cost_fee_sum" :  change_cost_fee_sum,
+
+                "mlt_ele_sum": mlt_ele_sum,
                 "mlt_price_sum" :  mlt_price_sum,
                 "mlt_fee_sum" :  mlt_fee_sum,
+
+                "dayAhead_ele_sum": dayAhead_ele_sum,
                 "dayAhead_price_sum" :  dayAhead_price_sum,
                 "dayAhead_fee_sum" :  dayAhead_fee_sum,
+
+                "realTime_ele_sum": realTime_ele_sum,
                 "realTime_price_sum" :  realTime_price_sum,
                 "realTime_fee_sum" :  realTime_fee_sum,
                 "comprehensive_price_sum" :  comprehensive_price_sum,
@@ -389,6 +401,7 @@ class ProInLogic:
                 "realTime_income_sum" :  realTime_income_sum,
                 "spot_incomeIncrease_sum" :  spot_incomeIncrease_sum,
         }
+
 
 
 

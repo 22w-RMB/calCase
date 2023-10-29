@@ -119,21 +119,24 @@ class Applkets:
 
         dataList = self.sqlQueryData( "省内私有",  provinceName ,businessTypeName,startDate,endDate)
 
+        # d = ProInLogic.getFrontPageRunCapacity(dataList)
+        # print(d/10)
 
-        d = ProInLogic.getFrontPageRunCapacity(dataList)
-        print(d/10)
 
+        d = ProInLogic.execEntry(dataList,96)
+        print(d["mlt_ele_list"])
+        print(d["dayAhead_ele_list"])
+        print(d["realTime_ele_list"])
+        print(d["mlt_price_list"])
+        print(d["dayAhead_price_list"])
+        print(d["realTime_price_list"])
+        print(d["change_cost_price_list"])
+        print(d["realTime_income_list"])
+        print(d["spot_incomeIncrease_list"])
 
-        # d = ProInLogic.execEntry(dataList,96)
-        # print(d["mlt_ele_list"])
-        # print(d["dayAhead_ele_list"])
-        # print(d["realTime_ele_list"])
-        # print(d["mlt_price_list"])
-        # print(d["dayAhead_price_list"])
-        # print(d["realTime_price_list"])
-        # print(d["change_cost_price_list"])
-        # print(d["realTime_income_list"])
-        # print(d["spot_incomeIncrease_lsit"])
+        print(d["mlt_ele_sum"])
+        print(d["dayAhead_ele_sum"])
+        print(d["realTime_ele_sum"])
 
         pass
 
@@ -177,7 +180,7 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-10-01","2023-10-01")
+    app.calProvicneInnerPrivateData("山东","全能源类型","2023-10-20","2023-10-20")
     # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
     # app.requestInterface()
 

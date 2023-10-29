@@ -99,6 +99,52 @@ class CommonCal:
             }
 
     @staticmethod
+    def conductDivide( listA , listB , A_NoneToZero=False, B_NoneToZero=False,length=96 ):
+        '''
+        lsitA - listB
+        :param listA:
+        :param listB:
+        :param A_Zero:  A 为空时是否当0处理
+        :param B_Zero:  B 为空时是否当0处理
+        :param length:
+        :return:
+        '''
+        divideList = [None for i in range(0, length)]
+        numeratorSum = None
+        denominatorSum = None
+        divideSum = None
+
+
+        for i in range(0, length):
+
+            if isinstance(listA,list) == False or  isinstance(listB,list) == False:
+                print("分子或分母存在None")
+                break
+
+            if len(listA) != length or len(listB) != length:
+                print("分子或分母存在长度与期望不一致")
+                break
+
+            if listA[i] == None or listB[i] == None or listB[i]== 0:
+                continue
+            divideList[i] = listA[i] / listB[i]
+
+        numeratorSum = CommonCal.getSum(listA)
+        denominatorSum = CommonCal.getSum(listB)
+        if denominatorSum == None or denominatorSum == 0 or numeratorSum == None:
+            pass
+        else:
+            divideSum = numeratorSum / denominatorSum
+
+        return {
+            "divideList": divideList,
+            "numeratorSum": numeratorSum,
+            "denominatorSum": denominatorSum,
+            "divideSum": divideSum,
+        }
+
+
+    @staticmethod
     def conductAdd(dataList,noneToZero=[],length=96 ):
         '''
         lsitA + listB
@@ -212,10 +258,10 @@ class CommonCal:
                 if len(denominatorList[0]) != length :
                     print("分母长度与期望的长度不一致")
                     break
-                if denominatorList[0][i] == None :
+                if denominatorList[0][i] == None or numeratorResList[i] == None:
                     continue
                 denominatorResList[i] = denominatorList[0][i]
-                if numeratorResList[i] == None or denominatorResList[i]==0:
+                if denominatorResList[i]==0:
                     continue
                 numeratorDividedenominatorResList[i] = numeratorResList[i]/denominatorResList[i]
 
