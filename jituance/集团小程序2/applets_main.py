@@ -1,3 +1,5 @@
+import json
+
 import requests
 
 from jituance.集团小程序2.mysql_tool import MysqlTool
@@ -164,22 +166,19 @@ class Applkets:
         s = requests.Session()
         s.post(loginurl, json=loginparam)
 
-        url = "http://ihntest.gzdevops3.tsintergy.com/adsswxapp/api/group/routing/trade/data/day"
+        url = "http://ihntest.gzdevops3.tsintergy.com/adsswxapp/api/group/routing/trade/overview"
         param = {
-            "startDate": "2020-04-27",
-            "endDate": "2020-04-27",
-            "provinceId": 15,
-            "unitType": 3,
-            "iHNDateType": 1,
+            "date": "2020-04-27",
         }
 
         res = s.get(url, params=param).json()
-        print(res)
+        print(json.dumps(res,indent=4))
 
 if __name__ == '__main__':
 
     app = Applkets()
     app.calProvicneInnerPrivateData("全集团","全能源类型","2023-10-01","2023-10-01")
     # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
+    # app.requestInterface()
 
     pass

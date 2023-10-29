@@ -26,7 +26,7 @@ class MysqlTool:
     def queryProvicneBetweenPrivateData(self,provinceIdList,businessTypeList,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
-        sql = "select * from data_province_clearing_result dpcr left join unit u on dpcr.unit_id=u.id where u.enable=1 "
+        sql = "select * from data_province_clearing_result dpcr join unit u on dpcr.unit_id=u.id where u.enable=1 "
         if startDate !=None and endDate!=None:
             dateSql = ' and dpcr.date>="' + startDate + '" and dpcr.date<="' + endDate+ '"'
             sql = sql + dateSql
@@ -47,38 +47,61 @@ class MysqlTool:
 
         return [dict(zip(header, row)) for row in res]
 
-    def queryProvicneInnerPrivateData(self,provinceIdList,businessTypeList,startDate=None,endDate=None,isNeedUnifiedPrice=True):
+    def queryProvicneInnerPrivateData(self,provinceIdList,businessTypeList,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
-        sql = 'select gppd.*,u.business_type from group_spot_period_data gppd left join unit u on gppd.owner_id=u.id  '
+        sql = 'select gppd.*,u.business_type,gpd.clearing_price from group_spot_period_data gppd  join unit u on gppd.owner_id=u.id  '
 
-        if isNeedUnifiedPrice:
-            sql = sql + "left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
-
-        whereSql = "where u.enable=1 "
-        sql += whereSql
-
+        mxSql = sql + "join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
+        otherSql  = sql + "left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
+        whereSql = "where 1 "
+        mxSql = mxSql + whereSql
+        otherSql = otherSql + whereSql
 
         if startDate !=None and endDate!=None:
             dateSql = ' and gppd.date>="' + startDate + '" and gppd.date<="' + endDate+ '"'
-            sql = sql + dateSql
+            mxSql = mxSql + dateSql
+            otherSql = otherSql + dateSql
 
-        provinceIdSql = ' and u.province_id in ( ' + (",".join(provinceIdList)) + ')'
-        sql = sql + provinceIdSql
-
-        businessTypeSql = ' and u.business_type in ( ' + (",".join( businessTypeList ) ) +  ')'
-        sql = sql + businessTypeSql
+        businessTypeSql = ' and u.business_type in ( ' + (",".join(businessTypeList)) + ')'
+        mxSql = mxSql + businessTypeSql
+        otherSql = otherSql + businessTypeSql
 
 
-        print(sql)
-        cursor.execute(sql)
+        mxIdList = ["15"]
+        otherIdList = []
+        for i in provinceIdList:
+            if i != "15":
+                otherIdList.append(i)
 
-        header = [col[0] for col in cursor.description]
+        mxSqlRes = []
+        otherSqlRes = []
+        sqlRes = []
 
-        res = cursor.fetchall()
+        if "15" in provinceIdList:
+            provinceIdSql = ' and gppd.province_id in ( ' + (",".join(mxIdList)) + ')'
+            mxSql = mxSql + provinceIdSql
+            print(mxSql)
+            cursor.execute(mxSql)
+            res = cursor.fetchall()
+            header = [col[0] for col in cursor.description]
+            mxSqlRes = [dict(zip(header, row)) for row in res]
+
+        if len(otherIdList)>0:
+            provinceIdSql = ' and gppd.province_id in ( ' + (",".join(otherIdList)) + ')'
+            otherSql = otherSql + provinceIdSql
+            print(otherSql)
+            cursor.execute(otherSql)
+            res = cursor.fetchall()
+            header = [col[0] for col in cursor.description]
+            otherSqlRes = [dict(zip(header, row)) for row in res]
+
+        sqlRes.extend(mxSqlRes)
+        sqlRes.extend(otherSqlRes)
+
         cursor.close()
 
-        return [dict(zip(header, row)) for row in res]
+        return sqlRes
 
 
     def close(self):

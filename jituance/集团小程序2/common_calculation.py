@@ -175,13 +175,12 @@ class CommonCal:
     @staticmethod
     def weightedMean( numeratorList ,denominatorList,length=96):
         '''
-        加权平均
+        加权平均，只适用于两个数据项
         :param numerator:  分子
         :param denominator: 分母
         :param length: 数组长度
         :return:
         '''
-
 
         numeratorResList = [None for i in range(0,length)]
         denominatorResList = [None for i in range(0,length)]
@@ -194,77 +193,39 @@ class CommonCal:
         if numeratorList == None or numeratorList == [] or denominatorList == None or denominatorList == []:
             isNumOrDenNotNone == False
 
+
         if isNumOrDenNotNone:
 
-            isNumNotError = True
-
-
-            for l in range(0, len(numeratorList)):
-
-                if isinstance(numeratorList[l] ,list) == False:
-                    isNumNotError = False
+            for i in range(0,length):
+                if isinstance(numeratorList[0], list) == False or isinstance(numeratorList[1], list) == False:
                     break
-                if len(numeratorList[l])!=length  :
-                    isNumNotError = False
+                if len(numeratorList[0]) != length or len(numeratorList[1]) != length:
+                    print("分子长度与期望的长度不一致")
                     break
+                if numeratorList[0][i] == None or numeratorList[1][i] == None:
+                    continue
+                numeratorResList[i] = numeratorList[0][i] * numeratorList[1][i]
 
-            if isNumNotError == True:
-                for i in range(0,length):
-                    iIsNone = False
-
-                    for l in range(0, len(numeratorList)):
-
-                        if numeratorList[l][i] == None :
-                            iIsNone = True
-                            continue
-
-                        numeratorResList[i] = (1 if numeratorResList[i]==None else numeratorResList[i])*numeratorList[l][i]
-                    if iIsNone:
-                        numeratorResList[i] = None
-
-            isDenNotError = True
-            for l in range(0, len(denominatorList)):
-                if isinstance(denominatorList[l], list) == False:
-                    isDenNotError = False
+            for i in range(0, length):
+                if isinstance(denominatorList[0], list) == False:
                     break
-                if len(denominatorList[l]) != length:
-                    isDenNotError = False
+                if len(denominatorList[0]) != length :
+                    print("分母长度与期望的长度不一致")
                     break
-                for i in range(0, length):
-                    if denominatorList[l][i] == None:
-                        continue
-                    denominatorResList[i] = (0 if denominatorResList[i] == None else denominatorResList[i]) + denominatorList[l][i]
+                if denominatorList[0][i] == None :
+                    continue
+                denominatorResList[i] = denominatorList[0][i]
+                if numeratorResList[i] == None or denominatorResList[i]==0:
+                    continue
+                numeratorDividedenominatorResList[i] = numeratorResList[i]/denominatorResList[i]
 
-            if isNumNotError == True and isDenNotError == True:
+            numeratorSum = CommonCal.getSum(numeratorResList)
+            denominatorSum = CommonCal.getSum(denominatorResList)
+            if denominatorSum == None  or denominatorSum == 0  or numeratorSum==None:
+                pass
+            else:
+                divideSum = numeratorSum/denominatorSum
 
-                for i in range(0, length):
-                    if numeratorResList[i] == None or denominatorResList[i]==None or denominatorResList[i]==0:
-                        numeratorDividedenominatorResList[i] = None
-                    else:
-                        numeratorDividedenominatorResList[i] = numeratorResList[i]/denominatorResList[i]
-
-                    # if numeratorResList[i] != None:
-                    #     if numeratorSum == None:
-                    #         numeratorSum = numeratorResList[i]
-                    #     else:
-                    #         numeratorSum += numeratorResList[i]
-                    #
-                    # if denominatorResList[i] != None:
-                    #     if denominatorSum == None:
-                    #         denominatorSum = denominatorResList[i]
-                    #     else:
-                    #         denominatorSum += denominatorResList[i]
-
-                numeratorSum = CommonCal.getSum(numeratorResList)
-                denominatorSum = CommonCal.getSum(denominatorResList)
-
-                if denominatorSum == None  or denominatorSum == 0  or numeratorSum==None:
-                    pass
-                else:
-                    divideSum = numeratorSum/denominatorSum
-            if isNumNotError == False or isDenNotError == False:
-                numeratorResList = [None for i in range(0,length)]
-                denominatorResList = [None for i in range(0,length)]
 
         return {
             "numeratorList": numeratorResList,
@@ -274,6 +235,111 @@ class CommonCal:
             "denominatorSum": denominatorSum,
             "divideSum": divideSum,
         }
+
+    #  暂不用这个加权计算逻辑
+    # @staticmethod
+    # def weightedMean( numeratorList ,denominatorList,length=96):
+    #     '''
+    #     加权平均
+    #     :param numerator:  分子
+    #     :param denominator: 分母
+    #     :param length: 数组长度
+    #     :return:
+    #     '''
+    #
+    #
+    #     numeratorResList = [None for i in range(0,length)]
+    #     denominatorResList = [None for i in range(0,length)]
+    #     numeratorDividedenominatorResList = [None for i in range(0,length)]
+    #     numeratorSum = None
+    #     denominatorSum = None
+    #     divideSum = None
+    #
+    #     isNumOrDenNotNone = True
+    #     if numeratorList == None or numeratorList == [] or denominatorList == None or denominatorList == []:
+    #         isNumOrDenNotNone == False
+    #
+    #     if isNumOrDenNotNone:
+    #
+    #         isNumNotError = True
+    #
+    #
+    #         for l in range(0, len(numeratorList)):
+    #
+    #             if isinstance(numeratorList[l] ,list) == False:
+    #                 isNumNotError = False
+    #                 break
+    #             if len(numeratorList[l])!=length  :
+    #                 isNumNotError = False
+    #                 break
+    #
+    #         if isNumNotError == True:
+    #             for i in range(0,length):
+    #                 iIsNone = False
+    #
+    #                 for l in range(0, len(numeratorList)):
+    #
+    #                     if numeratorList[l][i] == None :
+    #                         iIsNone = True
+    #                         continue
+    #
+    #                     numeratorResList[i] = (1 if numeratorResList[i]==None else numeratorResList[i])*numeratorList[l][i]
+    #                 if iIsNone:
+    #                     numeratorResList[i] = None
+    #
+    #         isDenNotError = True
+    #         for l in range(0, len(denominatorList)):
+    #             if isinstance(denominatorList[l], list) == False:
+    #                 isDenNotError = False
+    #                 break
+    #             if len(denominatorList[l]) != length:
+    #                 isDenNotError = False
+    #                 break
+    #             for i in range(0, length):
+    #                 if denominatorList[l][i] == None:
+    #                     continue
+    #                 denominatorResList[i] = (0 if denominatorResList[i] == None else denominatorResList[i]) + denominatorList[l][i]
+    #
+    #         if isNumNotError == True and isDenNotError == True:
+    #
+    #             for i in range(0, length):
+    #                 if numeratorResList[i] == None or denominatorResList[i]==None or denominatorResList[i]==0:
+    #                     numeratorDividedenominatorResList[i] = None
+    #                 else:
+    #                     numeratorDividedenominatorResList[i] = numeratorResList[i]/denominatorResList[i]
+    #
+    #                 # if numeratorResList[i] != None:
+    #                 #     if numeratorSum == None:
+    #                 #         numeratorSum = numeratorResList[i]
+    #                 #     else:
+    #                 #         numeratorSum += numeratorResList[i]
+    #                 #
+    #                 # if denominatorResList[i] != None:
+    #                 #     if denominatorSum == None:
+    #                 #         denominatorSum = denominatorResList[i]
+    #                 #     else:
+    #                 #         denominatorSum += denominatorResList[i]
+    #
+    #             numeratorSum = CommonCal.getSum(numeratorResList)
+    #             denominatorSum = CommonCal.getSum(denominatorResList)
+    #
+    #             if denominatorSum == None  or denominatorSum == 0  or numeratorSum==None:
+    #                 pass
+    #             else:
+    #                 divideSum = numeratorSum/denominatorSum
+    #         if isNumNotError == False or isDenNotError == False:
+    #             numeratorResList = [None for i in range(0,length)]
+    #             denominatorResList = [None for i in range(0,length)]
+    #
+    #     return {
+    #         "numeratorList": numeratorResList,
+    #         "denominatorList": denominatorResList,
+    #         "divideList": numeratorDividedenominatorResList,
+    #         "numeratorSum": numeratorSum,
+    #         "denominatorSum": denominatorSum,
+    #         "divideSum": divideSum,
+    #     }
+
 
     @staticmethod
     def conductAddMulField(fieldNameList, dataList, length=96):
