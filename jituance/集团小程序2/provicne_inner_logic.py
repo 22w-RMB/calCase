@@ -9,6 +9,9 @@ class ProInLogic:
     @staticmethod
     def getFrontPageRunCapacity(dataList):
 
+        if dataList == None:
+            return 0
+
         run_capacity_sum = 0
 
         for data in dataList:
@@ -18,7 +21,7 @@ class ProInLogic:
                 continue
             run_capacity_sum = run_capacity_sum + unit_run_capacity_sum
 
-        return run_capacity_sum/96
+        return run_capacity_sum/960
 
 
     @staticmethod

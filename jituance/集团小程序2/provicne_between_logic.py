@@ -5,6 +5,21 @@ from jituance.集团小程序2.common_calculation import CommonCal
 
 class ProBeLogic:
 
+    @staticmethod
+    def getFrontPageRunCapacity(dataList):
+
+        if dataList == None:
+            return 0
+
+        run_capacity_sum = 0
+        for data in dataList:
+
+            unit_run_capacity_sum = CommonCal.getSum(data["run_capacity"])
+            if unit_run_capacity_sum == None:
+                continue
+            run_capacity_sum = run_capacity_sum + unit_run_capacity_sum
+
+        return run_capacity_sum / 960
 
     @staticmethod
     def calLogic(data, length=96):

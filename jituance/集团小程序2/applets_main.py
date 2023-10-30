@@ -143,14 +143,48 @@ class Applkets:
     # 计算间私有数据
     def calProvicneBetweenPrivateData(self,provinceName,businessTypeName,startDate,endDate):
 
-
         dataList = self.sqlQueryData( "省间私有",  provinceName ,businessTypeName,startDate,endDate)
-
 
         ProBeLogic.execEntry(dataList,length=96)
 
-
         pass
+
+
+
+    def calRunCapacity(self,startDate,endDate):
+        proInAllTypeDataList = self.sqlQueryData("省内私有", "全集团","全能源类型", startDate, endDate)
+        proBetwAllTypeDataList = self.sqlQueryData("省间私有", "全集团","全能源类型", startDate, endDate)
+
+        proInAllType = ProInLogic.getFrontPageRunCapacity(proInAllTypeDataList)
+        proBetwAllType = ProBeLogic.getFrontPageRunCapacity(proBetwAllTypeDataList)
+        finalAllType = proInAllType + proBetwAllType
+
+        finalData = {
+            "全集团" : finalAllType,
+        }
+        proInData = {
+            "全集团": proInAllType,
+        }
+        proBetwData = {
+            "全集团": proBetwAllType,
+        }
+
+        for businessType in businessTypeEnum:
+            proInTypeDataList = self.sqlQueryData("省内私有", "全集团", businessType, startDate, endDate)
+            proBetwTypeDataList = self.sqlQueryData("省间私有", "全集团", businessType, startDate, endDate)
+
+            proInType = ProInLogic.getFrontPageRunCapacity(proInTypeDataList)
+            proBetwType = ProBeLogic.getFrontPageRunCapacity(proBetwTypeDataList)
+            finalType = proInType + proBetwType
+            finalData[businessType] = finalType
+            proInData[businessType] = proInType
+            proBetwData[businessType] = proBetwType
+
+        print("省内+省间：",finalData)
+        print("省内：",proInData)
+        print("省间：",proBetwData)
+
+
 
 
 
@@ -180,8 +214,8 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("山东","全能源类型","2023-10-20","2023-10-20")
+    # app.calProvicneInnerPrivateData("山东","全能源类型","2023-10-20","2023-10-20")
     # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
-    # app.requestInterface()
+    app.calRunCapacity("2023-10-25","2023-10-25")
 
     pass
