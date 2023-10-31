@@ -1,5 +1,36 @@
 
 class CommonCal:
+
+    @staticmethod
+    def transformYi( dataList):
+
+        for key in dataList:
+            if dataList[key] == None:
+                continue
+
+            if "price" in key:
+                continue
+            if isinstance(dataList[key], list):
+                tempList = []
+                for d in dataList[key]:
+                    if d == None:
+                        tempList.append(None)
+                    else:
+                        if "ele" in key:
+                            tempList.append(round(d / 100000,2))
+                        elif ("fee" in key) or ("income" in key):
+                            tempList.append(round(d / 100000000,2)   )
+
+                dataList[key] = tempList
+                continue
+
+            if "ele" in key:
+                dataList[key] = round(dataList[key] / 100000,2)
+            elif ("fee" in key) or ("income" in key):
+                dataList[key] = round(dataList[key] / 100000000,2)
+
+
+
     @staticmethod
     def filterNone( dataList):
         '''

@@ -264,9 +264,9 @@ class ProBeLogic:
             data.update(calLogicRes)
 
         res = ProBeLogic.calTarget(dataList, length=96)
+        # CommonCal.transformYi(res)
         for r in res:
             print(proBetweenFieldEnum[r]," ：",res[r])
-
 
 
 if __name__ == '__main__':
