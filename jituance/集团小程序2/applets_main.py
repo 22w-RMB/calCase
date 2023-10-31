@@ -205,7 +205,7 @@ class Applkets:
 
         url = "http://ihntest.gzdevops3.tsintergy.com/adsswxapp/api/group/routing/trade/overview"
         param = {
-            "date": "2020-04-27",
+            "date": "2020-04-28",
         }
 
         res = s.get(url, params=param).json()
@@ -215,7 +215,8 @@ if __name__ == '__main__':
 
     app = Applkets()
     # app.calProvicneInnerPrivateData("山东","全能源类型","2023-10-20","2023-10-20")
-    # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-04","2023-10-10")
-    app.calRunCapacity("2023-10-25","2023-10-25")
+    app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-29","2023-10-29")
+    # app.calRunCapacity("2023-10-28","2023-10-28")
+    # app.requestInterface()
 
     pass

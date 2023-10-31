@@ -115,7 +115,6 @@ class ProBeLogic:
     @staticmethod
     def calTarget(dataList, length=96):
 
-
         fieldNameList = [
             "change_cost_ele_list",
             "change_cost_fee_list",
@@ -137,9 +136,9 @@ class ProBeLogic:
         fieldDataDict = CommonCal.conductAddMulField(fieldNameList=fieldNameList,dataList=dataList,length=length)
 
         # 变动成本计算
-        cost_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["change_cost_fee_list"]],
-            denominatorList=[fieldDataDict["change_cost_ele_list"]],
+        cost_res = CommonCal.conductDivide(
+            listA=fieldDataDict["change_cost_fee_list"],
+            listB=fieldDataDict["change_cost_ele_list"],
             length=length
         )
         change_cost_price_list = cost_res["divideList"]
@@ -148,9 +147,9 @@ class ProBeLogic:
 
 
         # 日前计算
-        dayAhead_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["dayAhead_fee_list"]],
-            denominatorList=[fieldDataDict["dayAhead_ele_list"]],
+        dayAhead_res = CommonCal.conductDivide(
+            listA=fieldDataDict["dayAhead_fee_list"],
+            listB=fieldDataDict["dayAhead_ele_list"],
             length=length
         )
         dayAhead_price_list = dayAhead_res["divideList"]
@@ -161,9 +160,9 @@ class ProBeLogic:
         dayAhead_income_sum = CommonCal.getSum(fieldDataDict["dayAhead_income_list"])
 
         # 实时计算
-        realTime_res = CommonCal.weightedMean(
-            numeratorList=[fieldDataDict["realTime_fee_list"]],
-            denominatorList=[fieldDataDict["realTime_ele_list"]],
+        realTime_res = CommonCal.conductDivide(
+            listA=fieldDataDict["realTime_fee_list"],
+            listB=fieldDataDict["realTime_ele_list"],
             length=length
         )
         realTime_price_list = realTime_res["divideList"]

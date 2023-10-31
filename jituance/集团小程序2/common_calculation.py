@@ -241,7 +241,6 @@ class CommonCal:
 
 
         if isNumOrDenNotNone:
-
             for i in range(0,length):
                 if isinstance(numeratorList[0], list) == False or isinstance(numeratorList[1], list) == False:
                     break
