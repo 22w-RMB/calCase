@@ -13,6 +13,15 @@ class MysqlTool:
         database = database
         charset = charset
 
+
+        host = "192.168.1.76"
+        port = port
+        user = "huaneng_group_test"
+        password = "qinghua123@"
+        database = "huaneng_group_test"
+
+
+
         try:
             self.db = pymysql.connect(host=host,port=port,user=user,password=password,database=database,charset=charset)
             print("连接数据库成功")

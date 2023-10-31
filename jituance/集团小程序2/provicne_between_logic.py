@@ -25,7 +25,7 @@ class ProBeLogic:
     def calLogic(data, length=96):
 
         change_cost_ele_list = [None for i in range(0,length)]
-        if data["business_type"] == 1:
+        if data["business_type"] == "1":
             change_cost_day_ahead_ele_list = copy.deepcopy(data["day_ahead_ele"])
             change_cost_real_time_ele_list = copy.deepcopy(data["real_time_ele"])
             change_cost_ele_list = CommonCal.conductAdd([change_cost_day_ahead_ele_list,change_cost_real_time_ele_list])
