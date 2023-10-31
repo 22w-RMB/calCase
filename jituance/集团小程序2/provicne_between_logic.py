@@ -26,18 +26,24 @@ class ProBeLogic:
 
         change_cost_ele_list = [None for i in range(0,length)]
         if data["business_type"] == 1:
-            change_cost_ele_list = copy.deepcopy(data["day_ahead_ele"])
-
+            change_cost_day_ahead_ele_list = copy.deepcopy(data["day_ahead_ele"])
+            change_cost_real_time_ele_list = copy.deepcopy(data["real_time_ele"])
+            change_cost_ele_list = CommonCal.conductAdd([change_cost_day_ahead_ele_list,change_cost_real_time_ele_list])
 
         # 变动成本
-        cost = CommonCal.weightedMean(
+        dayAhead_cost = CommonCal.weightedMean(
             numeratorList=[data["day_ahead_ele"], data["change_cost"]],
             denominatorList=[data["day_ahead_ele"]],
             length=length
         )
+        realTime_cost = CommonCal.weightedMean(
+            numeratorList=[data["real_time_ele"], data["change_cost"]],
+            denominatorList=[data["real_time_ele"]],
+            length=length
+        )
 
-        change_cost_price_list = cost["divideList"]
-        change_cost_fee_list = cost["numeratorList"]
+        change_cost_fee_list = CommonCal.conductAdd([ dayAhead_cost["numeratorList"], realTime_cost["numeratorList"] ])
+        change_cost_price_list = CommonCal.conductDivide(change_cost_fee_list,change_cost_ele_list)
 
         # 日前费用计算
         dayAhead = CommonCal.weightedMean(
@@ -264,7 +270,7 @@ class ProBeLogic:
             data.update(calLogicRes)
 
         res = ProBeLogic.calTarget(dataList, length=96)
-        # CommonCal.transformYi(res)
+        CommonCal.transformYi(res)
         for r in res:
             print(proBetweenFieldEnum[r]," ：",res[r])
 
