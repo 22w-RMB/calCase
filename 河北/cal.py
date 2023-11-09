@@ -1151,8 +1151,16 @@ def getContractDetail(tradingSession,
 
     for month in monthData:
         monthDataList[0].append(month)
-        monthDataList[1].append(monthData[month]["eleSum"])
-        monthDataList[2].append(monthData[month]["priceSum"])
+
+        if "eleSum" in monthData[month]:
+            monthDataList[1].append(monthData[month]["eleSum"])
+        else:
+            monthDataList[1].append(None)
+
+        if "priceSum" in monthData[month]:
+            monthDataList[2].append(monthData[month]["priceSum"])
+        else:
+            monthDataList[2].append(None)
 
 
 
