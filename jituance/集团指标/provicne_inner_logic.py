@@ -710,7 +710,7 @@ class ProInLogic:
 
         for data in dataList:
             if data["province_id"] == "14":
-                ProInLogic.ShanxiSpecialHandling()
+                ProInLogic.ShanxiSpecialHandling(data)
 
             if data["province_id"] == "15":
                 ProInLogic.MxProvinceCal(data, length)
