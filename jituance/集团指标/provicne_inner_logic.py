@@ -33,7 +33,7 @@ class ProInLogic:
             length=length
         )
         # 中长期电价-变动成本，中长期为空时，结果为空，变动成本为空时，变动成本当0计算
-        mlt_diff_price = CommonCal.conductSubtract(data["mlt_price"], data["change_cost"], B_NoneToZero=True)["diff"]
+        mlt_diff_price = CommonCal.conductSubtract(data["mlt_price"], data["change_cost"], A_NoneToZero=True, B_NoneToZero=True)["diff"]
         # 计算中长期收益
         mlt_income_res = CommonCal.weightedMean(
             numeratorList=[data["mlt_ele"], mlt_diff_price],
@@ -87,10 +87,10 @@ class ProInLogic:
         dayAhead_fee_list = dayAhead_res["numeratorList"]
 
         # 计算日前偏差电量，日前-中长期，任意一个为空，则结果为空
-        dayAhead_diffEle_cal_res = CommonCal.conductSubtract(data["day_ahead_ele"], data["mlt_ele"])
+        dayAhead_diffEle_cal_res = CommonCal.conductSubtract(data["day_ahead_ele"], data["mlt_ele"],A_NoneToZero=True,B_NoneToZero=True)
         # 计算日前电价-变动成本，日前电价为空时，结果为空，变动成本为空时，变动成本当0计算
         dayAhead_diffPrice_cal_res = \
-        CommonCal.conductSubtract(data["day_ahead_price"], data["change_cost"], B_NoneToZero=True)["diff"]
+        CommonCal.conductSubtract(data["day_ahead_price"], data["change_cost"], A_NoneToZero=True,B_NoneToZero=True)["diff"]
 
         # 日前偏差电量
         dayAhead_diff_ele_list = dayAhead_diffEle_cal_res["diff"]
@@ -172,10 +172,10 @@ class ProInLogic:
         realTime_fee_list = realTime_res["numeratorList"]
 
         # 计算实时偏差电量，实时-日前，任意一个为空，则结果为空
-        realTime_diffEle_cal_res = CommonCal.conductSubtract(data["real_time_ele"], data["day_ahead_ele"])
+        realTime_diffEle_cal_res = CommonCal.conductSubtract(data["real_time_ele"], data["day_ahead_ele"],A_NoneToZero=True,B_NoneToZero=True)
         # 计算实时电价-变动成本，实时电价为空时，结果为空，变动成本为空时，变动成本当0计算
         realTime_diffPrice_cal_res = \
-        CommonCal.conductSubtract(data["real_time_price"], data["change_cost"], B_NoneToZero=True)["diff"]
+        CommonCal.conductSubtract(data["real_time_price"], data["change_cost"], A_NoneToZero=True, B_NoneToZero=True)["diff"]
 
         # 实时偏差电量
         realTime_diff_ele_list = realTime_diffEle_cal_res["diff"]
@@ -351,10 +351,10 @@ class ProInLogic:
         realTime_fee_list = realTime_res["numeratorList"]
 
         # 计算实时偏差电量，实时-中长期，任意一个为空，则结果为空
-        realTime_diffEle_cal_res = CommonCal.conductSubtract(data["real_time_ele"], data["mlt_ele"])
+        realTime_diffEle_cal_res = CommonCal.conductSubtract(data["real_time_ele"], data["mlt_ele"],A_NoneToZero=True,B_NoneToZero=True)
         # 计算实时电价-变动成本，实时电价为空时，结果为空，变动成本为空时，变动成本当0计算
         realTime_diffPrice_cal_res = \
-            CommonCal.conductSubtract(data["real_time_price"], data["change_cost"], B_NoneToZero=True)["diff"]
+            CommonCal.conductSubtract(data["real_time_price"], data["change_cost"], A_NoneToZero=True, B_NoneToZero=True)["diff"]
 
         # 实时偏差电量
         realTime_diff_ele_list = realTime_diffEle_cal_res["diff"]
@@ -391,7 +391,7 @@ class ProInLogic:
 
         # 机组ntn时刻的中长期合同价-tn时刻的全省统一出清价
         mlt_diff_clearing_price_list = \
-            CommonCal.conductSubtract(data["mlt_price"], data["clearing_price"], B_NoneToZero=True)["diff"]
+            CommonCal.conductSubtract(data["mlt_price"], data["clearing_price"], A_NoneToZero=True, B_NoneToZero=True)["diff"]
 
         # 机组ntn时刻的中长期电量*机组ntn时刻的中长期合同价-tn时刻的全省统一出清价
         mlt_diff_clearing_cal_res = CommonCal.weightedMean(
@@ -409,12 +409,12 @@ class ProInLogic:
 
         # 实时收益
         realTime_income_list = \
-            CommonCal.conductSubtract(temp_income_list, data["change_cost_fee_list"], B_NoneToZero=True)["diff"]
+            CommonCal.conductSubtract(temp_income_list, data["change_cost_fee_list"],A_NoneToZero=True, B_NoneToZero=True)["diff"]
 
 
         # 中长期收益
         mlt_income_list = \
-            CommonCal.conductSubtract(realTime_income_list, realTime_settlement_income_list, B_NoneToZero=True)["diff"]
+            CommonCal.conductSubtract(realTime_income_list, realTime_settlement_income_list,A_NoneToZero=True, B_NoneToZero=True)["diff"]
 
         data["mlt_income_list"] = mlt_income_list
 

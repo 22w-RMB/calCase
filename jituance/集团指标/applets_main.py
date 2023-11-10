@@ -200,7 +200,7 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-10-01","2023-10-01")
+    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-09-01","2023-09-01")
     # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-26","2023-10-28")
     # app.calRunCapacity("2023-10-28","2023-10-28")
     # app.requestInterface()
