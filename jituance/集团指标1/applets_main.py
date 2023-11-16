@@ -2,9 +2,9 @@ import json
 
 import requests
 
-from jituance.集团小程序2.mysql_tool import MysqlTool
-from jituance.集团小程序2.provicne_inner_logic import ProInLogic
-from jituance.集团小程序2.provicne_between_logic import ProBeLogic
+from jituance.集团指标1.mysql_tool import MysqlTool
+from jituance.集团指标1.provicne_inner_logic import ProInLogic
+from jituance.集团指标1.provicne_between_logic import ProBeLogic
 from datetime import datetime
 
 businessTypeEnum = {
@@ -119,24 +119,10 @@ class Applkets:
 
         dataList = self.sqlQueryData( "省内私有",  provinceName ,businessTypeName,startDate,endDate)
 
-        # d = ProInLogic.getFrontPageRunCapacity(dataList)
-        # print(d/10)
 
 
-        d = ProInLogic.execEntry(dataList,96)
-        print(d["mlt_ele_list"])
-        print(d["dayAhead_ele_list"])
-        print(d["realTime_ele_list"])
-        print(d["mlt_price_list"])
-        print(d["dayAhead_price_list"])
-        print(d["realTime_price_list"])
-        print(d["change_cost_price_list"])
-        print(d["realTime_income_list"])
-        print(d["spot_incomeIncrease_list"])
+        ProInLogic.execEntry(dataList,96)
 
-        print(d["mlt_ele_sum"])
-        print(d["dayAhead_ele_sum"])
-        print(d["realTime_ele_sum"])
 
         pass
 
@@ -214,8 +200,8 @@ class Applkets:
 if __name__ == '__main__':
 
     app = Applkets()
-    # app.calProvicneInnerPrivateData("山东","全能源类型","2023-10-20","2023-10-20")
-    app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-26","2023-10-28")
+    app.calProvicneInnerPrivateData("全集团","全能源类型","2023-09-01","2023-09-01")
+    # app.calProvicneBetweenPrivateData("全集团","全能源类型","2023-10-26","2023-10-28")
     # app.calRunCapacity("2023-10-28","2023-10-28")
     # app.requestInterface()
 

@@ -14,11 +14,11 @@ class MysqlTool:
         charset = charset
 
 
-        host = "192.168.1.76"
-        port = port
-        user = "huaneng_group_test"
-        password = "qinghua123@"
-        database = "huaneng_group_test"
+        # host = "192.168.1.76"
+        # port = port
+        # user = "huaneng_group_test"
+        # password = "qinghua123@"
+        # database = "huaneng_group_test"
 
 
 
@@ -59,13 +59,14 @@ class MysqlTool:
     def queryProvicneInnerPrivateData(self,provinceIdList,businessTypeList,startDate=None,endDate=None):
         cursor = self.db.cursor()
 
-        sql = 'select gppd.*,u.business_type,gpd.clearing_price from group_spot_period_data gppd  join unit u on gppd.owner_id=u.id  '
+        sql = 'select gppd.*,u.business_type,u.org_id,gpd.clearing_price from group_spot_period_data gppd  join unit u on gppd.owner_id=u.id  '
 
-        mxSql = sql + "join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
-        otherSql  = sql + "left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
+        sql += "left join group_public_data gpd on gppd.province_id=gpd.province_id and gpd.type=1 and gppd.date = gpd.date "
+
         whereSql = "where 1 "
-        mxSql = mxSql + whereSql
-        otherSql = otherSql + whereSql
+        sql += whereSql
+        mxSql = sql
+        otherSql = sql
 
         if startDate !=None and endDate!=None:
             dateSql = ' and gppd.date>="' + startDate + '" and gppd.date<="' + endDate+ '"'

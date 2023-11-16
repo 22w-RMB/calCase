@@ -30,7 +30,6 @@ class CommonCal:
                 dataList[key] = round(dataList[key] / 100000000,2)
 
 
-
     @staticmethod
     def filterNone( dataList):
         '''
@@ -149,11 +148,11 @@ class CommonCal:
         for i in range(0, length):
 
             if isinstance(listA,list) == False or  isinstance(listB,list) == False:
-                print("分子或分母存在None")
+                print("相减时：分子或分母存在None")
                 break
 
             if len(listA) != length or len(listB) != length:
-                print("分子或分母存在长度与期望不一致")
+                print("相减时：分子或分母存在长度与期望不一致")
                 break
 
             if listA[i] == None or listB[i] == None or listB[i]== 0:
@@ -174,62 +173,85 @@ class CommonCal:
             "divideSum": divideSum,
         }
 
-
+    # @staticmethod
+    # def conductAdd(dataList,noneToZero=[],length=96 ):
+    #     '''
+    #     lsitA + listB
+    #     :param listA:
+    #     :param listB:
+    #     :param A_Zero:  A 为空时是否当0处理
+    #     :param B_Zero:  B 为空时是否当0处理
+    #     :param length:
+    #     :return:
+    #     '''
+    #
+    #
+    #     if noneToZero == []:
+    #         noneToZero = [1 for i in range(0,len(dataList))]
+    #
+    #
+    #     for i in range(0,len(noneToZero)):
+    #         if dataList[i] == None and noneToZero[i] == 1  :
+    #             dataList[i] = [None for i in range(0,length)]
+    #
+    #     # 是否全部都是列表
+    #     isAllList = True
+    #     # 判断所有列表所有值是否都为None
+    #     isAllNone = True
+    #     for i in range(0, len(dataList)):
+    #         if isinstance(dataList[i], list) == False:
+    #             isAllList = False
+    #         else:
+    #             for j in dataList[i]:
+    #                 if j != None:
+    #                     isAllNone = False
+    #                     break
+    #
+    #     # 只有都是列表 且 且其中存在数据时
+    #     if isAllList == True and isAllNone == False:
+    #         sumList = [None for i in range(0, length)]
+    #
+    #         for i in range(0, length):
+    #             for j in range(0, len(dataList)):
+    #
+    #
+    #                 if dataList[j][i] == None and noneToZero[j] == 1:
+    #                     dataList[j][i] = 0
+    #
+    #                 if dataList[j][i] == None:
+    #                     pass
+    #                 else:
+    #                     sumList[i] = (0 if sumList[i]==None else sumList[i]) + dataList[j][i]
+    #
+    #
+    #         return sumList
+    #     else:
+    #         print("A、B中存在非列表，无法进行相加")
+    #         return [None for i in range(0,length)]
     @staticmethod
-    def conductAdd(dataList,noneToZero=[],length=96 ):
-        '''
-        lsitA + listB
-        :param listA:
-        :param listB:
-        :param A_Zero:  A 为空时是否当0处理
-        :param B_Zero:  B 为空时是否当0处理
-        :param length:
-        :return:
-        '''
+    def conductAdd(dataList,length=96 ):
+
+        sumList = [None for i in range(0, length)]
+
+        if isinstance(dataList, list) == True:
+
+            for data in dataList:
+                # 如果不是列表，则跳过
+                if isinstance(data, list) == False:
+                    continue
+
+                # 如果长度不一致，则跳过
+                if len(data) != length:
+                    print("相加时：存在列表长度不一致")
+                    continue
+                for i in range(0, length):
+                    if data[i] == None:
+                        continue
+                    sumList[i] = (0 if sumList[i] == None else sumList[i]) + data[i]
+
+        return sumList
 
 
-        if noneToZero == []:
-            noneToZero = [1 for i in range(0,len(dataList))]
-
-
-        for i in range(0,len(noneToZero)):
-            if dataList[i] == None and noneToZero[i] == 1  :
-                dataList[i] = [None for i in range(0,length)]
-
-        # 是否全部都是列表
-        isAllList = True
-        # 判断所有列表所有值是否都为None
-        isAllNone = True
-        for i in range(0, len(dataList)):
-            if isinstance(dataList[i], list) == False:
-                isAllList = False
-            else:
-                for j in dataList[i]:
-                    if j != None:
-                        isAllNone = False
-                        break
-
-        # 只有都是列表 且 且其中存在数据时
-        if isAllList == True and isAllNone == False:
-            sumList = [None for i in range(0, length)]
-
-            for i in range(0, length):
-                for j in range(0, len(dataList)):
-
-
-                    if dataList[j][i] == None and noneToZero[j] == 1:
-                        dataList[j][i] = 0
-
-                    if dataList[j][i] == None:
-                        pass
-                    else:
-                        sumList[i] = (0 if sumList[i]==None else sumList[i]) + dataList[j][i]
-
-
-            return sumList
-        else:
-            print("A、B中存在非列表，无法进行相加")
-            return [None for i in range(0,length)]
 
     @staticmethod
     def getAverage(dataList):
@@ -270,14 +292,17 @@ class CommonCal:
         if numeratorList == None or numeratorList == [] or denominatorList == None or denominatorList == []:
             isNumOrDenNotNone == False
 
-
         if isNumOrDenNotNone:
             for i in range(0,length):
+                # 如果不是列表，则退出循环
                 if isinstance(numeratorList[0], list) == False or isinstance(numeratorList[1], list) == False:
                     break
+                # 如果列表长度不一致，则退出循环
                 if len(numeratorList[0]) != length or len(numeratorList[1]) != length:
                     print("分子长度与期望的长度不一致")
                     break
+
+                # 如果某个时刻点为空，则跳过
                 if numeratorList[0][i] == None or numeratorList[1][i] == None:
                     continue
                 numeratorResList[i] = numeratorList[0][i] * numeratorList[1][i]
@@ -416,7 +441,6 @@ class CommonCal:
     #         "divideSum": divideSum,
     #     }
 
-
     @staticmethod
     def conductAddMulField(fieldNameList, dataList, length=96):
 
@@ -427,8 +451,8 @@ class CommonCal:
 
         for data in dataList:
             for field in fieldNameList:
-                # if field in data.keys():
-                fieldDataDict[field].append(data[field])
+                if field in data.keys():
+                    fieldDataDict[field].append(data[field])
 
         for field in fieldNameList:
             fieldDataDict[field] = CommonCal.conductAdd(fieldDataDict[field], length=length)

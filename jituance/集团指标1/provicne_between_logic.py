@@ -1,6 +1,6 @@
 import copy
 
-from jituance.集团小程序2.common_calculation import CommonCal
+from jituance.集团指标1.common_calculation import CommonCal
 
 
 class ProBeLogic:
