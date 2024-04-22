@@ -677,6 +677,49 @@ class Mengxi:
         for i in range(0, len(units)):
             t[i].start()
 
+    def generateContract(self):
+
+        pass
+
+    def requesetContract(self):
+
+        requesetData = {
+            "contractDTO": {
+                "ownerId": unitId,
+                "mltSort": "1",
+                "contractName": "光伏 双边协商合同",
+                "area": "1",
+                "netLossRatio": 0,
+                "oppositeSide": "1",
+                "startDate": "2024-05-01",
+                "endDate": "2024-05-02",
+                "createTime": "2024-04-17"
+            },
+            "contractPurchaseSaleRelated": [],
+            "contractDataDTOList": [{
+                "date": "2024-05-01",
+                "type": 3,
+                "checkType": False,
+                "price": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "value": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }, {
+                "date": "2024-05-02",
+                "type": 3,
+                "checkType": False,
+                "price": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "value": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            }]
+        }
+
+        pass
+
+    def writeContractIntoMysql(self):
+
+        pass
+
+    def readContractfromMysql(self):
+
+        pass
 
 if __name__ == '__main__':
     testSession = requests.Session()
@@ -688,30 +731,30 @@ if __name__ == '__main__':
     mx_test.login()
 
     # mx_test.createContract( name=1, unitId="e4dc743c87fe5ac60187fe69913d0002")
-
-    privatePath = r"D:\code\python\calCase\mx\私有数据"
-
-    threadList = []
-    print(threadList)
+    #
+    # privatePath = r"D:\code\python\calCase\mx\私有数据"
+    #
+    # threadList = []
+    # print(threadList)
     # mx_test.screenContract(1)
 
     #
-    num = 2
-    # t = []
-    for i in range(0,num):
-        threadList.append(Thread(target=mx_test.queryContract, args=("合同查询线程"+str(i),)))
-
-    reportNum = 2
-    for i in range(0,reportNum):
-        threadList.append(Thread(target=mx_test.report, args=("报表下载线程"+str(i),)))
+    # num = 2
+    # # t = []
+    # for i in range(0,num):
+    #     threadList.append(Thread(target=mx_test.queryContract, args=("合同查询线程"+str(i),)))
+    #
+    # reportNum = 2
+    # for i in range(0,reportNum):
+    #     threadList.append(Thread(target=mx_test.report, args=("报表下载线程"+str(i),)))
 
     # queryScreenNum = 2
     # for i in range(0,reportNum):
     #     threadList.append(Thread(target=mx_test.screenContract, args=("大屏指标线程"+str(i),)))
 
-    for i in threadList:
-        i.start()
-        # print(i)
+    # for i in threadList:
+    #     i.start()
+    #     # print(i)
 
     # print(mx_test.getFireUnit())
     # mx_test.deleteUnit(["省间火电机组#11","#2机组"])
