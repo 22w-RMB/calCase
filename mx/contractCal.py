@@ -7,6 +7,7 @@ import requests
 import random
 
 from common.common import CommonClass
+from mx.excel_handler import ExcelHeplerXlwing
 from mx.mysqlTool import MysqlTool
 
 yamlPath = r"D:\code\python\calCase\mx\config\mx_interface.yaml"
@@ -210,37 +211,7 @@ class Mengxi:
         }
 
 
-    # def requesetContract(self):
-    #
-    #     requesetData = {
-    #         "contractDTO": {
-    #             "ownerId": unitId,
-    #             "mltSort": "1",
-    #             "contractName": "光伏 双边协商合同",
-    #             "area": "1",
-    #             "netLossRatio": 0,
-    #             "oppositeSide": "1",
-    #             "startDate": "2024-05-01",
-    #             "endDate": "2024-05-02",
-    #             "createTime": "2024-04-17"
-    #         },
-    #         "contractPurchaseSaleRelated": [],
-    #         "contractDataDTOList": [{
-    #             "date": "2024-05-01",
-    #             "type": 3,
-    #             "checkType": False,
-    #             "price": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    #             "value": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    #         }, {
-    #             "date": "2024-05-02",
-    #             "type": 3,
-    #             "checkType": False,
-    #             "price": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    #             "value": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    #         }]
-    #     }
-    #
-    #     pass
+
 
     def writeContractIntoMysql(self,unit,requestData):
 
@@ -342,9 +313,7 @@ class Mengxi:
         queryRes = self.queryLocalContract(unitName, contractType, mltSort, tradeCycle, startDate, endDate)
 
 
-        time96List = {
 
-        }
 
         dayData = {
 
@@ -359,32 +328,248 @@ class Mengxi:
             monthStr = datetime.strftime(res["date"], "%Y-%m")
 
             if dateStr not in dayData.keys():
-                dayData[dateStr] = {
-                    "ele" : [None for i in range(0,96)],
-                    "price" : [None for i in range(0,96)],
-                    "fee" : [None for i in range(0,96)],
-                    "eleSum": [None for i in range(0, 96)],
-                    "priceSum": [None for i in range(0, 96)],
-                    "feeSum": [None for i in range(0, 96)],
-                }
+                dayData[dateStr] = []
 
-            if dateStr not in dayData.keys():
-                monthData[monthStr] = {
-                    "ele": [None for i in range(0, 96)],
-                    "price": [None for i in range(0, 96)],
-                    "fee": [None for i in range(0, 96)],
-                    "eleSum": [None for i in range(0, 96)],
-                    "priceSum": [None for i in range(0, 96)],
-                    "feeSum": [None for i in range(0, 96)],
-                }
+            if monthStr not in dayData.keys():
+                monthData[monthStr] = []
+
+            ele = res["ele"]
+            price = res["price"]
+
+            dayData[dateStr].append({
+                "ele" : ele,
+                "price" : price,
+            })
+
+            monthData[monthStr].append({
+                "ele" : ele,
+                "price" : price,
+            })
 
 
+
+        dayRes = self.calData(dayData)
+        monthRes = self.calData(monthData)
+
+        print(dayRes)
+        print(monthRes)
+
+        inputData = {
+            "day": dayRes,
+            "month": monthRes,
+        }
+        self.outputData(inputData)
+
+
+    def calData(self,dateDict):
+
+        resDateDict = {
+            "all" : {
+                "eleSum" : 0,
+                "priceSum" : 0,
+                "feeSum" : 0,
+                "absEleSum": 0,
+                "absPriceSum": 0,
+                "absFeeSum": 0,
+            }
+        }
+
+        for date in dateDict.keys():
+
+            dateData = dateDict[date]
+            ele = [0 for i in range(0,96)]
+            absEle = [0 for i in range(0,96)]
+            price = [0 for i in range(0,96)]
+            absPrice = [0 for i in range(0,96)]
+            fee = [0 for i in range(0,96)]
+            absFee = [0 for i in range(0,96)]
+
+
+            for i in range(0,len(dateData)):
+
+                indexData = dateData[i]
+
+                for j in range(0,96):
+                    if indexData["ele"][j] != None :
+                        ele[j] += indexData["ele"][j]
+                        absEle[j] += abs(indexData["ele"][j])
+
+                    if indexData["price"][j] == None or indexData["ele"][j] == None :
+                        continue
+
+                    fee[j] =   fee[j] + ( indexData["ele"][j] * indexData["price"][j])
+                    absFee[j] =   fee[j] + ( abs(indexData["ele"][j]) * indexData["price"][j])
+
+            eleSum = 0
+            absEleSum = 0
+
+            feeSum = 0
+            absFeeSum = 0
+            for i in range(0,96):
+                price[i] = None if ele[i] == 0 else fee[i]/ele[i]
+                absPrice[i] = None if absEle[i] == 0 else absFee[i]/absEle[i]
+
+                eleSum += ele[i]
+                absEleSum += absEle[i]
+                feeSum += fee[i]
+                absFeeSum += absFee[i]
+
+            priceSum = None if eleSum == 0 else feeSum/eleSum
+            absPriceSum = None if eleSum == 0 else absFeeSum/absEleSum
+
+            resDateDict[date] = {
+                "ele" : ele,
+                "price" : price,
+                "fee" : fee,
+                "absEle" : absEle,
+                "absPrice" : absPrice,
+                "absFee" : absFee,
+                "eleSum" : eleSum,
+                "priceSum" : priceSum,
+                "feeSum" : feeSum,
+                "absEleSum" : absEleSum,
+                "absPriceSum" : absPriceSum,
+                "absFeeSum" : absFeeSum,
+            }
+
+        for key in resDateDict.keys():
+
+            if key == "all":
+
+                continue
+
+            resDateDict["all"]["eleSum"] += resDateDict[key]["eleSum"]
+            resDateDict["all"]["feeSum"] += resDateDict[key]["feeSum"]
+            resDateDict["all"]["absEleSum"] += resDateDict[key]["absEleSum"]
+            resDateDict["all"]["absFeeSum"] += resDateDict[key]["absFeeSum"]
+
+        resDateDict["all"]["priceSum"] = None if resDateDict["all"]["eleSum"] == 0 else resDateDict["all"]["feeSum"] / resDateDict["all"]["eleSum"]
+        resDateDict["all"]["absPriceSum"] = None if resDateDict["all"]["absEleSum"] == 0 else resDateDict["all"]["absFeeSum"] / resDateDict["all"]["absEleSum"]
+
+        return resDateDict
+
+    # 输出到excel
+    def outputData(self,inputData):
+
+        # sd = datetime.strptime(startDate, "%Y-%m-%d")
+        # ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        resData = {}
+        dayData = inputData["day"]
+        monthData = inputData["month"]
+
+        print(dayData)
+        print(monthData)
+
+        for date in dayData.keys():
+            if date=="all":
+                continue
+
+            dateResData = []
+            # dateResData.append(
+            #     # ["日期","机组", "合约类型", "电量/电价", "合计/均值"],
+            # )
+
+            ele = [date,"全厂", "中长期总体", "电量" ,dayData[date]["eleSum"]]
+            ele.extend(dayData[date]["ele"])
+            price = [date,"全厂", "中长期总体", "电价" ,dayData[date]["priceSum"]]
+            price.extend(dayData[date]["price"])
+            fee = [date,"全厂", "中长期总体", "电费" ,dayData[date]["feeSum"]]
+            fee.extend(dayData[date]["fee"])
+
+            absEle = [date,"全厂", "中长期总体", "累计交易电量" ,dayData[date]["absEleSum"]]
+            absEle.extend(dayData[date]["absEle"])
+            absPrice = [date,"全厂", "中长期总体", "累计交易电价" ,dayData[date]["absPriceSum"]]
+            absPrice.extend(dayData[date]["absPrice"])
+            absFee = [date,"全厂", "中长期总体", "累计交易电费" ,dayData[date]["absFeeSum"]]
+            absFee.extend(dayData[date]["absFee"])
+
+            dateResData.append(ele)
+            dateResData.append(price)
+            dateResData.append(fee)
+            dateResData.append(absEle)
+            dateResData.append(absPrice)
+            dateResData.append(absFee)
+            resData[date] = dateResData
+
+
+
+
+        monthResData = []
+        monthSheetHeader = ["机组", "合约类型", "电量/电价", "合计/均值"]
+        monthSheetHeader.extend(monthData.keys())
+
+        monthele = ["全厂", "中长期总体", "电量", monthData["all"]["eleSum"]]
+        monthprice = ["全厂", "中长期总体", "电价", monthData["all"]["priceSum"]]
+        monthfee = ["全厂", "中长期总体", "电费", monthData["all"]["feeSum"]]
+        monthabsEle = ["全厂", "中长期总体", "累计交易电量", monthData["all"]["absEleSum"]]
+        monthabsPrice = ["全厂", "中长期总体", "累计交易电价", monthData["all"]["absPriceSum"]]
+        monthabsFee = ["全厂", "中长期总体", "累计交易电费", monthData["all"]["absFeeSum"]]
+
+        monthResData.append(monthSheetHeader)
+        monthResData.append(monthele)
+        monthResData.append(monthprice)
+        monthResData.append(monthfee)
+        monthResData.append(monthabsEle)
+        monthResData.append(monthabsPrice)
+        monthResData.append(monthabsFee)
+
+        for month in monthData.keys():
+
+
+            monthele.append(monthData[month]["eleSum"])
+            monthprice.append(monthData[month]["priceSum"])
+            monthfee.append(monthData[month]["feeSum"])
+
+            monthabsEle.append(monthData[month]["absEleSum"])
+            monthabsPrice.append(monthData[month]["absPriceSum"])
+            monthabsFee.append(monthData[month]["absFeeSum"])
+
+
+
+
+        # while sd <= ed:
+        #     dateStr = datetime.strftime(sd, "%Y-%m-%d")
+        #     dateResData[0].append(dateStr)
+        #
+        #
+        #     # 日期 +1
+        #     sd += timedelta(days=1)
+        #
+        # for date in resData:
+        #
+        #     if len(dateResData) - 1 < len(resData[date]):
+        #         for data in resData[date]:
+        #             dateResData.append(data[0:4])
+        #         continue
+        #
+        #     for i in range(0, len(resData[date])):
+        #         dateResData[i + 1].append(resData[date][i][3])
+
+        tempPath = CommonClass.mkDir("mx", "导出模板", "持仓总览模板.xlsx", isGetStr=True)
+        templateE = ExcelHeplerXlwing(tempPath)
+        template = templateE.getTemplateStyle("Sheet1")
+        templateE.close()
+
+        # print(resData)
+
+        savePath = CommonClass.mkDir("mx", "导出模板", "持仓总览结果.xlsx", isGetStr=True)
+        e = ExcelHeplerXlwing()
+
+        print(resData)
+        print(monthResData)
+        try:
+            for date in resData:
+                e.newExcel(sheetName=date, templateStyle=template)
+                e.writeData(savePath, resData[date], date)
+
+            e.newExcel(sheetName="月维度")
+            e.writeData(savePath, monthResData, "月维度", beginRow=1)
+        finally:
+            e.close()
 
         pass
 
-    def calData(self):
-
-        pass
 
 if __name__ == '__main__':
     testSession = requests.Session()
@@ -401,12 +586,12 @@ if __name__ == '__main__':
         "capacity": 580,
     }
 
-    startDate = "2024-04-01"
+    startDate = "2024-03-31"
     endDate = "2024-04-02"
 
-    # for i in range(1,10):
-    #     resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
-    #     mx_test.writeContractIntoMysql(unit,resquestData)
+    for i in range(1,10):
+        resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
+        mx_test.writeContractIntoMysql(unit,resquestData)
 
-    mx_test.queryLocalContract(["bteas"],["省内合同"], ["双边协商"], ["年度"], "2024-04-01", "2024-04-01")
+    mx_test.calContract(["bteas"],["省内合同"], ["双边协商"], ["年度"], "2024-03-30", "2024-04-01")
 
