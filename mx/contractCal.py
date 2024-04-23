@@ -95,6 +95,16 @@ enumType = {
     ],
 }
 
+enumOrder = [
+    "双边协商",
+    "跨省跨区",
+    "省间现货",
+    "基数",
+    "集中竞价",
+    "置换增量",
+    "置换转让",
+    "挂牌交易",
+]
 
 class Mengxi:
 
@@ -112,7 +122,6 @@ class Mengxi:
         elif type == "hn":
             self.domain = yamlData['url_domain']['hn_domain']
             self.loginInfo = yamlData['logininfo']['hn_info']
-
 
     def login(self):
         CommonClass.login(self.session, self.domain, self.loginInfo)
@@ -218,7 +227,6 @@ class Mengxi:
         res = CommonClass.execRequest(self.session, method=method, url=url, json=requestData)
         print(res.json())
 
-
     def writeContractIntoMysql(self,unit,requestData):
 
         contractDTO = requestData["contractDTO"]
@@ -317,11 +325,10 @@ class Mengxi:
 
         pass
 
-
+    #
     def calContract(self,unitName, contractType, mltSort, tradeCycle, startDate, endDate):
 
         queryRes = self.queryLocalContract(unitName, contractType, mltSort, tradeCycle, startDate, endDate)
-
 
         dayData = {
 
@@ -338,7 +345,7 @@ class Mengxi:
             if dateStr not in dayData.keys():
                 dayData[dateStr] = []
 
-            if monthStr not in dayData.keys():
+            if monthStr not in monthData.keys():
                 monthData[monthStr] = []
 
             ele = res["ele"]
@@ -357,8 +364,6 @@ class Mengxi:
                 "net_loss_ratio" : net_loss_ratio,
             })
 
-
-
         dayRes = self.calData(dayData)
         monthRes = self.calData(monthData)
 
@@ -371,7 +376,7 @@ class Mengxi:
         }
         self.outputData(inputData)
 
-
+    # 计算合同数据
     def calData(self,dateDict):
 
         resDateDict = {
@@ -409,8 +414,8 @@ class Mengxi:
                     if indexData["price"][j] == None or indexData["ele"][j] == None :
                         continue
 
-                    fee[j] =   fee[j] + ( indexData["ele"][j] * indexData["price"][j])
-                    absFee[j] =   fee[j] + ( abs(indexData["ele"][j]) * indexData["price"][j])
+                    fee[j] =   fee[j] + ( indexData["ele"][j]/(1-indexData["net_loss_ratio"]/100) * indexData["price"][j])
+                    absFee[j] =   absFee[j] + ( abs(indexData["ele"][j])/(1-indexData["net_loss_ratio"]/100) * indexData["price"][j])
 
             eleSum = 0
             absEleSum = 0
@@ -418,13 +423,16 @@ class Mengxi:
             feeSum = 0
             absFeeSum = 0
             for i in range(0,96):
-                price[i] = None if ele[i] == 0 else fee[i]/ele[i]
-                absPrice[i] = None if absEle[i] == 0 else absFee[i]/absEle[i]
 
                 eleSum += ele[i]
                 absEleSum += absEle[i]
                 feeSum += fee[i]
                 absFeeSum += absFee[i]
+
+                price[i] = None if ele[i] == 0 else fee[i]/ele[i]
+                absPrice[i] = None if absEle[i] == 0 else absFee[i]/absEle[i]
+
+
 
             priceSum = None if eleSum == 0 else feeSum/eleSum
             absPriceSum = None if eleSum == 0 else absFeeSum/absEleSum
@@ -619,11 +627,11 @@ if __name__ == '__main__':
     endDate = "2024-06-02"
 
     # for unit in units:
-    #     for i in range(1,30):
+    #     for i in range(1,2):
     #         resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
     #         mx_test.requestContract(resquestData)
     #         mx_test.writeContractIntoMysql(unit,resquestData)
 
     # mx_test.calContract(["bteas"],["省内合同"], ["双边协商"], ["年度"], "2024-03-30", "2024-04-01")
-    mx_test.calContract(None,None,None, None, "2024-05-01", "2024-06-02")
+    mx_test.calContract(["火电合同#1"],None,None, None, "2024-05-01", "2024-05-01")
 
