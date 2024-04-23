@@ -626,11 +626,11 @@ if __name__ == '__main__':
     startDate = "2024-05-01"
     endDate = "2024-06-02"
 
-    # for unit in units:
-    #     for i in range(1,2):
-    #         resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
-    #         mx_test.requestContract(resquestData)
-    #         mx_test.writeContractIntoMysql(unit,resquestData)
+    for unit in units:
+        for i in range(1,2):
+            resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
+            mx_test.requestContract(resquestData)
+            mx_test.writeContractIntoMysql(unit,resquestData)
 
     # mx_test.calContract(["bteas"],["省内合同"], ["双边协商"], ["年度"], "2024-03-30", "2024-04-01")
     mx_test.calContract(["火电合同#1"],None,None, None, "2024-05-01", "2024-05-01")

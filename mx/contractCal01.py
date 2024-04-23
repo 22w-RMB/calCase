@@ -2,6 +2,7 @@ import datetime
 import os
 import time
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 import requests
 import random
@@ -423,7 +424,7 @@ class Mengxi:
             for i in range(0,len(dateData)):
 
                 indexData = dateData[i]
-                print("===========",indexData)
+                # print("===========",indexData)
 
                 for j in range(0,96):
                     if indexData["ele"][j] != None :
@@ -490,6 +491,36 @@ class Mengxi:
 
     def outputData(self,inputData,startDate, endDate):
 
+
+
+        dateData = self.outputDayDataGenertate( inputData, startDate, endDate)
+        monthData = self.outputMonthDataGenertate( inputData, startDate, endDate)
+
+        try:
+            tempPath = CommonClass.mkDir("mx", "导出模板", "持仓总览模板.xlsx", isGetStr=True)
+            templateE = ExcelHeplerXlwing(tempPath)
+            template = templateE.getTemplateStyle("Sheet1")
+        finally:
+            templateE.close()
+
+        # print(resData)
+
+        savePath = CommonClass.mkDir("mx", "导出模板", "持仓总览结果.xlsx", isGetStr=True)
+        e = ExcelHeplerXlwing()
+
+        try:
+            for date in dateData:
+                e.newExcel(sheetName=date, templateStyle=template)
+                e.writeData(savePath, dateData[date], date)
+            e.newExcel(sheetName="月维度")
+            e.writeData(savePath, monthData, "月维度",beginRow=1)
+        finally:
+            e.close()
+
+        pass
+
+
+    def outputDayDataGenertate(self,inputData,startDate, endDate):
         sd = datetime.strptime(startDate, "%Y-%m-%d")
         ed = datetime.strptime(endDate, "%Y-%m-%d")
 
@@ -503,26 +534,26 @@ class Mengxi:
 
             for unit in inputData:
 
-                unitName = "汇总" if unit =="all" else unit
+                unitName = "汇总" if unit == "all" else unit
 
                 for mltSort in inputData[unit].keys():
 
-                    sortName = "中长期总体"  if mltSort =="all" else mltSort
+                    sortName = "中长期总体" if mltSort == "all" else mltSort
 
                     sortDayData = inputData[unit][mltSort]["day"]
                     if dateStr not in sortDayData.keys():
                         ele = [unitName, sortName, "电量", None]
-                        ele.extend( [None for i in range(0,96)] )
+                        ele.extend([None for i in range(0, 96)])
                         price = [unitName, sortName, "电价", None]
-                        price.extend( [None for i in range(0,96)] )
+                        price.extend([None for i in range(0, 96)])
                         fee = [unitName, sortName, "费用", None]
-                        fee.extend( [None for i in range(0,96)] )
-                        absEle = [unitName, sortName, "累计交易电量",None]
-                        absEle.extend( [None for i in range(0,96)] )
+                        fee.extend([None for i in range(0, 96)])
+                        absEle = [unitName, sortName, "累计交易电量", None]
+                        absEle.extend([None for i in range(0, 96)])
                         absPrice = [unitName, sortName, "累计交易电价", None]
-                        absPrice.extend( [None for i in range(0,96)] )
+                        absPrice.extend([None for i in range(0, 96)])
                         absFee = [unitName, sortName, "累计交易费用", None]
-                        absFee.extend( [None for i in range(0,96)] )
+                        absFee.extend([None for i in range(0, 96)])
                         dateData[dateStr].append(ele)
                         dateData[dateStr].append(price)
                         dateData[dateStr].append(fee)
@@ -533,18 +564,18 @@ class Mengxi:
                         continue
 
                     ele = [unitName, sortName, "电量", sortDayData[dateStr]["eleSum"]]
-                    ele.extend( sortDayData[dateStr]["ele"])
+                    ele.extend(sortDayData[dateStr]["ele"])
                     price = [unitName, sortName, "电价", sortDayData[dateStr]["priceSum"]]
-                    price.extend( sortDayData[dateStr]["price"])
+                    price.extend(sortDayData[dateStr]["price"])
                     fee = [unitName, sortName, "费用", sortDayData[dateStr]["feeSum"]]
-                    fee.extend( sortDayData[dateStr]["fee"])
+                    fee.extend(sortDayData[dateStr]["fee"])
 
                     absEle = [unitName, sortName, "累计交易电量", sortDayData[dateStr]["absEleSum"]]
-                    absEle.extend( sortDayData[dateStr]["absEle"])
+                    absEle.extend(sortDayData[dateStr]["absEle"])
                     absPrice = [unitName, sortName, "累计交易电价", sortDayData[dateStr]["absPriceSum"]]
-                    absPrice.extend( sortDayData[dateStr]["absPrice"])
+                    absPrice.extend(sortDayData[dateStr]["absPrice"])
                     absFee = [unitName, sortName, "累计交易费用", sortDayData[dateStr]["absFeeSum"]]
-                    absFee.extend( sortDayData[dateStr]["absFee"])
+                    absFee.extend(sortDayData[dateStr]["absFee"])
 
                     dateData[dateStr].append(ele)
                     dateData[dateStr].append(price)
@@ -553,27 +584,61 @@ class Mengxi:
                     dateData[dateStr].append(absPrice)
                     dateData[dateStr].append(absFee)
 
+        return dateData
+
+    def outputMonthDataGenertate(self, inputData, startDate, endDate):
+        sd = datetime.strptime(startDate[:7], "%Y-%m")
+        ed = datetime.strptime(endDate[:7], "%Y-%m")
+
+        dateData = {}
+        dateData["0"] =  ["机组", "合约类型", "电量/电价", "合计/均值"]
 
 
-        tempPath = CommonClass.mkDir("mx", "导出模板", "持仓总览模板.xlsx", isGetStr=True)
-        templateE = ExcelHeplerXlwing(tempPath)
-        template = templateE.getTemplateStyle("Sheet1")
-        templateE.close()
+        while sd <= ed:
+            dateStr = datetime.strftime(sd, "%Y-%m")
+            dateData["0"].append(dateStr)
 
-        # print(resData)
+            sd += relativedelta(months=1)
+            count = 1
 
-        savePath = CommonClass.mkDir("mx", "导出模板", "持仓总览结果.xlsx", isGetStr=True)
-        e = ExcelHeplerXlwing()
+            for unit in inputData:
 
-        try:
-            for date in dateData:
-                e.newExcel(sheetName=date, templateStyle=template)
-                e.writeData(savePath, dateData[date], date)
+                unitName = "汇总" if unit == "all" else unit
 
-        finally:
-            e.close()
+                for mltSort in inputData[unit].keys():
 
-        pass
+                    sortName = "中长期总体" if mltSort == "all" else mltSort
+
+                    sortDayData = inputData[unit][mltSort]["month"]
+
+                    if str(count) not in dateData.keys():
+                        dateData[str(count)] = [unitName,sortName,"电量",sortDayData["all"]["eleSum"]]
+                        dateData[str(count+1)] = [unitName,sortName,"电价",sortDayData["all"]["priceSum"]]
+                        dateData[str(count+2)] = [unitName,sortName,"电费",sortDayData["all"]["feeSum"]]
+                        dateData[str(count+3)] = [unitName,sortName,"累计交易电量",sortDayData["all"]["absEleSum"]]
+                        dateData[str(count+4)] = [unitName,sortName,"累计交易均价",sortDayData["all"]["absPriceSum"]]
+                        dateData[str(count+5)] = [unitName,sortName,"累计交易电费",sortDayData["all"]["absFeeSum"]]
+
+                    if dateStr not in sortDayData.keys():
+                        dateData[str(count)].append(None)
+                        dateData[str(count + 1)].append(None)
+                        dateData[str(count + 2)].append(None)
+                        dateData[str(count + 3)].append(None)
+                        dateData[str(count + 4)].append(None)
+                        dateData[str(count + 5)].append(None)
+                    else:
+                        dateData[str(count)] .append(sortDayData[dateStr]["eleSum"])
+                        dateData[str(count+1)] .append(sortDayData[dateStr]["priceSum"])
+                        dateData[str(count+2)] .append(sortDayData[dateStr]["feeSum"])
+                        dateData[str(count+3)] .append(sortDayData[dateStr]["absEleSum"])
+                        dateData[str(count+4)] .append(sortDayData[dateStr]["absPriceSum"])
+                        dateData[str(count+5)] .append(sortDayData[dateStr]["absFeeSum"])
+
+                    count += 6
+        dList = []
+        for key in dateData.keys():
+            dList.append(dateData[key])
+        return dList
 
 
 if __name__ == '__main__':
@@ -583,7 +648,7 @@ if __name__ == '__main__':
 
     mx_test = Mengxi(testSession,yamlData,"hn")
 
-    mx_test.login()
+    # mx_test.login()
 
     units = [
         {
@@ -640,5 +705,5 @@ if __name__ == '__main__':
         "风电合同#1",
     ]
 
-    mx_test.execMain(unitNameList,None,mltSortList, None, "2024-05-01", "2024-05-02")
+    mx_test.execMain(unitNameList,None,mltSortList, None, "2024-05-01", "2024-06-02")
 
