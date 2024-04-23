@@ -190,8 +190,8 @@ class Mengxi:
         while sd <= ed:
             dateStr = datetime.strftime(sd, "%Y-%m-%d")
             sd += timedelta(days=1)
-            ele = [ round(random.randint(0, unit["capacity"])/4/10/40,2) for _ in range(96)]
-            price = [ round(random.randint(10000, 100000)/100,2) for _ in range(96)]
+            ele = [ random.choice([-1,1])*round(random.randint(0, round(unit["capacity"],0))/4/10/40,2) for i in range(0,96)]
+            price = [ round(random.randint(10000, 100000)/100,2) for i in range(0,96)]
 
             tempDic = {
                 "date": dateStr,
@@ -210,7 +210,13 @@ class Mengxi:
             "contractDataDTOList": contractDataDTOList
         }
 
+    def requestContract(self,requestData):
 
+        url = self.domain + "/mxfire/api/mlt/contract"
+        method = "POST"
+
+        res = CommonClass.execRequest(self.session, method=method, url=url, json=requestData)
+        print(res.json())
 
 
     def writeContractIntoMysql(self,unit,requestData):
@@ -296,13 +302,17 @@ class Mengxi:
 
         ty = enumType[typeName]
         resultList = []
-
-        for t in typeList:
-
+        if typeList == None:
             for tt in ty:
-                if tt["name"] == t:
-                    resultList.append(tt["id"])
-                    break
+                resultList.append(tt["id"])
+
+        else:
+            for t in typeList:
+
+                for tt in ty:
+                    if tt["name"] == t:
+                        resultList.append(tt["id"])
+                        break
 
 
         pass
@@ -311,8 +321,6 @@ class Mengxi:
     def calContract(self,unitName, contractType, mltSort, tradeCycle, startDate, endDate):
 
         queryRes = self.queryLocalContract(unitName, contractType, mltSort, tradeCycle, startDate, endDate)
-
-
 
 
         dayData = {
@@ -335,15 +343,18 @@ class Mengxi:
 
             ele = res["ele"]
             price = res["price"]
+            net_loss_ratio = res["net_loss_ratio"]
 
             dayData[dateStr].append({
                 "ele" : ele,
                 "price" : price,
+                "net_loss_ratio" : net_loss_ratio,
             })
 
             monthData[monthStr].append({
                 "ele" : ele,
                 "price" : price,
+                "net_loss_ratio" : net_loss_ratio,
             })
 
 
@@ -351,8 +362,8 @@ class Mengxi:
         dayRes = self.calData(dayData)
         monthRes = self.calData(monthData)
 
-        print(dayRes)
-        print(monthRes)
+        # print(dayRes)
+        # print(monthRes)
 
         inputData = {
             "day": dayRes,
@@ -388,11 +399,12 @@ class Mengxi:
             for i in range(0,len(dateData)):
 
                 indexData = dateData[i]
+                print("===========",indexData)
 
                 for j in range(0,96):
                     if indexData["ele"][j] != None :
-                        ele[j] += indexData["ele"][j]
-                        absEle[j] += abs(indexData["ele"][j])
+                        ele[j] = ele[j] + indexData["ele"][j]/(1-indexData["net_loss_ratio"]/100)
+                        absEle[j] = absEle[j] + abs(indexData["ele"][j])/(1-indexData["net_loss_ratio"]/100)
 
                     if indexData["price"][j] == None or indexData["ele"][j] == None :
                         continue
@@ -578,20 +590,40 @@ if __name__ == '__main__':
 
     mx_test = Mengxi(testSession,yamlData,"hn")
 
-    # mx_test.login()
+    mx_test.login()
 
-    unit = {
-        "unitId": "23",
-        "unitName": "bteas",
-        "capacity": 580,
-    }
+    units = [
+        {
+            "unitId": "e4e4b4b48f08bd51018f08bfdfeb0001",
+            "unitName": "火电合同#1",
+            "capacity": 500,
+        },
+        {
+            "unitId": "e4e4b4b48f08bd51018f08c0346e0003",
+            "unitName": "火电合同#2",
+            "capacity": 488.3,
+        },
+        {
+            "unitId": "e4e4b4b48f08bd51018f08c006fd0002",
+            "unitName": "风电合同#1",
+            "capacity": 100,
+        },
+        {
+            "unitId": "e4e4b4b48f08bd51018f08c06ac30004",
+            "unitName": "水电合同#1",
+            "capacity": 580,
+        },
+    ]
 
-    startDate = "2024-03-31"
-    endDate = "2024-04-02"
+    startDate = "2024-05-01"
+    endDate = "2024-06-02"
 
-    for i in range(1,10):
-        resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
-        mx_test.writeContractIntoMysql(unit,resquestData)
+    # for unit in units:
+    #     for i in range(1,30):
+    #         resquestData = mx_test.generateContractRequestData(startDate,endDate,unit)
+    #         mx_test.requestContract(resquestData)
+    #         mx_test.writeContractIntoMysql(unit,resquestData)
 
-    mx_test.calContract(["bteas"],["省内合同"], ["双边协商"], ["年度"], "2024-03-30", "2024-04-01")
+    # mx_test.calContract(["bteas"],["省内合同"], ["双边协商"], ["年度"], "2024-03-30", "2024-04-01")
+    mx_test.calContract(None,None,None, None, "2024-05-01", "2024-06-02")
 
