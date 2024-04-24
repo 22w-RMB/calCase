@@ -492,9 +492,9 @@ class Mengxi:
     def outputData(self,inputData,startDate, endDate):
 
 
-
         dateData = self.outputDayDataGenertate( inputData, startDate, endDate)
-        monthData = self.outputMonthDataGenertate( inputData, startDate, endDate)
+        monthData = self.outputMonthDataGenertate( inputData, startDate, endDate,dimensions="month")
+        dayData = self.outputMonthDataGenertate( inputData, startDate, endDate,dimensions="day")
 
         try:
             tempPath = CommonClass.mkDir("mx", "导出模板", "持仓总览模板.xlsx", isGetStr=True)
@@ -514,6 +514,8 @@ class Mengxi:
                 e.writeData(savePath, dateData[date], date)
             e.newExcel(sheetName="月维度")
             e.writeData(savePath, monthData, "月维度",beginRow=1)
+            e.newExcel(sheetName="日维度")
+            e.writeData(savePath, dayData, "日维度", beginRow=1)
         finally:
             e.close()
 
@@ -586,19 +588,31 @@ class Mengxi:
 
         return dateData
 
-    def outputMonthDataGenertate(self, inputData, startDate, endDate):
-        sd = datetime.strptime(startDate[:7], "%Y-%m")
-        ed = datetime.strptime(endDate[:7], "%Y-%m")
-
+    def outputMonthDataGenertate(self, inputData, startDate, endDate,dimensions = "month"):
+        sd = None
+        ed = None
+        if dimensions == "month":
+            sd = datetime.strptime(startDate[:7], "%Y-%m")
+            ed = datetime.strptime(endDate[:7], "%Y-%m")
+        if dimensions == "day":
+            sd = datetime.strptime(startDate, "%Y-%m-%d")
+            ed = datetime.strptime(endDate, "%Y-%m-%d")
         dateData = {}
         dateData["0"] =  ["机组", "合约类型", "电量/电价", "合计/均值"]
 
 
         while sd <= ed:
-            dateStr = datetime.strftime(sd, "%Y-%m")
+            dateStr = None
+            if dimensions == "month":
+                dateStr = datetime.strftime(sd, "%Y-%m")
+                sd += relativedelta(months=1)
+            if dimensions == "day":
+                dateStr = datetime.strftime(sd, "%Y-%m-%d")
+                sd += timedelta(days=1)
+
             dateData["0"].append(dateStr)
 
-            sd += relativedelta(months=1)
+
             count = 1
 
             for unit in inputData:
@@ -609,7 +623,7 @@ class Mengxi:
 
                     sortName = "中长期总体" if mltSort == "all" else mltSort
 
-                    sortDayData = inputData[unit][mltSort]["month"]
+                    sortDayData = inputData[unit][mltSort][dimensions]
 
                     if str(count) not in dateData.keys():
                         dateData[str(count)] = [unitName,sortName,"电量",sortDayData["all"]["eleSum"]]
@@ -700,9 +714,9 @@ if __name__ == '__main__':
     unitNameList = [
         "all",
         "火电合同#1",
+        "风电合同#1",
         "火电合同#2",
         "水电合同#1",
-        "风电合同#1",
     ]
 
     mx_test.execMain(unitNameList,None,mltSortList, None, "2024-05-01", "2024-06-02")
