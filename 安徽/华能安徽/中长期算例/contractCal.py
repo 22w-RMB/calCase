@@ -157,7 +157,7 @@ class Anhui:
             "ownerId": unit["unitId"],
             "mltSort": str(random.randint(1, len(enumType["mltSort"]))),
             "contractName": "随机合同" + str(count)+str(random.randint(10000, 99999)),
-            "tradeDirection": random.randint(0, len(enumType["contractType"])-1),
+            "tradeDirection": random.choice(["BUY","SELL"]),
             "type":  random.choice(["PROVINCIAL","INTER_PROVINCIAL"]),
             "oppositeSide": "购电名称"+str(random.randint(0, 10000)),
             "startDate": startDate,
@@ -184,7 +184,13 @@ class Anhui:
             if random.randint(0, 100) == 1:
                 priceNoneIndex = eleNoneIndex
 
-            ele = [ random.choice([-1,1])*round(random.randint(0, 500)/100,2) for i in range(0,96)]
+            ele = []
+            for i in range(0, 96):
+                temp = 1
+                if random.randint(0, 20) <2 :
+                    temp = -1
+                ele.append(round(random.randint(0, 500)/100,2)*temp)
+
             price = [ round(random.randint(10000, 100000)/100,2) for i in range(0,96)]
 
             ele[eleNoneIndex] = None
@@ -609,17 +615,17 @@ if __name__ == '__main__':
     ah_test.login()
 
 
-    startDate = "2024-05-01"
-    endDate = "2024-05-01"
+    startDate = "2024-06-27"
+    endDate = "2024-07-03"
 
     count = 0
-    for unit in units:
-        for i in range(1,3):
-            resquestData = ah_test.generateContractRequestData(startDate,endDate,unit,count)
-            print(resquestData)
-            # ah_test.requestContract(resquestData)
-            ah_test.writeContractIntoMysql(unit,resquestData)
-            count += 1
+    # for unit in units:
+    #     for i in range(1,20):
+    #         resquestData = ah_test.generateContractRequestData(startDate,endDate,unit,count)
+    #         print(resquestData)
+    #         ah_test.requestContract(resquestData)
+    #         ah_test.writeContractIntoMysql(unit,resquestData)
+    #         count += 1
 
     mltSortList = [
         "all",
@@ -639,6 +645,6 @@ if __name__ == '__main__':
         "光伏合同#1",
     ]
 
-    # ah_test.execMain(unitNameList,None,mltSortList, "2024-05-01", "2024-05-01")
+    ah_test.execMain(unitNameList,None,mltSortList, "2024-06-27", "2024-07-03")
 
 
