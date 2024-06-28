@@ -97,7 +97,7 @@ class Shanxi:
                 intervalDay = targetD-tradeD
 
                 intervalDayStr = "D-" + str(intervalDay.days)
-                print(intervalDayStr)
+                # print(intervalDayStr)
 
                 resultDataDic[dateStr][intervalDayStr]["price"] = resData["price"]
                 resultDataDic[dateStr][intervalDayStr]["minPrice"] = resData["minPrice"]
@@ -114,7 +114,7 @@ class Shanxi:
 
 
 
-        print(resultDataDic)
+        # print(resultDataDic)
         return resultDataDic
 
 
@@ -168,6 +168,9 @@ class Shanxi:
             sumEleList = []
             sumFeeList = []
             sumPriceList = []
+            sumMaxPriceList = []
+            sumMinPriceList = []
+            sumMedianPriceList = []
 
             for key in dateDic.keys():
                 if key == "汇总" or key=="dayAheadPirce":
@@ -180,6 +183,8 @@ class Shanxi:
                 allDateDic[dateStr][key+"成交电量"] = tempDic["ele"]
                 allDateDic[dateStr][key+"成交均价"] = tempDic["price"]
                 allDateDic[dateStr][key+"成交费用"] = self.multiData(tempDic["ele"],tempDic["price"])
+
+
                 allDateDic[dateStr][key+"价差(总成交均价-日前价格)"] = self.subData(tempDic["price"],dayAheadPirce)
                 allDateDic[dateStr][key+"成交最高均价"] = tempDic["maxPrice"]
                 allDateDic[dateStr][key+"价差(成交最高均价-日前价格)"] = self.subData(tempDic["maxPrice"],dayAheadPirce)
@@ -189,22 +194,26 @@ class Shanxi:
                 allDateDic[dateStr][key+"价差(成交中位数均价-日前价格)"] = self.subData(tempDic["medianPrice"],dayAheadPirce)
 
 
-                if filter == [] or key in filter:
+                if filter == [] or (key in filter):
                     sumEleList.append(tempDic["ele"])
                     sumPriceList.append(tempDic["price"])
                     sumFeeList.append(self.multiData(tempDic["ele"],tempDic["price"]))
-
+                    sumMaxPriceList.append(tempDic["maxPrice"])
+                    sumMinPriceList.append(tempDic["minPrice"])
+                    sumMedianPriceList.append(tempDic["medianPrice"])
 
             allDateDic[dateStr]["总成交电量"] = self.otherData(sumEleList)["add"]
             allDateDic[dateStr]["总成交费用"] = self.otherData(sumFeeList)["add"]
             allDateDic[dateStr]["总成交均价"] = self.divData(allDateDic[dateStr]["总成交费用"],allDateDic[dateStr]["总成交电量"])
             allDateDic[dateStr]["总价差(总成交均价-日前价格)"] = self.subData( allDateDic[dateStr]["总成交均价"],allDateDic[dateStr]["日前出清价格"]  )
-            allDateDic[dateStr]["总成交最高均价"] = self.otherData(sumPriceList)["max"]
+            allDateDic[dateStr]["总成交最高均价"] = self.otherData(sumMaxPriceList)["max"]
             allDateDic[dateStr]["总价差(成交最高均价-日前价格)"] = self.subData( allDateDic[dateStr]["总成交最高均价"],allDateDic[dateStr]["日前出清价格"]  )
-            allDateDic[dateStr]["总成交最低均价"] = self.otherData(sumPriceList)["min"]
+            allDateDic[dateStr]["总成交最低均价"] = self.otherData(sumMinPriceList)["min"]
             allDateDic[dateStr]["总价差(成交最低均价-日前价格)"] = self.subData( allDateDic[dateStr]["总成交最低均价"],allDateDic[dateStr]["日前出清价格"]  )
-            allDateDic[dateStr]["总成交中位数均价"] = self.otherData(sumPriceList)["median"]
+            allDateDic[dateStr]["总成交中位数均价"] = self.otherData(sumMedianPriceList)["avg"]
             allDateDic[dateStr]["总价差(成交中位数均价-日前价格)"] = self.subData( allDateDic[dateStr]["总成交中位数均价"],allDateDic[dateStr]["日前出清价格"]  )
+
+            allDateDic[dateStr]["总日前价格成交费用"] = self.multiData(allDateDic[dateStr]["总成交电量"],dayAheadPirce)
 
 
         # print(allDateDic)
@@ -223,12 +232,16 @@ class Shanxi:
             typeList.append("D-"+str(i))
 
         dayAheadPriceList = []
+        sumdayAheadPriceFeeList = []
 
         for i in typeList:
 
             sumEleList = []
             sumFeeList = []
             sumPriceList = []
+            sumMaxList = []
+            sumMinList = []
+            sumMedianList = []
 
             for dateStr in allDateData:
                 dDic = allDateData[dateStr]
@@ -236,23 +249,29 @@ class Shanxi:
                 sumEleList.append( dDic[ i +"成交电量"]  )
                 sumFeeList.append(dDic[i +"成交费用"] )
                 sumPriceList.append(dDic[i +"成交均价"] )
+                sumMaxList.append(dDic[i +"成交最高均价"] )
+                sumMinList.append(dDic[i +"成交最低均价"] )
+                sumMedianList.append(dDic[i +"成交中位数均价"] )
 
                 if i == "总":
-                    dayAheadPriceList.append(dDic["日前出清价格"])
+                    sumdayAheadPriceFeeList.append(dDic[i +"日前价格成交费用"])
 
             if i == "总":
-                totalDic["日前出清价格"] = self.otherData(dayAheadPriceList)["avg"]
+
+                totalDic[i + "日前价格成交费用"] = self.otherData(sumdayAheadPriceFeeList)["add"]
+                totalDic["日前出清价格"] = self.divData(totalDic[i + "日前价格成交费用"],self.otherData(sumEleList)["add"])
 
             totalDic[i + "成交电量"] = self.otherData(sumEleList)["add"]
             totalDic[i + "成交费用"] = self.otherData(sumFeeList)["add"]
             totalDic[i + "成交均价"] = self.divData(totalDic[i + "成交费用"],totalDic[i + "成交电量"])
             totalDic[i + "价差(总成交均价-日前价格)"] = self.subData( totalDic[i + "成交均价"],totalDic["日前出清价格"]  )
-            totalDic[i + "成交最高均价"] = self.otherData(sumPriceList)["max"]
+            totalDic[i + "成交最高均价"] = self.otherData(sumMaxList)["max"]
             totalDic[i + "价差(成交最高均价-日前价格)"] = self.subData( totalDic[i + "成交最高均价"],totalDic["日前出清价格"]  )
-            totalDic[i + "成交最低均价"] = self.otherData(sumPriceList)["min"]
+            totalDic[i + "成交最低均价"] = self.otherData(sumMinList)["min"]
             totalDic[i + "价差(成交最低均价-日前价格)"] = self.subData( totalDic[i + "成交最低均价"],totalDic["日前出清价格"]  )
-            totalDic[i + "成交中位数均价"] = self.otherData(sumPriceList)["median"]
+            totalDic[i + "成交中位数均价"] = self.otherData(sumMedianList)["avg"]
             totalDic[i + "价差(成交中位数均价-日前价格)"] = self.subData( totalDic[i + "成交中位数均价"],totalDic["日前出清价格"]  )
+
 
 
         return totalDic
@@ -369,22 +388,22 @@ class Shanxi:
 
         resJson = CommonClass.execRequest(self.session,url=url,method="POST",json=jsonData).json()
 
-        print(resJson["data"]["dataList"])
+        # print(resJson["data"]["dataList"])
 
         for d in resJson["data"]["dataList"]:
 
-            if d["marketType"] == "DAY_AHEAD":
+            if d["marketType"] == "DAY_AHEAD" and d["price"]!=[]:
 
                 price = d["price"]
 
-        print(price)
+        # print(price)
         return price
 
 
-    def outputData(self, dateData,totalData):
+    def outputData(self, startDate,endDate,filter=[],outputFilter=[]):
 
-
-
+        dateData = self.calAllDate(startDate, endDate, filter=filter)
+        totalData = self.calTotal(dateData)
 
         try:
             tempPath = CommonClass.mkDir("山西","新能源","导出", "模板.xlsx", isGetStr=True)
@@ -400,31 +419,31 @@ class Shanxi:
 
         try:
             for date in dateData.keys():
-                res = self.transData(dateData[date])
+                res = self.transData(dateData[date],outputFilter)
                 e.newExcel(sheetName=date, templateStyle=template)
                 e.writeData(savePath, res, date,beginRow=1,beginCol=1)
 
             e.newExcel(sheetName="汇总", templateStyle=template)
-            total = self.transData(totalData)
+            total = self.transData(totalData,outputFilter)
             e.writeData(savePath, total, "汇总",beginRow=1,beginCol=1)
 
         finally:
             e.close()
 
 
-    def transData(self,dicData):
+    def transData(self,dicData,outputFilter):
         # print(dicData)
         returnList = [ [] for i in range(0,25) ]
         returnList[0].append("时刻")
         for key in dicData.keys():
-            if "费" in key:
+            if ("费" in key)  or ( ("D" in key) and (key[:3] not in outputFilter) and (outputFilter != [])  ):
                 continue
             returnList[0].append(key)
 
         for i in range(0,24):
             returnList[i + 1].append(i+1)
             for key in dicData.keys():
-                if "费" in key:
+                if ("费" in key)  or ( ("D" in key) and (key[:3] not in outputFilter) and (outputFilter != [])  ):
                     continue
                 returnList[i+1].append( dicData[key][i] )
 
@@ -444,10 +463,8 @@ if __name__ == '__main__':
 
 
     startDate = "2024-05-01"
-    endDate = "2024-05-01"
+    endDate = "2024-05-08"
 
     # sx_test.getPublicDailyRoll(startDate,endDate)
-    dateData = sx_test.calAllDate(startDate,endDate,filter=[])
-    print(dateData)
-    totalData = sx_test.calTotal(dateData)
-    sx_test.outputData(dateData,totalData)
+
+    sx_test.outputData(startDate,endDate,filter=["D-2","D-3","D-4","D-7","D-8",],outputFilter=["D-2","D-3","D-4","D-7","D-8",])
