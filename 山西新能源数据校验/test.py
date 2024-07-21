@@ -1,4 +1,6 @@
 from 山西新能源数据校验.common import CommonClass
+from 山西新能源数据校验.excel_handler import ExcelHeplerXlwing
+from datetime import datetime, timedelta
 import requests
 
 businessType = [
@@ -63,7 +65,7 @@ dataItemDic = {
         "type" : "省内现货交易"
     },
     "405":  {
-        "name" : "日内出力计划",
+        "name" : "日前节点电价",
         "type" : "省内现货交易"
     },
     "406":  {
@@ -90,6 +92,40 @@ dataItemDic = {
         "name": "省间日内结算电量",
         "type": "省间现货交易"
     },
+    "buySellContract" : {
+        "name": "购售电合同",
+        "type": "日清分单结算明细-中长期数据"
+    },
+    "marketContract":{
+        "name": "市场化合同",
+        "type": "日清分单结算明细-中长期数据"
+    },
+    "proInDayAhead":{
+        "name": "日前数据",
+        "type": "日清分单结算明细-日前数据"
+    },
+    "proInRealTime": {
+        "name": "实时数据",
+        "type": "日清分单结算明细-实时数据"
+    },
+
+    "501" :{
+        "name": "日清分单",
+        "type": "日清分单"
+    },
+    "901": {
+        "name": "月结算单",
+        "type": "月结算单"
+    },
+
+    "分时交易合同数据": {
+        "name": "分时交易合同数据",
+        "type": "中长期合同数据"
+    },
+    "双边与挂牌合同数据": {
+        "name": "双边与挂牌合同数据",
+        "type": "中长期合同数据"
+    }
 }
 
 def getBusinessTypeStr(businessTypeId):
@@ -108,6 +144,8 @@ class Shanxi:
         self.session = session
         self.domain = info['url_domain']
         self.loginInfo = info['logininfo']
+        self.tenantId = info['tenantId']
+        self.loginInfo["switch_url"] += self.tenantId
 
 
     def login(self):
@@ -130,6 +168,371 @@ class Shanxi:
             )
         return unitsInfo
 
+    #场站发电数据
+    def getStationPowerGenerationStatus(self,startDate,endDate,unitInfo):
+
+        url = self.domain + "/sxAdss/api/private/data/detail"
+        method = "GET"
+
+        haveDataResList = []
+
+        for unit in unitInfo:
+
+            paramDic = {
+                "osOrgId" : unit["unitId"],
+                "dataType" : 4,
+                "startTime" : startDate,
+                "endTime" : endDate,
+
+            }
+
+            response = CommonClass.execRequest(self.session, params=paramDic,method=method, url=url).json()['data']
+
+            if response == []:
+                continue
+
+            for d in response:
+                dateStr = d["date"][:10]
+                dataItem = d["dataItem"]
+                dataList = d["data"]
+
+                if dataList == None:
+                    continue
+
+                else:
+                    # 日期-数据项
+                    tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"]
+                    haveDataResList.append(tempStr)
+
+        return haveDataResList
+
+
+    #日清分单、月结算单
+    def getSettlementStatus(self,startDate,endDate,unitInfo):
+
+
+        url = self.domain + "/sxAdss/api/private/data/getPrivateAndPrivateItem"
+        method = "GET"
+
+        haveDataResList = []
+
+        for unit in unitInfo:
+
+            paramDic = {
+                "osOrgId" : unit["unitId"],
+                "startTime" : startDate,
+                "endTime" : endDate,
+
+            }
+
+            response = CommonClass.execRequest(self.session, params=paramDic,  method=method, url=url).json()['data']["uploadList"]
+
+            if response == []:
+                continue
+
+            for d in response:
+                dateStr = d["date"][:10]
+                monthStr = d["date"][:7]
+                dataItem = d["dataItem"]
+
+                outputItem = ["501","901"]
+
+                if dataItem not in outputItem:
+                    continue
+
+                else:
+                    # 日期-数据项
+                    tempStr = None
+                    if dataItem =="901":
+                        tempStr = monthStr + "-" + dataItem + "-" + unit["unitId"]
+                    elif dataItem =="501":
+                        tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"]
+                    haveDataResList.append(tempStr)
+
+        return haveDataResList
+
+
+    #日清分单明细
+    def getDaySettlementDetailStatus(self, startDate, endDate, unitInfo):
+
+        url = self.domain + "/sxAdss/api/daily/clearing/summarize"
+        method = "GET"
+
+        haveDataResList = []
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        while sd <= ed:
+            dateStr = datetime.strftime(sd, "%Y-%m-%d")
+            sd += timedelta(days=1)
+
+            for unit in unitInfo:
+
+                paramDic = {
+                    "osOrgId": unit["unitId"],
+                    "startDate": dateStr,
+                    "endDate": dateStr,
+                    "expectantIndex": "DAILY_CLEARING_DETAIL",
+                    "formalIndex": "DAILY_CLEARING",
+
+                }
+
+                response = \
+                CommonClass.execRequest(self.session, params=paramDic, method=method, url=url).json()['data'][
+                    "dailyClearingDetailData"]["detailData"]
+
+                if response == None:
+                    continue
+
+                for dataItem in response.keys():
+
+                    if dataItem not in dataItemDic.keys():
+                        continue
+
+                    if response[dataItem]["ele"] == [] and \
+                            response[dataItem]["fee"] == [] and \
+                            response[dataItem]["price"] ==[]:
+                        continue
+
+                    tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"]
+
+                    haveDataResList.append(tempStr)
+
+        return haveDataResList
+
+    #中长期合同：方法1，只判断总电量，需要每天遍历
+    def getContractStatus1(self,startDate,endDate,unitInfo):
+
+        url = self.domain + "/sxAdss/api/mlt/position/detail"
+        method = "POST"
+
+        haveDataResList = []
+
+        dataItems = {
+            "分时交易合同数据": {
+                "contractTypeIds": ["1"],
+            },
+            "双边与挂牌合同数据": {
+                "contractTypeIds": ["2","3"],
+            }
+        }
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        while sd <= ed:
+            dateStr = datetime.strftime(sd, "%Y-%m-%d")
+            sd += timedelta(days=1)
+
+            for unit in unitInfo:
+
+                for dataItem in dataItems.keys():
+
+                    josnDic = {
+                        "contractNames": [],
+                        "contractTypeIds": dataItems[dataItem]["contractTypeIds"],
+                        "datePeriodDTOS": [{
+                            "startDate": dateStr,
+                            "endDate": dateStr
+                        }],
+                        "eleDiameter": "ONLINE_ELE",
+                        "isSeparate": False,
+                        "labelIds": [],
+                        "mergeType": "NONE",
+                        "mltTimePeriodDTO": {
+                            "timePeriods": [],
+                            "timeSegment": "POINT_96"
+                        },
+                        "orgId": self.tenantId,
+                        "ownerIds": [unit["unitId"]],
+                        "tradingModeIds": ["4", "5"]
+                    }
+
+                    response = \
+                    CommonClass.execRequest(self.session, json=josnDic, method=method, url=url).json()['data'][
+                        "mltContractRespDTO"]
+                    # print(dateStr)
+                    # print(response)
+
+                    if response == None:
+                        continue
+
+                    # 通过电量判断是否有数据
+                    if response["contractTotalEle"] == None:
+                        continue
+
+                    tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"]
+
+                    haveDataResList.append(tempStr)
+
+        return haveDataResList
+
+    #中长期合同：方法2，判断每一天96点电量，不用每天遍历
+    def getContractStatus(self,startDate,endDate,unitInfo):
+
+        url = self.domain + "/sxAdss/api/mlt/position/detail"
+        method = "POST"
+
+        haveDataResList = []
+
+        dataItems = {
+            "分时交易合同数据": {
+                "contractTypeIds": ["1"],
+            },
+            "双边与挂牌合同数据": {
+                "contractTypeIds": ["2","3"],
+            }
+        }
+
+
+        for unit in unitInfo:
+
+            for dataItem in dataItems.keys():
+
+                josnDic = {
+                    "contractNames": [],
+                    "contractTypeIds": dataItems[dataItem]["contractTypeIds"],
+                    "datePeriodDTOS": [{
+                        "startDate": startDate,
+                        "endDate": endDate
+                    }],
+                    "eleDiameter": "ONLINE_ELE",
+                    "isSeparate": False,
+                    "labelIds": [],
+                    "mergeType": "NONE",
+                    "mltTimePeriodDTO": {
+                        "timePeriods": [],
+                        "timeSegment": "POINT_96"
+                    },
+                    "orgId": self.tenantId,
+                    "ownerIds": [unit["unitId"]],
+                    "tradingModeIds": ["4", "5"]
+                }
+
+                response = \
+                CommonClass.execRequest(self.session, json=josnDic, method=method, url=url).json()['data'][
+                    "mltContractRespDTO"]["mltPositionDetailDetailDTOList"]
+                # print(dateStr)
+                # print(response)
+
+                if response == None:
+                    continue
+
+                for r in response:
+                    eleList = r["contractEle"]
+                    if CommonClass.judgeListIsNone(eleList) :
+                        continue
+
+                    dateStr = r["date"][:10]
+
+                    tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"]
+
+                    haveDataResList.append(tempStr)
+
+        return haveDataResList
+
+
+    def statisticsUploadStatus(self, startDate,endDate ):
+        unitInfo = self.getUnit()
+
+        dataStatusList = []
+        dataStatusList.extend(self.getContractStatus(startDate,endDate,unitInfo)   )
+        dataStatusList.extend(self.getDaySettlementDetailStatus(startDate,endDate,unitInfo)   )
+        dataStatusList.extend(self.getSettlementStatus(startDate,endDate,unitInfo)   )
+        dataStatusList.extend(self.getStationPowerGenerationStatus(startDate,endDate,unitInfo)   )
+
+        outputList = []
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+
+        # 月结算已经判断过了就把这个月存到里面
+        monthTrueList = []
+
+        while sd <= ed:
+
+            dateStr = datetime.strftime(sd, "%Y-%m-%d")
+            monthStr = dateStr[:7]
+
+            for unit in unitInfo:
+
+                unitName = unit["unitName"]
+                unitId = unit["unitId"]
+
+                for dataItem in dataItemDic.keys():
+
+                    s = dateStr
+
+                    if dataItem=="901":
+                        s = monthStr
+
+                        if monthStr in monthTrueList:
+                            continue
+
+                    tempStr = s + "-" + dataItem + "-" + unitId
+                    dateItemName = dataItemDic[dataItem]["name"]
+                    dateItemType = dataItemDic[dataItem]["type"]
+
+                    if tempStr in dataStatusList:
+                        outputList.append(
+                            {
+                                "日期": s,
+                                "数据类型": dateItemType,
+                                "数据项": dateItemName,
+                                "场站名称": unitName,
+                                "结果": "已经上传该数据项",
+                            }
+                        )
+                        continue
+
+                    outputList.append(
+                        {
+                            "日期" :  s,
+                            "数据类型" :  dateItemType,
+                            "数据项" : dateItemName ,
+                            "场站名称" :  unitName,
+                            "结果" :  "未上传该数据项",
+                        }
+                    )
+
+            sd += timedelta(days=1)
+
+            monthTrueList.append(monthStr)
+
+
+        return outputList
+        pass
+
+    def outputData(self,outputList):
+
+        try:
+            tempPath = CommonClass.mkDir("山西新能源数据校验",  "导出", "导出模板.xlsx", isGetStr=True)
+            templateE = ExcelHeplerXlwing(tempPath)
+            template = templateE.getTemplateStyle("Sheet1")
+        finally:
+            templateE.close()
+
+        # 获取当前时间
+        now = datetime.now()
+
+        # 转换为文本
+        text_time = now.strftime('%Y-%m-%d-%H.%M.%S')
+
+        savePath = CommonClass.mkDir("山西新能源数据校验",  "导出", text_time+"输出结果.xlsx", isGetStr=True)
+        e = ExcelHeplerXlwing()
+
+        try:
+            e.newExcel(sheetName="数据上传结果", templateStyle=template)
+            e.writeData(savePath, "数据上传结果",outputList)
+
+        finally:
+            e.close()
+
+    def execMain(self, startDate,endDate ):
+        outputList = self.statisticsUploadStatus(startDate,endDate)
+        self.outputData(outputList)
+
 if __name__ == '__main__':
 
 
@@ -138,17 +541,25 @@ if __name__ == '__main__':
         "logininfo" : {
             "publicKey_url" :  None,
             "login_url" :  "/usercenter/web/login",
-            "switch_url" :  "/usercenter/web/switchTenant?tenantId=8280818779cb82450179cb8422a30000" ,
+            "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
             "username" :  "zhanzw_czc",
             "password" :  "passwd123@",
             "loginMode" :  2,
         },
+        "tenantId" : "e4f736aa7cc47f7c017ce4c3ac2302bc",
     }
 
 
     testSession = requests.Session()
     sx = Shanxi(testSession,info)
     sx.login()
+
+    startDate = "2024-07-03"
+    endDate = "2024-07-03"
+
+    # unitInfo = sx.getUnit()
+    sx.execMain(startDate,endDate)
+
 
     pass
 

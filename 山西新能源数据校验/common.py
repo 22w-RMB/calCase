@@ -10,6 +10,18 @@ import requests
 
 class CommonClass:
 
+    @staticmethod
+    def judgeListIsNone( l ):
+
+        if l == None or l == []:
+            return True
+
+        for i in l:
+            if i is not None:
+                return False
+
+        return True
+
 
     @staticmethod
     def mkDir( *args, isGetStr=False):
@@ -119,7 +131,7 @@ class CommonClass:
 
     # 处理频繁请求
     @staticmethod
-    def execRequest(session, method, url,sleepTime=0.1,
+    def execRequest(session, method, url,sleepTime=0.2,
             params=None, data=None, headers=None, cookies=None, files=None,
             auth=None, timeout=None, allow_redirects=True, proxies=None,
             hooks=None, stream=None, verify=False, cert=None, json=None):
