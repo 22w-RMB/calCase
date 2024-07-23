@@ -37,17 +37,17 @@ class ExcelHeplerXlwing:
     def writeData(self, savePath,sheetName,dataList):
 
         ws = self.wb.sheets[sheetName]
-
-        i = 2
+        print("开始遍历")
+        l = []
         for item in dataList:
 
             data = [ item[key] for key in item.keys() ]
-
-            ws.range((i, 1), (i, 20)).value = data
-            ws.range('A1:zz5000').columns.autofit()
-            i += 1
-
-
+            l.append(data)
+            # ws.range((2, 1), (500000, 20)).value = data
+            # ws.range('A1:zz500000').columns.autofit()
+            # i += 1
+        ws.range((2, 1), (500000, 20)).value = l
+        print("遍历结束")
         self.saveFile(savePath)
 
 

@@ -11,6 +11,17 @@ import requests
 class CommonClass:
 
     @staticmethod
+    def judgeListIsZero( l ):
+
+
+        for i in l:
+            if i != 0:
+                return False
+
+        return True
+
+
+    @staticmethod
     def judgeListIsNone( l ):
 
         if l == None or l == []:
@@ -134,7 +145,7 @@ class CommonClass:
     def execRequest(session, method, url,sleepTime=0.2,
             params=None, data=None, headers=None, cookies=None, files=None,
             auth=None, timeout=None, allow_redirects=True, proxies=None,
-            hooks=None, stream=None, verify=False, cert=None, json=None):
+            hooks=None, stream=None, verify=True, cert=None, json=None):
 
         while True:
             try:

@@ -168,7 +168,7 @@ class Shanxi:
             )
         return unitsInfo
 
-    #场站发电数据
+    #场站发电数据、省内现货出清结果、中长期基数
     def getStationPowerGenerationStatus(self,startDate,endDate,unitInfo):
 
         url = self.domain + "/sxAdss/api/private/data/detail"
@@ -178,15 +178,35 @@ class Shanxi:
 
         for unit in unitInfo:
 
-            paramDic = {
+            paramDic1 = {
+                "osOrgId" : unit["unitId"],
+                "dataType" : 3,
+                "startTime" : startDate,
+                "endTime" : endDate,
+
+            }
+            paramDic2 = {
                 "osOrgId" : unit["unitId"],
                 "dataType" : 4,
                 "startTime" : startDate,
                 "endTime" : endDate,
 
             }
+            paramDic3 = {
+                "osOrgId" : unit["unitId"],
+                "dataItemEnum" : "MLT_BASE_ELE",
+                "startTime" : startDate,
+                "endTime" : endDate,
 
-            response = CommonClass.execRequest(self.session, params=paramDic,method=method, url=url).json()['data']
+            }
+
+            response = []
+            print("场站发电数据", unit["unitName"])
+            response.extend( CommonClass.execRequest(self.session, params=paramDic1,method=method, url=url).json()['data'])
+            print("省内现货出清数据", unit["unitName"])
+            response.extend( CommonClass.execRequest(self.session, params=paramDic2,method=method, url=url).json()['data'])
+            print("中长期基数电量", unit["unitName"])
+            response.extend( CommonClass.execRequest(self.session, params=paramDic3,method=method, url=url).json()['data'])
 
             if response == []:
                 continue
@@ -200,8 +220,13 @@ class Shanxi:
                     continue
 
                 else:
-                    # 日期-数据项
-                    tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"]
+                    tt = ""
+                    if dataItem =="1001":
+                        if CommonClass.judgeListIsZero(dataList) == True:
+                            tt = "-ZERO"
+
+                    # 日期-数据项-机组
+                    tempStr = dateStr + "-" + dataItem + "-" + unit["unitId"] +tt
                     haveDataResList.append(tempStr)
 
         return haveDataResList
@@ -217,16 +242,16 @@ class Shanxi:
         haveDataResList = []
 
         for unit in unitInfo:
-
+            print("结算单",unit["unitName"])
             paramDic = {
-                "osOrgId" : unit["unitId"],
+                "orgIds" : unit["unitId"],
                 "startTime" : startDate,
                 "endTime" : endDate,
 
             }
 
             response = CommonClass.execRequest(self.session, params=paramDic,  method=method, url=url).json()['data']["uploadList"]
-
+            print("===",response)
             if response == []:
                 continue
 
@@ -268,7 +293,7 @@ class Shanxi:
             sd += timedelta(days=1)
 
             for unit in unitInfo:
-
+                print("日清分单明细", unit["unitName"],dateStr)
                 paramDic = {
                     "osOrgId": unit["unitId"],
                     "startDate": dateStr,
@@ -326,7 +351,7 @@ class Shanxi:
             sd += timedelta(days=1)
 
             for unit in unitInfo:
-
+                print("日清分单明细", unit["unitName"], dateStr)
                 for dataItem in dataItems.keys():
 
                     josnDic = {
@@ -387,7 +412,7 @@ class Shanxi:
 
 
         for unit in unitInfo:
-
+            print("中长期数据", unit["unitName"])
             for dataItem in dataItems.keys():
 
                 josnDic = {
@@ -441,6 +466,8 @@ class Shanxi:
         dataStatusList.extend(self.getDaySettlementDetailStatus(startDate,endDate,unitInfo)   )
         dataStatusList.extend(self.getSettlementStatus(startDate,endDate,unitInfo)   )
         dataStatusList.extend(self.getStationPowerGenerationStatus(startDate,endDate,unitInfo)   )
+        print(dataStatusList)
+        print("上传状态已爬取完成")
 
         outputList = []
 
@@ -464,15 +491,29 @@ class Shanxi:
 
                     s = dateStr
 
-                    if dataItem=="901":
+                    if dataItem == "901":
                         s = monthStr
 
-                        if monthStr in monthTrueList:
+                        if (monthStr+"-"+unitId) in monthTrueList:
                             continue
+                        monthTrueList.append(monthStr+"-"+unitId)
 
                     tempStr = s + "-" + dataItem + "-" + unitId
                     dateItemName = dataItemDic[dataItem]["name"]
                     dateItemType = dataItemDic[dataItem]["type"]
+
+                    if dataItem == "1001":
+                        if (tempStr+"-ZERO") in dataStatusList:
+                            outputList.append(
+                                {
+                                    "日期": s,
+                                    "数据类型": dateItemType,
+                                    "数据项": dateItemName,
+                                    "场站名称": unitName,
+                                    "结果": "该日所有时刻点为0",
+                                }
+                            )
+                            continue
 
                     if tempStr in dataStatusList:
                         outputList.append(
@@ -498,16 +539,18 @@ class Shanxi:
 
             sd += timedelta(days=1)
 
-            monthTrueList.append(monthStr)
+
 
 
         return outputList
         pass
 
     def outputData(self,outputList):
-
+        # print(outputList)
         try:
+            print("获取模板")
             tempPath = CommonClass.mkDir("山西新能源数据校验",  "导出", "导出模板.xlsx", isGetStr=True)
+            print(tempPath)
             templateE = ExcelHeplerXlwing(tempPath)
             template = templateE.getTemplateStyle("Sheet1")
         finally:
@@ -523,9 +566,10 @@ class Shanxi:
         e = ExcelHeplerXlwing()
 
         try:
+            print("开始导出")
             e.newExcel(sheetName="数据上传结果", templateStyle=template)
             e.writeData(savePath, "数据上传结果",outputList)
-
+            print("导出结束")
         finally:
             e.close()
 
@@ -554,8 +598,8 @@ if __name__ == '__main__':
     sx = Shanxi(testSession,info)
     sx.login()
 
-    startDate = "2024-07-03"
-    endDate = "2024-07-03"
+    startDate = "2018-01-01"
+    endDate = "2018-01-01"
 
     # unitInfo = sx.getUnit()
     sx.execMain(startDate,endDate)

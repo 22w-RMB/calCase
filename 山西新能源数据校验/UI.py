@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
+
+import pythoncom
+
 from 山西新能源数据校验.test import *
 from threading import Thread
 
@@ -23,6 +26,13 @@ def long_running_task(select,entry,but):
     # 模拟一个耗时的任务
     but.config(state=tk.DISABLED)
     try:
+        pythoncom.CoInitializeEx(pythoncom.COINIT_MULTITHREADED)
+        # 获取当前时间
+        beginTime = datetime.now()
+
+        # 转换为文本
+        text_time = beginTime.strftime('%Y-%m-%d-%H.%M.%S')
+
         configData = getYaml()
         selectV = select.get()
         domain = configData[selectV]["domain"]
@@ -56,8 +66,13 @@ def long_running_task(select,entry,but):
     except Exception as e:
         messagebox.showerror("错误", "执行出错，请查看参数是否正确！")
     finally:
-        but.config(state=tk.ACTIVE)
 
+        # 获取当前时间
+        endTime = datetime.now()
+        execution_time = endTime - beginTime
+        print("耗时：",execution_time.total_seconds()," 妙")
+        but.config(state=tk.ACTIVE)
+        pythoncom.CoUninitialize()
 
 
 def open_folder(savePath):
