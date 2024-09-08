@@ -160,6 +160,22 @@ class ExcelHepler:
         ws.range((1, 1), (1000, 20)).value = outputList
 
 
+    def writeDailyRoll(self,dataList,sheetName="市场交易信息"):
+        self.wb.sheets['Sheet1'].delete()
+        ws = self.wb.sheets[sheetName]
+        print(dataList)
+        ws.range((2, 2), (25, 6)).value = dataList
+        pass
+
+
+    def writeDayAheadPrice(self,dataList,sheetName="sheet"):
+        self.wb.sheets['Sheet1'].delete()
+        ws = self.wb.sheets[sheetName]
+        print(dataList)
+        ws.range((2, 2), (5, 25)).value = dataList
+        pass
+
+
     def saveFile(self, savePath = None):
 
         if savePath is None:

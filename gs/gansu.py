@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import random
 
 import requests
 from datetime import datetime,timedelta
@@ -35,7 +36,6 @@ class Gansu:
 
     def login(self):
         CommonClass.login(self.session, self.domain, self.loginInfo)
-
 
     def getContractData(self , startDate,endDate):
 
@@ -177,7 +177,6 @@ class Gansu:
         for d in res['data']:
             pass
 
-
     def requestReport(self,i):
 
         url = self.domain + "/report/api/report/export"
@@ -195,7 +194,6 @@ class Gansu:
 
         endTime = datetime.now()
         print("线程【"+str(i) +"】时间：",endTime-startTime)
-
 
     def uploadPrivateData(self):
 
@@ -466,20 +464,280 @@ class Gansu:
         detailE.saveFile(detailSavePath)
         detailE.close()
 
+    def genetateDayAheadPrice(self):
+
+        resL = []
+
+        for i in range(0, 4):
+            tempL = []
+
+            for i in range(0,24):
+                if random.randint(0, 50) == 1:
+                    tempL.append(None)
+                else:
+                    tempL.append(random.randint(4000, 100000) / 100)
+
+
+            resL.append(tempL)
+
+        # print(resL)
+        return resL
+
+    #  生成日前价格
+    def genetateDayAheadPriceFile(self,startDate,endDate,unitNameList=["风电调度单元","光伏调度单元"]):
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+        yearStr = startDate[:4]
+
+        tempPath = CommonClass.mkDir("gs", "muban", "公有私有价格导入模板.xlsx", isGetStr=True)
+        template = None
+        templateE = ExcelHepler(tempPath)
+        try:
+            template = templateE.getTemplateStyle("sheet")
+        finally:
+            templateE.close()
+
+        while sd <= ed:
+            startDateStr = sd.strftime("%Y%m%d")
+
+
+            # 场站名称-日前电厂结算价格-20230717
+            filenameList = []
+            for unitName in unitNameList:
+                privatePriceFileName =  unitName + "-日前电厂结算价格-" + startDateStr +".xlsx"
+                filenameList.append(privatePriceFileName)
+            # 日前统一结算点价格20230828
+            publicPriceFileName =  "日前统一结算点价格" + startDateStr +".xlsx"
+
+            filenameList.append(publicPriceFileName)
+            print(filenameList)
+
+            for filename in filenameList:
+                p = ""
+                if "日前统一结算点价格" in filename:
+                    p = "日前统一结算点价格"
+                else:
+                    p = "日前电厂结算价格"
+
+                resL = self.genetateDayAheadPrice()
+
+                # 输出文件
+
+                savePath = CommonClass.mkDir("gs", "导出","价格", p, yearStr, filename, isGetStr=True)
+
+                e = ExcelHepler()
+                try:
+                    e.newExcel("sheet", template)
+                    e.writeDayAheadPrice(resL)
+
+                    e.saveFile(savePath)
+                finally:
+                    e.close()
+
+            sd += timedelta(days=1)
+
+        pass
+
+        pass
+
+    #  上传日前结算点价格
+    def uploadPublicDayAheadPrice(self):
+
+        path = CommonClass.mkDir("gs", "导出","价格","日前统一结算点价格",isGetStr=True)
+
+        url = self.domain + "/datacenter/gs/api/data/import/create/multi"
+
+        for root, dirs, files in os.walk(path):
+
+            for filename in files:
+
+                    # print(filename)
+                    filePath = os.path.join(root, filename)
+
+                    formdata = {
+                        "fileNames": [filename],
+                        "provinceAreaId": "062",
+                        "dataType": "TRADE_RESULT",
+                        "type": "PUBLIC",
+                        "templateNameList":["日前河东分区价格","日前河西分区价格","日前出清节点价格","日前出清电能价格","实时河东分区价格","实时河西分区价格","实时出清节点价格","实时出清电能价格","日前统一结算点价格","实时统一结算点价格"]
+
+                    }
+
+                    fileList = [
+                        ("files", (filename, open(filePath, "rb")))
+                    ]
+
+                    res = CommonClass.execRequest(self.session, method="post", url=url, data=formdata,
+                                                  files=fileList).json()
+
+                    print(filename, "上传情况：", res)
+
+        pass
+
+    #  上传日前电厂结算价格
+    def uploadPrivateDayAheadPrice(self):
+
+        path = CommonClass.mkDir("gs", "导出","价格","日前电厂结算价格",isGetStr=True)
+
+        url = self.domain + "/tads/gansu/api/power/trade/pri/data/import/create/multi"
+
+        for root, dirs, files in os.walk(path):
+
+            for filename in files:
+
+                    # print(filename)
+                    filePath = os.path.join(root, filename)
+
+                    formdata = {
+                        "provinceAreaId": "062",
+                        "sysType": "NEWENERGY",
+                        "templateNameList":[filename]
+                    }
+
+                    fileList = [
+                        ("files", (filename, open(filePath, "rb")))
+                    ]
+
+                    res = CommonClass.execRequest(self.session, method="post", url=url, data=formdata,
+                                                  files=fileList).json()
+
+                    print(filename, "上传情况：", res)
+
+        pass
+
+
+    #  生成全网日滚动
+    def genetatePublicDailyRollData(self):
+
+        # ele = [None for i in range(0,24)]
+        # maxP = [None for i in range(0,24)]
+        # minP = [None for i in range(0,24)]
+        # avgP = [None for i in range(0,24)]
+        # midP = [None for i in range(0,24)]
+
+        resL = []
+
+        for i in range(0,24):
+            tempL = []
+
+            tempL.append(random.randint(0, 20000) / 100)
+            tempL.append(random.randint(0, 90000) / 100)
+            tempL.append(random.randint(0, 90000) / 100)
+            tempL.append(random.randint(0, 90000) / 100)
+            tempL.append(random.randint(0, 90000) / 100)
+
+            ifNone = True
+            if ifNone:
+                for i in range(0,4):
+                    if random.randint(0, 10) == 1:
+                        tempL[i] = None
+
+
+            resL.append(tempL)
+
+        # print(resL)
+        return resL
+
+
+        pass
+
+    #导出日滚动文件
+    def genetatePublicDailyRollFile(self,startDate,endDate):
+
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+        yearStr = startDate[:4]
+
+        tempPath = CommonClass.mkDir("gs", "muban", "yyyy年mm月dd日日滚动交易(yyyy-m-dd).xlsx", isGetStr=True)
+        template = None
+        templateE = ExcelHepler(tempPath)
+        try :
+            template = templateE.getTemplateStyle("市场交易信息")
+        finally:
+            templateE.close()
+
+        while sd <= ed:
+            startDateStr = sd.strftime("%Y-%#m-%#d")
+
+            for i in range(1,29):
+                beforeDate = sd - timedelta(days=i)
+                beforeDateStr = beforeDate.strftime( "%Y年%m月%d日")
+
+                # yyyy年mm月dd日日滚动交易(yyyy-m-dd)
+                fileName = beforeDateStr + "日滚动交易("+ startDateStr +")"
+                print(fileName)
+
+                resL = self.genetatePublicDailyRollData()
+
+                # 输出文件
+
+                savePath = CommonClass.mkDir("gs", "导出","全网日滚动",yearStr, fileName+".xlsx", isGetStr=True)
+
+                e = ExcelHepler()
+                try:
+                    e.newExcel("市场交易信息",template)
+                    e.writeDailyRoll(resL)
+
+                    e.saveFile(savePath)
+                finally:
+                    e.close()
+
+
+            sd += timedelta(days=1)
+
+
+
+        pass
+
+    #  上传全网日滚动
+    def uploadPublicDailyRoll(self):
+
+        path = CommonClass.mkDir("gs", "导出","全网日滚动",isGetStr=True)
+
+        url = self.domain + "/datacenter/gs/api/data/import/create/multi"
+
+        for root, dirs, files in os.walk(path):
+
+            for filename in files:
+
+
+                    filePath = os.path.join(root, filename)
+
+                    formdata = {
+                        "fileNames": [filename],
+                        "provinceAreaId": "062",
+                        "dataType": "MLT_WHOLE_NET_INFO",
+                    }
+
+                    fileList = [
+                        ("files", (filename, open(filePath, "rb")))
+                    ]
+
+                    res = CommonClass.execRequest(self.session, method="post", url=url, data=formdata,
+                                                  files=fileList).json()
+
+                    print(filename, "上传情况：", res)
+
+        pass
+
+
 if __name__ == '__main__':
     testSession = requests.Session()
 
     yamlData = CommonClass.readYaml(yamlPath)
 
-    gs_test = Gansu(testSession, yamlData, "tcloud")
+    gs_test = Gansu(testSession, yamlData, "test")
 
-    gs_test.login()
 
-    startDate = "2023-07-08"
-    endDate = "2023-09-08"
 
-    gs_test.getPriceVersionData(startDate,endDate)
+    # startDate = "2023-07-08"
+    # endDate = "2023-09-08"
 
+    # gs_test.getPriceVersionData(startDate,endDate)
+
+    # for i in range(0,10):
+    #     gs_test.genetatePublicDailyRoll()
 
 
     # data = gs_test.getContractData(startDate,startDate)
@@ -503,3 +761,27 @@ if __name__ == '__main__':
     #     threadList[i].join()
     #
     # print("多线程结束")
+
+
+    gs_test.genetateDayAheadPriceFile("2020-02-01", "2020-02-29")
+
+    gs_test.login()
+    gs_test.uploadPublicDayAheadPrice()
+    gs_test.uploadPrivateDayAheadPrice()
+
+
+    gs_test.genetatePublicDailyRollFile("2020-02-01", "2020-02-29")
+    gs_test.login()
+    gs_test.uploadPublicDailyRoll()
+
+
+
+    gs_test.genetatePublicDailyRollFile("2020-03-01", "2020-12-31")
+    gs_test.login()
+    gs_test.uploadPublicDailyRoll()
+
+
+    gs_test.genetateDayAheadPriceFile("2020-03-01", "2020-12-31")
+    gs_test.login()
+    gs_test.uploadPublicDayAheadPrice()
+    gs_test.uploadPrivateDayAheadPrice()

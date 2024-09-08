@@ -21,7 +21,7 @@ logininfo:
     publicKey_url: /usercenter/web/pf/login/info/publicKey
     login_url: /usercenter/web/login
     switch_url: /usercenter/web/switchTenant?tenantId=tsintergy
-    username: zhanzw
-    password: huaneng123@
-    loginMode: 2
+    username:
+    password:
+    loginMode:
 
