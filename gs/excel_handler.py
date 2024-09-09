@@ -65,6 +65,12 @@ class ExcelHepler:
 
             ws.range((i+2, 1), (i+2, 5)).value = data[i]
 
+    #
+    def getDailyRollData(self,sheetName="市场交易信息"):
+        ws = self.wb.sheets[sheetName]
+        dataList = ws.range((2, 1), (25, 6)).value
+
+        return dataList
 
     # 针对甘肃用的
     def getAllData(self):
@@ -163,8 +169,8 @@ class ExcelHepler:
     def writeDailyRoll(self,dataList,sheetName="市场交易信息"):
         self.wb.sheets['Sheet1'].delete()
         ws = self.wb.sheets[sheetName]
-        print(dataList)
-        ws.range((2, 2), (25, 6)).value = dataList
+        # print(dataList)
+        ws.range((2, 1), (300000, 10)).value = dataList
         pass
 
 

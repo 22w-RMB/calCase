@@ -660,7 +660,7 @@ class Gansu:
         while sd <= ed:
             startDateStr = sd.strftime("%Y-%#m-%#d")
 
-            for i in range(1,29):
+            for i in range(3,29):
                 beforeDate = sd - timedelta(days=i)
                 beforeDateStr = beforeDate.strftime( "%Y年%m月%d日")
 
@@ -701,25 +701,115 @@ class Gansu:
 
             for filename in files:
 
+                # 交易日期
+                tradeDate = filename[:10].replace("年", "-").replace("月", "-")
 
-                    filePath = os.path.join(root, filename)
 
-                    formdata = {
-                        "fileNames": [filename],
-                        "provinceAreaId": "062",
-                        "dataType": "MLT_WHOLE_NET_INFO",
-                    }
+                # 标的日期
+                targetDate = filename[17:].replace(").xlsx", "")
+                # window
+                date_format = "%Y-%m-%d"
+                d1 = datetime.strptime(tradeDate, date_format)
+                d2 = datetime.strptime(targetDate, date_format)
+                targetDateStr = d2.strftime("%Y%m%d")
 
-                    fileList = [
-                        ("files", (filename, open(filePath, "rb")))
-                    ]
+                delta = d2 - d1
+                if abs(delta.days) < 3:
+                    print(filename)
+                    continue
 
-                    res = CommonClass.execRequest(self.session, method="post", url=url, data=formdata,
-                                                  files=fileList).json()
 
-                    print(filename, "上传情况：", res)
+
+                filePath = os.path.join(root, filename)
+
+                formdata = {
+                    "fileNames": [filename],
+                    "provinceAreaId": "062",
+                    "dataType": "MLT_WHOLE_NET_INFO",
+                }
+
+                fileList = [
+                    ("files", (filename, open(filePath, "rb")))
+                ]
+
+                res = CommonClass.execRequest(self.session, method="post", url=url, data=formdata,
+                                              files=fileList).json()
+
+                print(filename, "上传情况：", res)
 
         pass
+
+
+    def getDayAheadPriceFileData(self):
+
+        pass
+
+    # 生成全网日滚动算例用的文件
+    def genetateDailyRollCalCaseFile(self):
+        path = CommonClass.mkDir("gs", "导出", "全网日滚动", isGetStr=True)
+
+        outputList  = []
+
+        for root, dirs, files in os.walk(path):
+
+            for filename in files:
+                filePath = os.path.join(root, filename)
+
+                # 交易日期
+                tradeDate = filename[:10].replace("年", "-").replace("月", "-")
+
+                if tradeDate <"2020-06-01":
+                    continue
+                # 标的日期
+                targetDate = filename[17:].replace(").xlsx", "")
+                # window
+                date_format = "%Y-%m-%d"
+                d1 = datetime.strptime(tradeDate, date_format)
+                d2 = datetime.strptime(targetDate, date_format)
+                targetDateStr = d2.strftime("%Y%m%d")
+
+                delta = d2 - d1
+                windowStr =  "D-"+str(abs(delta.days))
+
+                beginList = [tradeDate,targetDate,windowStr]
+
+                e = ExcelHepler(filePath)
+                try:
+
+                    dList = e.getDailyRollData()
+                    for dl in dList:
+                        templist = []
+                        templist.extend(beginList)
+                        templist.extend(dl)
+                        outputList.append(templist)
+
+                        pass
+
+                    # print(outputList)
+
+                finally:
+                    e.close()
+                    print(filename,"执行完成")
+
+        tempPath = CommonClass.mkDir("gs", "muban", "yyyy年mm月dd日日滚动交易(yyyy-m-dd).xlsx", isGetStr=True)
+        template = None
+        templateE = ExcelHepler(tempPath)
+        try :
+            template = templateE.getTemplateStyle("市场交易信息")
+        finally:
+            templateE.close()
+
+
+        savePath = CommonClass.mkDir("gs", "导出", "算例需要的文件1.xlsx", isGetStr=True)
+
+        e1 = ExcelHepler()
+        try:
+            e1.newExcel("市场交易信息",template)
+            e1.writeDailyRoll(outputList)
+
+            e1.saveFile(savePath)
+        finally:
+            e1.close()
 
 
 if __name__ == '__main__':
@@ -762,26 +852,29 @@ if __name__ == '__main__':
     #
     # print("多线程结束")
 
-
-    gs_test.genetateDayAheadPriceFile("2020-02-01", "2020-02-29")
-
-    gs_test.login()
-    gs_test.uploadPublicDayAheadPrice()
-    gs_test.uploadPrivateDayAheadPrice()
-
-
-    gs_test.genetatePublicDailyRollFile("2020-02-01", "2020-02-29")
+    #
+    # gs_test.genetateDayAheadPriceFile("2020-02-01", "2020-02-29")
+    #
+    # gs_test.login()
+    # gs_test.uploadPublicDayAheadPrice()
+    # gs_test.uploadPrivateDayAheadPrice()
+    #
+    #
+    # gs_test.genetatePublicDailyRollFile("2020-02-01", "2020-02-29")
+    # gs_test.login()
+    # gs_test.uploadPublicDailyRoll()
+    #
+    #
+    #
+    # gs_test.genetatePublicDailyRollFile("2020-03-01", "2020-12-31")
     gs_test.login()
     gs_test.uploadPublicDailyRoll()
+    #
+    #
+    # gs_test.genetateDayAheadPriceFile("2020-03-01", "2020-12-31")
+    # gs_test.login()
+    # gs_test.uploadPublicDayAheadPrice()
+    # gs_test.uploadPrivateDayAheadPrice()
 
+    # gs_test.genetateDailyRollCalCaseFile()
 
-
-    gs_test.genetatePublicDailyRollFile("2020-03-01", "2020-12-31")
-    gs_test.login()
-    gs_test.uploadPublicDailyRoll()
-
-
-    gs_test.genetateDayAheadPriceFile("2020-03-01", "2020-12-31")
-    gs_test.login()
-    gs_test.uploadPublicDayAheadPrice()
-    gs_test.uploadPrivateDayAheadPrice()
