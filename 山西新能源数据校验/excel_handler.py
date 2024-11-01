@@ -13,7 +13,7 @@ class ExcelHeplerXlwing:
         self.app.screen_updating = False
         self.wb = None
         if filePath is not None:
-            self.wb = self.app.books.open(filePath)
+            self.wb = self.app.books.open(r"{}".format(filePath))
         else:
             self.wb = self.app.books.add()
 
@@ -25,14 +25,28 @@ class ExcelHeplerXlwing:
 
     def newExcel(self, sheetName="Sheet1", templateStyle=None):
 
-        # self.wb = self.app.books.add()
-
         if sheetName != "Sheet1":
             self.wb.sheets.add(sheetName)
         if templateStyle == None:
             return
 
         self.wb.sheets[sheetName].range("A1").options(expand="table").value = templateStyle
+
+
+
+
+    def copySheet(self,tempPath=None,tempSheet=None,sheetName=None):
+
+        try:
+            tempWb = xlwings.Book(tempPath)
+            tempSht = tempWb.sheets[tempSheet]
+            tempSht.copy(after=self.wb.sheets[0])
+            self.wb.sheets[tempSheet].name = sheetName
+        finally:
+            tempWb.close()
+            # tempWb.kill()
+
+        pass
 
     def writeData(self, savePath,sheetName,dataList):
 
@@ -50,6 +64,31 @@ class ExcelHeplerXlwing:
         print("遍历结束")
         self.saveFile(savePath)
 
+    '''
+        输出私有数据明细
+    '''
+    def writePrivateDetailData(self, savePath,sheetName,dataDict):
+
+        ws = self.wb.sheets[sheetName]
+        print("开始遍历")
+        l = []
+        print(dataDict)
+        print("==",dataDict['原始功率预测'])
+        unitsList = [ k  for k in dataDict['原始功率预测'].keys()]
+
+        for unit in unitsList:
+            print("==",unit)
+            temp = []
+            for k,v in dataDict.items():
+                temp.append(v[unit])
+
+            l.append(temp)
+                # ws.range((2, 1), (500000, 20)).value = data
+                # ws.range('A1:zz500000').columns.autofit()
+                # i += 1
+        ws.range((4, 2), (500000, 20)).value = l
+        print("遍历结束")
+        self.saveFile(savePath)
 
 
 
@@ -70,6 +109,18 @@ class ExcelHeplerXlwing:
 
 
 if __name__ == '__main__':
+    # Create two books and add a value to the first sheet of the first book
+    first_book = xlwings.Book()
+    second_book = xlwings.Book()
+    first_book.sheets[0]['A1'].value = 'some value'
 
+    # Copy to same Book with the default location and name
+    first_book.sheets[0].copy()
+
+    # Copy to same Book with custom sheet name
+    first_book.sheets[0].copy(name='copied')
+
+    # Copy to second Book requires to use before or after
+    first_book.sheets[0].copy(after=second_book.sheets[0])
 
     pass
