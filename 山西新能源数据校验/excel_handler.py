@@ -166,9 +166,12 @@ if __name__ == '__main__':
     dict1 = {
         "a" : 1,
         "b" : 1,
-        "c" : 2
+        "c" : None
     }
 
-    print(list(filter(lambda k:dict1[k]==1 ,dict1.keys())))
+    print(list(filter(lambda x: dict1[x]==None, dict1)))
+
+
+    print("vaera3b"[:-2])
 
     pass

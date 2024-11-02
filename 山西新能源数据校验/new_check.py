@@ -150,6 +150,84 @@ dataItemDic = {
     }
 }
 
+# 省间通道
+interProvinceClearingPowerChannelName = [
+    "总加-日前",
+    "总加-日内",
+    "山西送上海-日前",
+    "山西送浙江-日前",
+    "山西送重庆-日前",
+    "山西送江西-日前",
+    "山西送吉林-日前",
+    "山西送苏南-日前",
+    "山西送陕西-日前",
+    "山西送冀北-日前",
+    "山西送湖北-日前",
+    "山西送宁夏-日前",
+    "山西送蒙东-日前",
+    "山西送四川主网-日前",
+    "山西送安徽-日前",
+    "山西送甘肃东部-日前",
+    "山西送冀北-日内",
+    "山西送天津-日内",
+    "山西送浙江-日内",
+    "山西送陕西-日内",
+    "山西送河北-日内",
+    "山西送上海-日内",
+    "山西送吉林-日内",
+]
+
+# 联络线通道
+callWirePowerChannelName = [
+    "总加日前",
+    "河北负荷日前",
+    "华北负荷日前",
+    "京津唐日前",
+    "山西送京津唐日前",
+    "山西送雁淮日前",
+    "山西送锡泰日前",
+    "特高压长南线日前",
+    "特高压雁淮直流外送日前",
+    "山西送雁淮(月计划)日前",
+    "山西送京津唐(省间现货)日前",
+    "山西送河北(省间现货)日前",
+    "山西送锡泰(省间现货)日前",
+    "山西送锡泰(月计划)日前",
+    "山西送雁淮(省间现货)日前",
+    "山西送京津唐(月计划)日前",
+    "山西送河北(华北跨省)日前",
+    "京津唐送雁淮(月计划)日前",
+    "山西送河北(月计划)日前",
+    "山西送京津唐(华北跨省)日前",
+    "京津唐送雁淮(省间现货)日前",
+    "长南线(月计划)日前",
+    "长南线(省间现货)日前",
+    "京津唐送雁淮(过境)日前",
+    "总加实时",
+    "河北负荷实时",
+    "华北负荷实时",
+    "京津唐实时",
+    "山西送京津唐实时",
+    "山西送雁淮实时",
+    "特高压雁淮直流外送实时",
+    "山西送锡泰实时",
+    "特高压长南线实时",
+    "山西送雁淮(月计划)实时",
+    "山西送京津唐(省间现货)实时",
+    "山西送河北(省间现货)实时",
+    "山西送锡泰(省间现货)实时",
+    "山西送锡泰(月计划)实时",
+    "山西送雁淮(省间现货)实时",
+    "山西送京津唐(月计划)实时",
+    "山西送河北(华北跨省)实时",
+    "京津唐送雁淮(月计划)实时",
+    "山西送河北(月计划)实时",
+    "山西送京津唐(华北跨省)实时",
+    "京津唐送雁淮(省间现货)实时",
+    "长南线(月计划)实时",
+    "长南线(省间现货)实时",
+]
+
 def getBusinessTypeStr(businessTypeId):
 
     for b in businessType:
@@ -158,13 +236,18 @@ def getBusinessTypeStr(businessTypeId):
     return None
 
 
-def find_missing_dates(given_dates, date_format="%Y-%m-%d"):
+def find_missing_dates(given_dates, date_format="%Y-%m-%d", allDateLen=None):
     # 将给定的日期字符串转换为datetime对象，并排序
     given_dates = sorted([datetime.strptime(date, date_format) for date in given_dates])
 
-
     # 初始化一个列表来存储缺失的日期范围
     missing_ranges = []
+
+    if given_dates == []:
+        return "√"
+
+    if len(given_dates) == allDateLen:
+        return "无数据"
 
     temp_start = given_dates[0].strftime("%m.%d")
     temp_end = ""
@@ -190,12 +273,29 @@ def find_missing_dates(given_dates, date_format="%Y-%m-%d"):
             if flag2:
                 missing_ranges.append(given_dates[i].strftime("%m.%d"))
 
-
-
     if len(given_dates)==1:
         missing_ranges.append(temp_start)
     # 使用"/"连接缺失的日期范围，并返回结果字符串
     return "缺少" + "/".join(missing_ranges) + "数据"
+
+
+def getPublicMarketNoDayList(dataList,marketType=None,itemName=None,fieldType=None,fieldName=None,allDateList=None):
+
+    # 过滤出日前或实时的数据
+    filterList1 = list(filter(lambda x:x['marketType'] == marketType, dataList))
+    # 如果是联络线或者通道或新能源，那么
+    if fieldType is not None:
+        filterList1 = list(filter(lambda x:x[fieldType] == fieldName, filterList1))
+    # 进一步过滤出96点数据不为空的日期
+    filterList2 = list(filter(lambda x: CommonClass.judgeListIsNone(x[itemName]) == False, filterList1))
+    # 生成有数据的日期
+    havaDataDate = [d['date'][:10] for d in filterList2]
+    # 生成没有数据的日期
+    noDataDate = list(set(allDateList) - set(havaDataDate))
+
+    return noDataDate
+
+
 
 class Shanxi:
 
@@ -211,6 +311,7 @@ class Shanxi:
 
     def login(self):
         CommonClass.login(self.session, self.domain, self.loginInfo)
+
 
     def getUnit(self):
         url = self.domain + "/sxAdss/api/common/user/list"
@@ -228,6 +329,7 @@ class Shanxi:
                 }
             )
         return unitsInfo
+
 
     #场站发电数据、省内现货出清结果、中长期基数
     def getStationPowerGenerationStatus(self,startDate,endDate,unitInfo):
@@ -389,6 +491,7 @@ class Shanxi:
 
         return haveDataResList
 
+
     #中长期合同：方法1，只判断总电量，需要每天遍历
     def getContractStatus1(self,startDate,endDate,unitInfo):
 
@@ -456,6 +559,7 @@ class Shanxi:
 
         return haveDataResList
 
+
     #中长期合同：方法2，判断每一天96点电量，不用每天遍历
     def getContractStatus(self,startDate,endDate,unitInfo):
 
@@ -521,7 +625,8 @@ class Shanxi:
         return haveDataResList
 
 
-    def statisticsUploadStatus(self, startDate, endDate ):
+    # 私有数据上传状态合并&处理
+    def statisticsPrivateUploadStatus(self, startDate, endDate ):
         unitInfo = self.getUnit()
 
         dataStatusList = []
@@ -606,10 +711,11 @@ class Shanxi:
 
             sd += timedelta(days=1)
 
-
         return outputList
 
-    def outputListTrans(self, outputList, startDate, endDate ):
+
+    # 转换私有数据上传状态格式
+    def privateOutputListTrans(self, outputList, startDate, endDate ):
         # print(outputList)
         unUploadDataList = list(filter(lambda x: x['结果'] != '已经上传该数据项', outputList))
         unitInfo = self.getUnit()
@@ -661,7 +767,9 @@ class Shanxi:
 
         return resDict
 
-    def outputListTransFile(self,outputDict,yearMonth):
+
+    # 私有数据上传状态格式转换后输出到验收清单
+    def privateOutputListTransFile(self,outputDict,yearMonth):
         # print(outputList)
         try:
             print("获取模板")
@@ -691,7 +799,8 @@ class Shanxi:
             e.close()
 
 
-    def outputData(self,outputList):
+    # 私有数据最详细数据项的上传状态输出
+    def privateOutputData(self,outputList):
         # print(outputList)
         try:
             print("获取模板")
@@ -719,13 +828,14 @@ class Shanxi:
         finally:
             e.close()
 
-    def execMain(self, startDate=None,endDate=None,year=None,month=None ):
+
+    def execPrivateMain(self, startDate=None,endDate=None,year=None,month=None ):
 
         if startDate is not None:
-            outputList = self.statisticsUploadStatus(startDate,endDate)
-            # self.outputData(outputList)
-            outputDict = self.outputListTrans(outputList, startDate, endDate)
-            self.outputListTransFile(outputDict, startDate[:7])
+            outputList = self.statisticsPrivateUploadStatus(startDate,endDate)
+            # self.privateOutputData(outputList)
+            outputDict = self.privateOutputListTrans(outputList, startDate, endDate)
+            self.privateOutputListTransFile(outputDict, startDate[:7])
         else:
             start = 1
             end = 13
@@ -745,38 +855,213 @@ class Shanxi:
                 startDate = first_day.strftime("%Y-%m-%d")
                 endDate = last_day.strftime("%Y-%m-%d")
                 print(startDate,endDate)
-                outputList = self.statisticsUploadStatus(startDate,endDate)
-                # self.outputData(outputList)
-                outputDict = self.outputListTrans(outputList,startDate,endDate)
-                self.outputListTransFile(outputDict,startDate[:7])
+                outputList = self.statisticsPrivateUploadStatus(startDate,endDate)
+                # self.privateOutputData(outputList)
+                outputDict = self.privateOutputListTrans(outputList,startDate,endDate)
+                self.privateOutputListTransFile(outputDict,startDate[:7])
+
+
+    def publicMarketData(self,startDate,endDate):
+
+        allDateList = []
+        sd = datetime.strptime(startDate, "%Y-%m-%d")
+        ed = datetime.strptime(endDate, "%Y-%m-%d")
+        while sd <= ed:
+            dateStr = datetime.strftime(sd,"%Y-%m-%d")
+            allDateList.append(dateStr)
+            sd += timedelta(days=1)
+
+        marketMethod = "POST"
+        marketUrl = self.domain +"/PublicDataManage/014/api/spot/market/info"
+        marketJson = {
+            "dateMerge": {
+                "aggregateType": "AVG",
+                "mergeType": "NONE"
+            },
+            "dateRanges": [{
+                "start": startDate,
+                "end": endDate
+            }],
+            "marketType": None,
+            "provinceAreaId": "014",
+            "timeSegment": {
+                "aggregateType": None,
+                "filterPoints": None,
+                "segmentType": "SEG_96"
+            },
+            "statistics": {
+                "groupType": "RANGE"
+            }
+        }
+        responseData = CommonClass.execRequest(self.session,url=marketUrl,method=marketMethod,json=marketJson,).json()["data"]
+        # print(responseData)
+
+        itemUploadStatusDict = {}
+
+        marketItemDict ={
+            '日前节点边际电价' : [
+                {
+                    'dataListKey' : "marketClearingPrice",
+                    'marketType' : "DAY_AHEAD",
+                    'itemName' : "price",
+                    'fieldType' : None,
+                    'fieldName' : None,
+                }
+            ],
+            '日前现货价格预测': [
+                {
+                    'dataListKey': "marketClearingPrice",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "priceForecast",
+                    'fieldType': None,
+                    'fieldName': None,
+                }
+            ],
+            '现货出清电价': [
+                {
+                    'dataListKey': "marketClearingPrice",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "price",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+                {
+                    'dataListKey': "marketClearingPrice",
+                    'marketType': "REAL_TIME",
+                    'itemName': "price",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '日前省间现货出清电价情况': [
+                {
+                    'dataListKey': "interProvinceClearingPrice",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "price",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '日内省间现货出清电价情况': [
+                {
+                    'dataListKey': "interProvinceClearingPrice",
+                    'marketType': "REAL_TIME",
+                    'itemName': "price",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '日前新能源负荷预测': [
+                {
+                    'dataListKey': "newEnergyPower",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "power",
+                    'fieldType': "type",
+                    'fieldName': "NEW_ENERGY",
+                },
+            ],
+            '日前统调系统负荷预测': [
+                {
+                    'dataListKey': "systemLoad",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "power",
+                    'fieldType': "type",
+                    'fieldName': "SHORT_TERM_FORECAST",
+                },
+            ],
+            '非市场化机组出力': [
+                {
+                    'dataListKey': "nonMarketUnitPower",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "power",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+                {
+                    'dataListKey': "nonMarketUnitPower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '可再生能源富余程度': [
+                {
+                    'dataListKey': "powerLimit",
+                    'marketType': None,
+                    'itemName': "limitStatus",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+
+        }
+
+        # 对数据项批量处理
+        for itemName,itemConfig in marketItemDict.items():
+            set1 = set()
+            for ic in itemConfig:
+                noDayList = getPublicMarketNoDayList(responseData[ic['dataListKey']], marketType=ic['marketType'],
+                                                     itemName=ic['itemName'], fieldType=ic['fieldType'],
+                                                     fieldName=ic['fieldName'],allDateList=allDateList)
+                set1 = set1.union(set(noDayList))
+
+            itemUploadStatusDict[itemName] = find_missing_dates(list(set1),allDateLen=len(allDateList))
+        print(itemUploadStatusDict)
+
+        # 省间通道
+        for channel in interProvinceClearingPowerChannelName:
+            channelName = channel.split("-")[0]
+            marketType = "DAY_AHEAD" if channel.split("-")[1] == "日前" else "REAL_TIME"
+            itemUploadStatusDict["省间-"+channel] = find_missing_dates(
+                getPublicMarketNoDayList(responseData['interProvinceClearingPower'], marketType=marketType,
+                                         itemName="power", fieldType="channelName", fieldName=channelName, allDateList=allDateList),
+                allDateLen=len(allDateList)
+            )
+            # print(channel, itemUploadStatusDict[channel])
+
+        # 联络线通道
+        for channel in callWirePowerChannelName:
+            channelName = channel[:-2]
+            marketType = "DAY_AHEAD" if "日前" in channel else "REAL_TIME"
+            itemUploadStatusDict["联络线-"+channel] = find_missing_dates(
+                getPublicMarketNoDayList(responseData['callWirePower'], marketType=marketType,
+                                         itemName="power", fieldType="channelName", fieldName=channelName, allDateList=allDateList),
+                allDateLen=len(allDateList)
+            )
+            # print(channel, itemUploadStatusDict[channel])
+
+
+
+
 if __name__ == '__main__':
 
 
-    # info = {
-    #     "url_domain" :  "https://adssx-test-gzdevops3.tsintergy.com",
-    #     "logininfo" : {
-    #         "publicKey_url" :  None,
-    #         "login_url" :  "/usercenter/web/login",
-    #         "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
-    #         "username" :  "zhanzw_czc",
-    #         "password" :  "passwd123@",
-    #         "loginMode" :  2,
-    #     },
-    #     "tenantId" : "e4f736aa7cc47f7c017ce4c3ac2302bc",
-    # }
-
     info = {
-        "url_domain" :  "https://pets.crnewenergy.com.cn",
+        "url_domain" :  "https://adssx-test-gzdevops3.tsintergy.com",
         "logininfo" : {
-            "publicKey_url" :  "/usercenter/web/pf/login/info/publicKey",
+            "publicKey_url" :  None,
             "login_url" :  "/usercenter/web/login",
             "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
-            "username" :  "tsintergy",
-            "password" :  "tsintergy@123",
+            "username" :  "zhanzw_czc",
+            "password" :  "passwd123@",
             "loginMode" :  2,
         },
-        "tenantId" : "tsintergy",
+        "tenantId" : "e4f736aa7cc47f7c017ce4c3ac2302bc",
     }
+
+    # info = {
+    #     "url_domain" :  "https://pets.crnewenergy.com.cn",
+    #     "logininfo" : {
+    #         "publicKey_url" :  "/usercenter/web/pf/login/info/publicKey",
+    #         "login_url" :  "/usercenter/web/login",
+    #         "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
+    #         "username" :  "tsintergy",
+    #         "password" :  "tsintergy@123",
+    #         "loginMode" :  2,
+    #     },
+    #     "tenantId" : "tsintergy",
+    # }
 
     testSession = requests.Session()
     sx = Shanxi(testSession,info)
@@ -784,13 +1069,13 @@ if __name__ == '__main__':
 
     # startDate = "2024-08-05"
     # endDate = "2024-08-05"
-    # sx.execMain(startDate,endDate)
+    # sx.execPrivateMain(startDate,endDate)
 
-    # unitInfo = sx.getUnit()
 
-    sx.execMain(year=2024,month=8)
+    # sx.execPrivateMain(year=2024,month=8)
 
-    # r = find_missing_dates(['2024-06-01', '2024-06-02','2024-06-03', '2024-06-24', '2024-06-25'] , date_format="%Y-%m-%d")
-    # print(r)
-    pass
+
+    startDate = "2024-08-01"
+    endDate = "2024-08-31"
+    sx.publicMarketData(startDate,endDate)
 
