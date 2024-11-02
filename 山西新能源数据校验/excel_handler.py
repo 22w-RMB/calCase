@@ -91,6 +91,44 @@ class ExcelHeplerXlwing:
         self.saveFile(savePath)
 
 
+    '''
+        输出私有数据概况
+    '''
+    def writePrivateOverviewData(self, savePath,sheetName,dataDict):
+
+        ws = self.wb.sheets[sheetName]
+        print("开始遍历")
+        l = []
+
+        for k,v in dataDict.items():
+            #  获取场站个数
+            vLen = len(v.keys())
+            #  获取无数据的场站
+            filterNoDataList = list(filter(lambda x:v[x]=="无数据",v.keys()))
+            filterNoDataListLen = len(filterNoDataList)
+            #  获取数据齐全的场站
+            filterCompleteDataList = list(filter(lambda x:v[x]=="√",v.keys()))
+            filterCompleteDataListLen = len(filterCompleteDataList)
+
+            #  获取部分数据缺失的场站个数
+            filterIncompleteDataListLen = vLen - filterNoDataListLen - filterCompleteDataListLen
+
+            if filterNoDataListLen == vLen:
+                l.append(["所有场站无数据"])
+            elif filterIncompleteDataListLen == 0 and filterNoDataListLen != 0:
+                l.append(["、".join(filterNoDataList) + "无数据"])
+            elif filterIncompleteDataListLen != 0 and filterNoDataListLen != 0:
+                l.append(["部分场站缺少数据或无数据"])
+            elif filterCompleteDataListLen == vLen:
+                l.append(["所有场站数据齐全"])
+            else:
+                l.append([None])
+
+
+        ws.range((3, 6), (500000, 6)).value = l
+        print("遍历结束")
+        self.saveFile(savePath)
+
 
     def saveFile(self, savePath = None):
 
@@ -110,17 +148,27 @@ class ExcelHeplerXlwing:
 
 if __name__ == '__main__':
     # Create two books and add a value to the first sheet of the first book
-    first_book = xlwings.Book()
-    second_book = xlwings.Book()
-    first_book.sheets[0]['A1'].value = 'some value'
+    # first_book = xlwings.Book()
+    # second_book = xlwings.Book()
+    # first_book.sheets[0]['A1'].value = 'some value'
+    #
+    # # Copy to same Book with the default location and name
+    # first_book.sheets[0].copy()
+    #
+    # # Copy to same Book with custom sheet name
+    # first_book.sheets[0].copy(name='copied')
+    #
+    # # Copy to second Book requires to use before or after
+    # first_book.sheets[0].copy(after=second_book.sheets[0])
 
-    # Copy to same Book with the default location and name
-    first_book.sheets[0].copy()
 
-    # Copy to same Book with custom sheet name
-    first_book.sheets[0].copy(name='copied')
 
-    # Copy to second Book requires to use before or after
-    first_book.sheets[0].copy(after=second_book.sheets[0])
+    dict1 = {
+        "a" : 1,
+        "b" : 1,
+        "c" : 2
+    }
+
+    print(list(filter(lambda k:dict1[k]==1 ,dict1.keys())))
 
     pass

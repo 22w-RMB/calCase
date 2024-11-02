@@ -679,6 +679,10 @@ class Shanxi:
             # e.newExcel(sheetName=month + "月私有数据测试明细", templateStyle=template)
             e.copySheet(tempPath,"私有数据测试明细",month + "月私有数据测试明细")
             e.writePrivateDetailData(savePath, month + "月私有数据测试明细", outputDict)
+
+            e.copySheet(tempPath, "私有数据", "私有数据（"+month + "月）")
+            e.writePrivateOverviewData(savePath, "私有数据（"+month + "月）", outputDict)
+
             print("导出结束")
 
 
@@ -780,9 +784,10 @@ if __name__ == '__main__':
 
     # startDate = "2024-08-05"
     # endDate = "2024-08-05"
+    # sx.execMain(startDate,endDate)
 
     # unitInfo = sx.getUnit()
-    # sx.execMain(startDate,endDate)
+
     sx.execMain(year=2024,month=8)
 
     # r = find_missing_dates(['2024-06-01', '2024-06-02','2024-06-03', '2024-06-24', '2024-06-25'] , date_format="%Y-%m-%d")
