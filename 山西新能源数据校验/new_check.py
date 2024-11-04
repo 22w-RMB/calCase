@@ -1,4 +1,5 @@
 import calendar
+from copy import deepcopy
 
 from 山西新能源数据校验.common import CommonClass
 from 山西新能源数据校验.excel_handler import ExcelHeplerXlwing
@@ -279,21 +280,44 @@ def find_missing_dates(given_dates, date_format="%Y-%m-%d", allDateLen=None):
     return "缺少" + "/".join(missing_ranges) + "数据"
 
 
-def getPublicMarketNoDayList(dataList,marketType=None,itemName=None,fieldType=None,fieldName=None,allDateList=None):
-
+def getPublicMarketNoDayList(dataList,marketType=None,itemName=None,fieldType=None,fieldName=None,allDateList=None,itemOtherInfo=None,):
     # 过滤出日前或实时的数据
-    filterList1 = list(filter(lambda x:x['marketType'] == marketType, dataList))
+    filterList1 = list(filter(lambda x: x.get('marketType') == marketType, dataList))
     # 如果是联络线或者通道或新能源，那么
     if fieldType is not None:
-        filterList1 = list(filter(lambda x:x[fieldType] == fieldName, filterList1))
-    # 进一步过滤出96点数据不为空的日期
-    filterList2 = list(filter(lambda x: CommonClass.judgeListIsNone(x[itemName]) == False, filterList1))
-    # 生成有数据的日期
-    havaDataDate = [d['date'][:10] for d in filterList2]
-    # 生成没有数据的日期
-    noDataDate = list(set(allDateList) - set(havaDataDate))
+        filterList1 = list(filter(lambda x: x[fieldType] == fieldName, filterList1))
 
-    return noDataDate
+    if itemOtherInfo == None:
+
+        # 进一步过滤出96点数据不为空的日期
+        filterList2 = list(filter(lambda x: CommonClass.judgeListIsNone(x[itemName]) == False, filterList1))
+        # 生成有数据的日期
+        havaDataDate = [d['date'][:10] for d in filterList2]
+        # 生成没有数据的日期
+        noDataDate = list(set(allDateList) - set(havaDataDate))
+
+        return noDataDate
+
+    if itemOtherInfo is not None:
+
+        if itemOtherInfo['itemDataType'] == "dict" :
+            '''
+                {itemDataType : "dict" , dictKeyLists : []}
+            '''
+            def filterDictValue(dictData,dictKeyLists):
+                if dictData == None:
+                    return  False
+                filterTemp = list(filter(lambda x: dictData[x] == None,dictKeyLists))
+                return True if filterTemp == [] else False
+
+            # 进一步过滤出96点数据不为空的日期
+            filterList2 = list(filter(lambda x: filterDictValue(x[itemName],itemOtherInfo['dictKeyLists']) == True, filterList1))
+            # 生成有数据的日期
+            havaDataDate = [d['date'][:10] for d in filterList2]
+            # 生成没有数据的日期
+            noDataDate = list(set(allDateList) - set(havaDataDate))
+
+            return noDataDate
 
 
 
@@ -871,6 +895,7 @@ class Shanxi:
             allDateList.append(dateStr)
             sd += timedelta(days=1)
 
+        #  市场行情看板请求
         marketMethod = "POST"
         marketUrl = self.domain +"/PublicDataManage/014/api/spot/market/info"
         marketJson = {
@@ -893,13 +918,96 @@ class Shanxi:
                 "groupType": "RANGE"
             }
         }
-        responseData = CommonClass.execRequest(self.session,url=marketUrl,method=marketMethod,json=marketJson,).json()["data"]
+        marketResponseData = CommonClass.execRequest(self.session,url=marketUrl,method=marketMethod,json=marketJson,).json()["data"]
         # print(responseData)
+
+        #  水电出力请求
+        waterPowerMethod = "POST"
+        waterPowertUrl = self.domain +"/PublicDataManage/014/api/spot/waterPower/query/latest"
+        waterPowerJson = {
+            "dateMerge": {
+                "aggregateType": "AVG",
+                "mergeType": "NONE"
+            },
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "marketType": None,
+            "provinceAreaId": "014",
+            "timeSegment": {
+                "aggregateType": None,
+                "filterPoints": None,
+                "segmentType": "SEG_96"
+            },
+            "statistics": {
+                "groupType": "RANGE"
+            }
+        }
+        waterPowerResponseData = CommonClass.execRequest(self.session,url=waterPowertUrl,method=waterPowerMethod,json=waterPowerJson,).json()["data"]
+        # print(responseData)
+
+        #  省内出清电量请求
+        clearingEnergyMethod = "POST"
+        clearingEnergytUrl = self.domain +"/PublicDataManage/014/api/spot/market/clearingEnergy/query/latest"
+        clearingEnergyJson = {
+            "dateMerge": {
+                "aggregateType": "SUM",
+                "mergeType": "NONE"
+            },
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "marketType": None,
+            "provinceAreaId": "014",
+            "timeSegment": {
+                "aggregateType": None,
+                "filterPoints": None,
+                "segmentType": "SEG_96"
+            },
+            "statistics": {
+                "groupType": "RANGE"
+            }
+        }
+        clearingEnergyResponseData = CommonClass.execRequest(self.session,url=clearingEnergytUrl,method=clearingEnergyMethod,json=clearingEnergyJson,).json()["data"]
+        # print(responseData)
+
+        #  省内出清电量请求
+        clearingOverviewMethod = "POST"
+        clearingOverviewtUrl = self.domain +"/PublicDataManage/014/api/spot/market/clearingOverview/query/latest"
+        clearingOverviewJson = {
+            "dateRanges": [{
+                "start": startDate,
+                "end": endDate
+            }],
+            "provinceAreaId": "014"
+        }
+        clearingOverviewResponseData = CommonClass.execRequest(self.session,url=clearingOverviewtUrl,method=clearingOverviewMethod,json=clearingOverviewJson,).json()["data"]
+        # print(responseData)
+
+        responseData = deepcopy(marketResponseData)
+        responseData['waterPower'] = waterPowerResponseData['dataList']
+        responseData['clearingEnergy'] = clearingEnergyResponseData['dataList']
+        responseData['clearingOverview'] = clearingOverviewResponseData['dataList']
 
         itemUploadStatusDict = {}
 
         marketItemDict ={
-            '日前节点边际电价' : [
+            '日前节点边际电价': [
+                {
+                    'dataListKey': "marketClearingPrice",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "price",
+                    'fieldType': None,
+                    'fieldName': None,
+                }
+            ],
+            '分时交易出清信息' : [
                 {
                     'dataListKey' : "marketClearingPrice",
                     'marketType' : "DAY_AHEAD",
@@ -994,7 +1102,113 @@ class Shanxi:
                     'fieldName': None,
                 },
             ],
-
+            '96点电网运行实际值': [
+                {
+                    'dataListKey': "systemLoad",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': "type",
+                    'fieldName': "REAL_TIME_ACTUAL",
+                },
+                {
+                    'dataListKey': "callWirePower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': "channelName",
+                    'fieldName': "总加",
+                },
+                {
+                    'dataListKey': "newEnergyPower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': "type",
+                    'fieldName': "WIND",
+                },
+                {
+                    'dataListKey': "newEnergyPower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': "type",
+                    'fieldName': "PHOTOVOLTAIC",
+                },
+                {
+                    'dataListKey': "newEnergyPower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': "type",
+                    'fieldName': "NEW_ENERGY",
+                },
+                {
+                    'dataListKey': "waterPower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+                {
+                    'dataListKey': "nonMarketUnitPower",
+                    'marketType': "REAL_TIME",
+                    'itemName': "power",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '日前各时段出清现货电量': [
+                {
+                    'dataListKey': "clearingEnergy",
+                    'marketType': "DAY_AHEAD",
+                    'itemName': "energy",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '实时各时段出清现货电量': [
+                {
+                    'dataListKey': "clearingEnergy",
+                    'marketType': "REAL_TIME",
+                    'itemName': "energy",
+                    'fieldType': None,
+                    'fieldName': None,
+                },
+            ],
+            '日前市场出清概况': [
+                {
+                    'dataListKey': "clearingOverview",
+                    'marketType': None,
+                    'itemName': "dayAheadOverview",
+                    'fieldType': None,
+                    'fieldName': None,
+                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['sourceInfo']},
+                },
+            ],
+            '实时市场出清概况': [
+                {
+                    'dataListKey': "clearingOverview",
+                    'marketType': None,
+                    'itemName': "realTimeOverview",
+                    'fieldType': None,
+                    'fieldName': None,
+                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['sourceInfo']},
+                },
+            ],
+            '实时节点边际电价': [
+                {
+                    'dataListKey': "clearingOverview",
+                    'marketType': None,
+                    'itemName': "realTimeOverview",
+                    'fieldType': None,
+                    'fieldName': None,
+                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['avgClearingPrice']},
+                },
+                {
+                    'dataListKey': "clearingOverview",
+                    'marketType': None,
+                    'itemName': "dayAheadOverview",
+                    'fieldType': None,
+                    'fieldName': None,
+                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['avgClearingPrice']},
+                },
+            ],
         }
 
         # 对数据项批量处理
@@ -1003,11 +1217,11 @@ class Shanxi:
             for ic in itemConfig:
                 noDayList = getPublicMarketNoDayList(responseData[ic['dataListKey']], marketType=ic['marketType'],
                                                      itemName=ic['itemName'], fieldType=ic['fieldType'],
-                                                     fieldName=ic['fieldName'],allDateList=allDateList)
+                                                     fieldName=ic['fieldName'],allDateList=allDateList,itemOtherInfo=ic.get('itemOtherInfo'))
                 set1 = set1.union(set(noDayList))
 
             itemUploadStatusDict[itemName] = find_missing_dates(list(set1),allDateLen=len(allDateList))
-        print(itemUploadStatusDict)
+        # print(itemUploadStatusDict)
 
         # 省间通道
         for channel in interProvinceClearingPowerChannelName:
@@ -1031,24 +1245,23 @@ class Shanxi:
             )
             # print(channel, itemUploadStatusDict[channel])
 
-
-
+        print(itemUploadStatusDict)
 
 if __name__ == '__main__':
 
 
-    info = {
-        "url_domain" :  "https://adssx-test-gzdevops3.tsintergy.com",
-        "logininfo" : {
-            "publicKey_url" :  None,
-            "login_url" :  "/usercenter/web/login",
-            "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
-            "username" :  "zhanzw_czc",
-            "password" :  "passwd123@",
-            "loginMode" :  2,
-        },
-        "tenantId" : "e4f736aa7cc47f7c017ce4c3ac2302bc",
-    }
+    # info = {
+    #     "url_domain" :  "https://adssx-test-gzdevops3.tsintergy.com",
+    #     "logininfo" : {
+    #         "publicKey_url" :  None,
+    #         "login_url" :  "/usercenter/web/login",
+    #         "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
+    #         "username" :  "zhanzw_czc",
+    #         "password" :  "passwd123@",
+    #         "loginMode" :  2,
+    #     },
+    #     "tenantId" : "e4f736aa7cc47f7c017ce4c3ac2302bc",
+    # }
 
     # info = {
     #     "url_domain" :  "https://pets.crnewenergy.com.cn",
@@ -1063,6 +1276,20 @@ if __name__ == '__main__':
     #     "tenantId" : "tsintergy",
     # }
 
+
+    info = {
+        "url_domain" :  "https://adssx-tcloud.tsintergy.com/",
+        "logininfo" : {
+            "publicKey_url" :  None,
+            "login_url" :  "/usercenter/web/login",
+            "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
+            "username" :  "zhanzewei",
+            "password" :  "Qinghua123@",
+            "loginMode" :  2,
+        },
+        "tenantId" : "2c9487a07fb53c54017fd51402310c7c",
+    }
+
     testSession = requests.Session()
     sx = Shanxi(testSession,info)
     sx.login()
@@ -1075,7 +1302,7 @@ if __name__ == '__main__':
     # sx.execPrivateMain(year=2024,month=8)
 
 
-    startDate = "2024-08-01"
-    endDate = "2024-08-31"
+    startDate = "2024-11-01"
+    endDate = "2024-11-30"
     sx.publicMarketData(startDate,endDate)
 

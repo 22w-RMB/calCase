@@ -1,4 +1,5 @@
 import os.path
+import re
 
 import xlwings
 
@@ -162,16 +163,31 @@ if __name__ == '__main__':
     # first_book.sheets[0].copy(after=second_book.sheets[0])
 
 
+    #
+    # dict1 = {
+    #     "a" : {
+    #         "m" :2
+    #     },
+    #     "b" : {
+    #         "b" :2
+    #     },
+    #     "c" :  {
+    #         "m" :2
+    #     }
+    # }
+    #
+    # print(list(filter(lambda x: dict1[x]['m']==None, dict1)))
 
-    dict1 = {
-        "a" : 1,
-        "b" : 1,
-        "c" : None
-    }
+    str3 = "创建日期：2024-01-12日，更新日期：2024-03-23日"
 
-    print(list(filter(lambda x: dict1[x]==None, dict1)))
+    pattern = re.compile("(\d{4})-(\d{2})-(\d{2})")
+    # 正则表达式匹配上的文本全部替换
+    res3 = pattern.sub("****", str3)
+    print(res3)  # 打印结果： 创建日期：****日，更新日期：****日
+    # 指定分组不替换， \\n ，n代表第n个分组，n从1开始
+    res3 = pattern.sub("\\1****\\2", str3)
+    print(res3)  # 打印结果： 创建日期：****日，更新日期：****日
 
-
-    print("vaera3b"[:-2])
+    # print("vaera3b"[:-2])
 
     pass
