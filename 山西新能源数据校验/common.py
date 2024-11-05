@@ -22,7 +22,7 @@ class CommonClass:
 
 
     @staticmethod
-    def judgeListIsNone( l ):
+    def judgeListIsNone(l):
 
         if l == None or l == []:
             return True

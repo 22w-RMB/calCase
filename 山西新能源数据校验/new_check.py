@@ -287,19 +287,13 @@ def getPublicMarketNoDayList(dataList,marketType=None,itemName=None,fieldType=No
     if fieldType is not None:
         filterList1 = list(filter(lambda x: x[fieldType] == fieldName, filterList1))
 
-    if itemOtherInfo == None:
+    filterList2 = []
 
+    if itemOtherInfo == None:
         # 进一步过滤出96点数据不为空的日期
         filterList2 = list(filter(lambda x: CommonClass.judgeListIsNone(x[itemName]) == False, filterList1))
-        # 生成有数据的日期
-        havaDataDate = [d['date'][:10] for d in filterList2]
-        # 生成没有数据的日期
-        noDataDate = list(set(allDateList) - set(havaDataDate))
-
-        return noDataDate
 
     if itemOtherInfo is not None:
-
         if itemOtherInfo['itemDataType'] == "dict" :
             '''
                 {itemDataType : "dict" , dictKeyLists : []}
@@ -312,13 +306,23 @@ def getPublicMarketNoDayList(dataList,marketType=None,itemName=None,fieldType=No
 
             # 进一步过滤出96点数据不为空的日期
             filterList2 = list(filter(lambda x: filterDictValue(x[itemName],itemOtherInfo['dictKeyLists']) == True, filterList1))
-            # 生成有数据的日期
-            havaDataDate = [d['date'][:10] for d in filterList2]
-            # 生成没有数据的日期
-            noDataDate = list(set(allDateList) - set(havaDataDate))
 
-            return noDataDate
+        if itemOtherInfo['itemDataType'] == "str" :
+            '''
+                {itemDataType : "str" }
+            '''
+            # 进一步过滤出96点数据不为空的日期
+            filterList2 = list(filter(lambda x: (x[itemName] != None or x[itemName] != ""), filterList1))
 
+    # 生成有数据的日期
+    havaDataDate = [d['date'][:10] for d in filterList2]
+    # 生成没有数据的日期
+    noDataDate = list(set(allDateList) - set(havaDataDate))
+
+    return {
+        'noDataDate': noDataDate,
+        'haveDataDate': list(set(havaDataDate)),
+    }
 
 
 class Shanxi:
@@ -919,7 +923,6 @@ class Shanxi:
             }
         }
         marketResponseData = CommonClass.execRequest(self.session,url=marketUrl,method=marketMethod,json=marketJson,).json()["data"]
-        # print(responseData)
 
         #  水电出力请求
         waterPowerMethod = "POST"
@@ -947,7 +950,6 @@ class Shanxi:
             }
         }
         waterPowerResponseData = CommonClass.execRequest(self.session,url=waterPowertUrl,method=waterPowerMethod,json=waterPowerJson,).json()["data"]
-        # print(responseData)
 
         #  省内出清电量请求
         clearingEnergyMethod = "POST"
@@ -975,7 +977,6 @@ class Shanxi:
             }
         }
         clearingEnergyResponseData = CommonClass.execRequest(self.session,url=clearingEnergytUrl,method=clearingEnergyMethod,json=clearingEnergyJson,).json()["data"]
-        # print(responseData)
 
         #  省内出清电量请求
         clearingOverviewMethod = "POST"
@@ -988,264 +989,526 @@ class Shanxi:
             "provinceAreaId": "014"
         }
         clearingOverviewResponseData = CommonClass.execRequest(self.session,url=clearingOverviewtUrl,method=clearingOverviewMethod,json=clearingOverviewJson,).json()["data"]
-        # print(responseData)
+
+        #  断面约束请求
+        transSectionMethod = "POST"
+        transSectiontUrl = self.domain +"/PublicDataManage/014/api/spot/transSection/bound/query/latest"
+        transSectionJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "provinceAreaId": "014",
+            "marketType": "DAY_AHEAD"
+        }
+        transSectionResponseData = CommonClass.execRequest(self.session,url=transSectiontUrl,method=transSectionMethod,json=transSectionJson,).json()["data"]
+
+        #  输电通道可用容量请求
+        transChannelCapacityMethod = "POST"
+        transChannelCapacityUrl = self.domain +"/PublicDataManage/014/api/spot/transChannel/capacity/query/latest"
+        transChannelCapacityJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "channelIds": [],
+            "provinceAreaId": "014"
+        }
+        transChannelCapacityResponseData = CommonClass.execRequest(self.session,url=transChannelCapacityUrl,method=transChannelCapacityMethod,json=transChannelCapacityJson,).json()["data"]
+
+        #  重要通道实际输电情况请求
+        transChannelTransInfoMethod = "POST"
+        transChannelTransInfotUrl = self.domain +"/PublicDataManage/014/api/spot/transChannel/transInfo/query/latest"
+        transChannelTransInfoJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "channelIds": [],
+            "provinceAreaId": "014"
+        }
+        transChannelTransInfoResponseData = CommonClass.execRequest(self.session,url=transChannelTransInfotUrl,method=transChannelTransInfoMethod,json=transChannelTransInfoJson,).json()["data"]
+
+        #  日前正负备用需求请求
+        spareDemandMethod = "POST"
+        spareDemandUrl = self.domain +"/PublicDataManage/014/api/spot/spareDemand/query/latest"
+        spareDemandJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "provinceAreaId": "014",
+            "timeSegment": {
+                "filterPoints": None,
+                "segmentType": "SEG_DAY"
+            }
+        }
+        spareDemandResponseData = CommonClass.execRequest(self.session,url=spareDemandUrl,method=spareDemandMethod,json=spareDemandJson,).json()["data"]
+
+        #  开机不满五天机组请求
+        discontinueBootMethod = "POST"
+        discontinueBootUrl = self.domain +"/PublicDataManage/014/api/spot/discontinueBoot/query/latest"
+        discontinueBootJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "provinceAreaId": "014"
+        }
+        discontinueBootData = CommonClass.execRequest(self.session,url=discontinueBootUrl,method=discontinueBootMethod,json=discontinueBootJson,).json()["data"]
+
+        #  检修总容量请求
+        overhaulCapacityMethod = "POST"
+        overhaulCapacityUrl = self.domain +"/PublicDataManage/014/api/spot/overhaulCapacity/query/latest"
+        overhaulCapacityJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "marketType": "DAY_AHEAD",
+            "provinceAreaId": "014"
+        }
+        overhaulCapacityData = CommonClass.execRequest(self.session,url=overhaulCapacityUrl,method=overhaulCapacityMethod,json=overhaulCapacityJson,).json()["data"]
+
+        #  必开必停请求
+        startStopUnitMethod = "POST"
+        startStopUnitUrl = self.domain +"/PublicDataManage/014/api/spot/startStopUnit/statistics/query/latest"
+        startStopUnitJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "provinceAreaId": "014",
+            "unitStatus": "START"
+        }
+
+        startStopUnitData = {'dataList': []}
+        startUnitData = CommonClass.execRequest(self.session,url=startStopUnitUrl,method=startStopUnitMethod,json=startStopUnitJson,).json()["data"]
+        startStopUnitJson["unitStatus"] = "STOP"
+        stopUnitData = CommonClass.execRequest(self.session,url=startStopUnitUrl,method=startStopUnitMethod,json=startStopUnitJson,).json()["data"]
+        startStopUnitData['dataList'].extend(startUnitData['dataList'])
+        startStopUnitData['dataList'].extend(stopUnitData['dataList'])
+
 
         responseData = deepcopy(marketResponseData)
         responseData['waterPower'] = waterPowerResponseData['dataList']
         responseData['clearingEnergy'] = clearingEnergyResponseData['dataList']
         responseData['clearingOverview'] = clearingOverviewResponseData['dataList']
+        responseData['transSection'] = transSectionResponseData['dataList']
+        responseData['transChannelCapacity'] = transChannelCapacityResponseData['dataList']
+        responseData['transChannelTransInfo'] = transChannelTransInfoResponseData['dataList']
+        responseData['spareDemand'] = spareDemandResponseData['dataList']
+        responseData['discontinueBoot'] = discontinueBootData['dataList']
+        responseData['overhaulCapacity'] = overhaulCapacityData['dataList']
+        responseData['startStopUnit'] = startStopUnitData['dataList']
 
         itemUploadStatusDict = {}
 
         marketItemDict ={
-            '日前节点边际电价': [
-                {
-                    'dataListKey': "marketClearingPrice",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "price",
-                    'fieldType': None,
-                    'fieldName': None,
-                }
-            ],
-            '分时交易出清信息' : [
-                {
-                    'dataListKey' : "marketClearingPrice",
-                    'marketType' : "DAY_AHEAD",
-                    'itemName' : "price",
-                    'fieldType' : None,
-                    'fieldName' : None,
-                }
-            ],
-            '日前现货价格预测': [
-                {
-                    'dataListKey': "marketClearingPrice",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "priceForecast",
-                    'fieldType': None,
-                    'fieldName': None,
-                }
-            ],
-            '现货出清电价': [
-                {
-                    'dataListKey': "marketClearingPrice",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "price",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-                {
-                    'dataListKey': "marketClearingPrice",
-                    'marketType': "REAL_TIME",
-                    'itemName': "price",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '日前省间现货出清电价情况': [
-                {
-                    'dataListKey': "interProvinceClearingPrice",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "price",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '日内省间现货出清电价情况': [
-                {
-                    'dataListKey': "interProvinceClearingPrice",
-                    'marketType': "REAL_TIME",
-                    'itemName': "price",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '日前新能源负荷预测': [
-                {
-                    'dataListKey': "newEnergyPower",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "power",
-                    'fieldType': "type",
-                    'fieldName': "NEW_ENERGY",
-                },
-            ],
-            '日前统调系统负荷预测': [
-                {
-                    'dataListKey': "systemLoad",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "power",
-                    'fieldType': "type",
-                    'fieldName': "SHORT_TERM_FORECAST",
-                },
-            ],
-            '非市场化机组出力': [
-                {
-                    'dataListKey': "nonMarketUnitPower",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "power",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-                {
-                    'dataListKey': "nonMarketUnitPower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '可再生能源富余程度': [
-                {
-                    'dataListKey': "powerLimit",
-                    'marketType': None,
-                    'itemName': "limitStatus",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '96点电网运行实际值': [
-                {
-                    'dataListKey': "systemLoad",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': "type",
-                    'fieldName': "REAL_TIME_ACTUAL",
-                },
-                {
-                    'dataListKey': "callWirePower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': "channelName",
-                    'fieldName': "总加",
-                },
-                {
-                    'dataListKey': "newEnergyPower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': "type",
-                    'fieldName': "WIND",
-                },
-                {
-                    'dataListKey': "newEnergyPower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': "type",
-                    'fieldName': "PHOTOVOLTAIC",
-                },
-                {
-                    'dataListKey': "newEnergyPower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': "type",
-                    'fieldName': "NEW_ENERGY",
-                },
-                {
-                    'dataListKey': "waterPower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-                {
-                    'dataListKey': "nonMarketUnitPower",
-                    'marketType': "REAL_TIME",
-                    'itemName': "power",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '日前各时段出清现货电量': [
-                {
-                    'dataListKey': "clearingEnergy",
-                    'marketType': "DAY_AHEAD",
-                    'itemName': "energy",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '实时各时段出清现货电量': [
-                {
-                    'dataListKey': "clearingEnergy",
-                    'marketType': "REAL_TIME",
-                    'itemName': "energy",
-                    'fieldType': None,
-                    'fieldName': None,
-                },
-            ],
-            '日前市场出清概况': [
-                {
-                    'dataListKey': "clearingOverview",
-                    'marketType': None,
-                    'itemName': "dayAheadOverview",
-                    'fieldType': None,
-                    'fieldName': None,
-                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['sourceInfo']},
-                },
-            ],
-            '实时市场出清概况': [
-                {
-                    'dataListKey': "clearingOverview",
-                    'marketType': None,
-                    'itemName': "realTimeOverview",
-                    'fieldType': None,
-                    'fieldName': None,
-                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['sourceInfo']},
-                },
-            ],
-            '实时节点边际电价': [
-                {
-                    'dataListKey': "clearingOverview",
-                    'marketType': None,
-                    'itemName': "realTimeOverview",
-                    'fieldType': None,
-                    'fieldName': None,
-                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['avgClearingPrice']},
-                },
-                {
-                    'dataListKey': "clearingOverview",
-                    'marketType': None,
-                    'itemName': "dayAheadOverview",
-                    'fieldType': None,
-                    'fieldName': None,
-                    'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['avgClearingPrice']},
-                },
-            ],
+            '日前节点边际电价': {
+                'info': [
+                    {
+                        'dataListKey': "marketClearingPrice",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "price",
+                        'fieldType': None,
+                        'fieldName': None,
+                    }
+                ]
+            },
+            '分时交易出清信息' : {
+                'info': [
+                    {
+                        'dataListKey' : "marketClearingPrice",
+                        'marketType' : "DAY_AHEAD",
+                        'itemName' : "price",
+                        'fieldType' : None,
+                        'fieldName' : None,
+                    }
+                ]
+            },
+            '日前现货价格预测': {
+                'info': [
+                    {
+                        'dataListKey': "marketClearingPrice",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "priceForecast",
+                        'fieldType': None,
+                        'fieldName': None,
+                    }
+                ]
+            },
+            '现货出清电价': {
+                'info': [
+                    {
+                        'dataListKey': "marketClearingPrice",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "price",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                    {
+                        'dataListKey': "marketClearingPrice",
+                        'marketType': "REAL_TIME",
+                        'itemName': "price",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日前省间现货出清电价情况': {
+                'info': [
+                    {
+                        'dataListKey': "interProvinceClearingPrice",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "price",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日内省间现货出清电价情况': {
+                'info': [
+                    {
+                        'dataListKey': "interProvinceClearingPrice",
+                        'marketType': "REAL_TIME",
+                        'itemName': "price",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日前新能源负荷预测': {
+                'info': [
+                    {
+                        'dataListKey': "newEnergyPower",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "power",
+                        'fieldType': "type",
+                        'fieldName': "NEW_ENERGY",
+                    },
+                ]
+            },
+            '日前统调系统负荷预测': {
+                'info': [
+                    {
+                        'dataListKey': "systemLoad",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "power",
+                        'fieldType': "type",
+                        'fieldName': "SHORT_TERM_FORECAST",
+                    },
+                ]
+            },
+            '非市场化机组出力': {
+                'info': [
+                    {
+                        'dataListKey': "nonMarketUnitPower",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "power",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                    {
+                        'dataListKey': "nonMarketUnitPower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '可再生能源富余程度': {
+                'info': [
+                    {
+                        'dataListKey': "powerLimit",
+                        'marketType': None,
+                        'itemName': "limitStatus",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '96点电网运行实际值': {
+                'info': [
+                    {
+                        'dataListKey': "systemLoad",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': "type",
+                        'fieldName': "REAL_TIME_ACTUAL",
+                    },
+                    {
+                        'dataListKey': "callWirePower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': "channelName",
+                        'fieldName': "总加",
+                    },
+                    {
+                        'dataListKey': "newEnergyPower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': "type",
+                        'fieldName': "WIND",
+                    },
+                    {
+                        'dataListKey': "newEnergyPower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': "type",
+                        'fieldName': "PHOTOVOLTAIC",
+                    },
+                    {
+                        'dataListKey': "newEnergyPower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': "type",
+                        'fieldName': "NEW_ENERGY",
+                    },
+                    {
+                        'dataListKey': "waterPower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                    {
+                        'dataListKey': "nonMarketUnitPower",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日前各时段出清现货电量': {
+                'info': [
+                    {
+                        'dataListKey': "clearingEnergy",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "energy",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '实时各时段出清现货电量': {
+                'info': [
+                    {
+                        'dataListKey': "clearingEnergy",
+                        'marketType': "REAL_TIME",
+                        'itemName': "energy",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日前市场出清概况': {
+                'info': [
+                    {
+                        'dataListKey': "clearingOverview",
+                        'marketType': None,
+                        'itemName': "dayAheadOverview",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['sourceInfo']},
+                    },
+                ]
+            },
+            '实时市场出清概况': {
+                'info': [
+                    {
+                        'dataListKey': "clearingOverview",
+                        'marketType': None,
+                        'itemName': "realTimeOverview",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['sourceInfo']},
+                    },
+                ]
+            },
+            '实时节点边际电价': {
+                'info': [
+                    {
+                        'dataListKey': "clearingOverview",
+                        'marketType': None,
+                        'itemName': "realTimeOverview",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['avgClearingPrice']},
+                    },
+                    {
+                        'dataListKey': "clearingOverview",
+                        'marketType': None,
+                        'itemName': "dayAheadOverview",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "dict", 'dictKeyLists': ['avgClearingPrice']},
+                    },
+                ]
+            },
+            '断面约束': {
+                'info': [
+                    {
+                        'dataListKey': "transSection",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "sectionName",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "str", },
+                    },
+                ]
+            },
+            '日前输电断面约束及阻塞': {
+                'info': [
+                    {
+                        'dataListKey': "transSection",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "sectionName",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "str", },
+                    },
+                ]
+            },
+            '输电通道可用容量': {
+                'info': [
+                    {
+                        'dataListKey': "transChannelCapacity",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "capacity",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '重要通道实际输电情况': {
+                'info': [
+                    {
+                        'dataListKey': "transChannelTransInfo",
+                        'marketType': "REAL_TIME",
+                        'itemName': "power",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日前正负备用需求': {
+                'info': [
+                    {
+                        'dataListKey': "spareDemand",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "negativePower",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                    {
+                        'dataListKey': "spareDemand",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "newEnergyPower",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                    {
+                        'dataListKey': "spareDemand",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "positivePower",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '开机不满五天机组': {
+                'info': [
+                    {
+                        'dataListKey': "discontinueBoot",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "unitName",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "str", },
+                    },
+                ]
+            },
+            '检修总容量': {
+                'info': [
+                    {
+                        'dataListKey': "overhaulCapacity",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "capacity",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
+            '日前必开必停机组': {
+                'info': [
+                    {
+                        'dataListKey': "startStopUnit",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "unitCapacity",
+                        'fieldType': None,
+                        'fieldName': None,
+                    },
+                ]
+            },
         }
 
         # 对数据项批量处理
-        for itemName,itemConfig in marketItemDict.items():
+        for itemName, itemConfig in marketItemDict.items():
             set1 = set()
-            for ic in itemConfig:
-                noDayList = getPublicMarketNoDayList(responseData[ic['dataListKey']], marketType=ic['marketType'],
+            logic = itemConfig.get('logic')
+            for ic in itemConfig['info']:
+                dayStatusDict = getPublicMarketNoDayList(responseData[ic['dataListKey']], marketType=ic['marketType'],
                                                      itemName=ic['itemName'], fieldType=ic['fieldType'],
                                                      fieldName=ic['fieldName'],allDateList=allDateList,itemOtherInfo=ic.get('itemOtherInfo'))
-                set1 = set1.union(set(noDayList))
 
-            itemUploadStatusDict[itemName] = find_missing_dates(list(set1),allDateLen=len(allDateList))
-        # print(itemUploadStatusDict)
+                if logic == 'or':
+                    set1 = set1.union(set(dayStatusDict['haveDataDate']))
+                else:
+                    set1 = set1.union(set(dayStatusDict['noDataDate']))
+            if logic == 'or':
+                set1 = set(allDateList).difference(set(dayStatusDict['haveDataDate']))
+
+            itemUploadStatusDict[itemName] = find_missing_dates(list(set1), allDateLen=len(allDateList))
 
         # 省间通道
         for channel in interProvinceClearingPowerChannelName:
             channelName = channel.split("-")[0]
             marketType = "DAY_AHEAD" if channel.split("-")[1] == "日前" else "REAL_TIME"
-            itemUploadStatusDict["省间-"+channel] = find_missing_dates(
-                getPublicMarketNoDayList(responseData['interProvinceClearingPower'], marketType=marketType,
-                                         itemName="power", fieldType="channelName", fieldName=channelName, allDateList=allDateList),
-                allDateLen=len(allDateList)
-            )
-            # print(channel, itemUploadStatusDict[channel])
+            dayStatusDict = getPublicMarketNoDayList(responseData['interProvinceClearingPower'], marketType=marketType,
+                                     itemName="power", fieldType="channelName", fieldName=channelName,
+                                     allDateList=allDateList)
+            itemUploadStatusDict["省间-"+channel] = find_missing_dates(dayStatusDict['noDataDate'],
+                                                                     allDateLen=len(allDateList))
 
         # 联络线通道
         for channel in callWirePowerChannelName:
             channelName = channel[:-2]
             marketType = "DAY_AHEAD" if "日前" in channel else "REAL_TIME"
-            itemUploadStatusDict["联络线-"+channel] = find_missing_dates(
-                getPublicMarketNoDayList(responseData['callWirePower'], marketType=marketType,
-                                         itemName="power", fieldType="channelName", fieldName=channelName, allDateList=allDateList),
-                allDateLen=len(allDateList)
-            )
-            # print(channel, itemUploadStatusDict[channel])
+            dayStatusDict = getPublicMarketNoDayList(responseData['callWirePower'], marketType=marketType,
+                                     itemName="power", fieldType="channelName", fieldName=channelName,
+                                     allDateList=allDateList)
+            itemUploadStatusDict["联络线-"+channel] = find_missing_dates(dayStatusDict['noDataDate'],
+                                                                     allDateLen=len(allDateList))
 
         print(itemUploadStatusDict)
+
 
 if __name__ == '__main__':
 
