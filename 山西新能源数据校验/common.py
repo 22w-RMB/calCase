@@ -42,8 +42,13 @@ class CommonClass:
             if isGetStr == False:
                 if not os.path.exists(root):
                     os.mkdir(root)
-
         return root
+
+
+    @staticmethod
+    def fileIsExist(filePath):
+        return os.path.exists(filePath)
+
 
     @staticmethod
     def randomData(count, maxLimit,minLimit, decimalPlace):

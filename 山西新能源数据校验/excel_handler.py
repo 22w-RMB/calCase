@@ -34,13 +34,16 @@ class ExcelHeplerXlwing:
         self.wb.sheets[sheetName].range("A1").options(expand="table").value = templateStyle
 
 
-
-
     def copySheet(self,tempPath=None,tempSheet=None,sheetName=None):
 
         try:
             tempWb = xlwings.Book(tempPath)
             tempSht = tempWb.sheets[tempSheet]
+
+            for sht in self.wb.sheets:
+                if sht.name == sheetName:
+                    sht.delete()
+
             tempSht.copy(after=self.wb.sheets[0])
             self.wb.sheets[tempSheet].name = sheetName
         finally:
@@ -131,6 +134,20 @@ class ExcelHeplerXlwing:
         self.saveFile(savePath)
 
 
+    '''
+        输出公有数据概况
+    '''
+    def writePublicDetailData(self,savePath,sheetName,dataDict,rowColInfo):
+
+        ws = self.wb.sheets[sheetName]
+        cellAdress = rowColInfo.get('cellAdress')
+        keyConfigList = ws.range(cellAdress).value
+        valueList = [dataDict.get(k) for k in keyConfigList]
+        # ws.range(cellAdress).value = valueList
+        ws.range(cellAdress).options(transpose=True).value = valueList
+        self.saveFile(savePath)
+
+
     def saveFile(self, savePath = None):
 
         if savePath is None:
@@ -177,16 +194,11 @@ if __name__ == '__main__':
     # }
     #
     # print(list(filter(lambda x: dict1[x]['m']==None, dict1)))
-
-    str3 = "创建日期：2024-01-12日，更新日期：2024-03-23日"
-
-    pattern = re.compile("(\d{4})-(\d{2})-(\d{2})")
-    # 正则表达式匹配上的文本全部替换
-    res3 = pattern.sub("****", str3)
-    print(res3)  # 打印结果： 创建日期：****日，更新日期：****日
-    # 指定分组不替换， \\n ，n代表第n个分组，n从1开始
-    res3 = pattern.sub("\\1****\\2", str3)
-    print(res3)  # 打印结果： 创建日期：****日，更新日期：****日
+    try:
+        e = ExcelHeplerXlwing(r'D:\code\python\calCase\山西新能源数据校验\导出\华润验收清单模版.xlsx')
+        e.writePublicDetailData(None,"公有数据测试明细",{},{'cellAdress': "c3:c106"})
+    finally:
+        e.close()
 
     # print("vaera3b"[:-2])
 

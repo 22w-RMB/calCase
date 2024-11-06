@@ -312,7 +312,7 @@ def getPublicMarketNoDayList(dataList,marketType=None,itemName=None,fieldType=No
                 {itemDataType : "str" }
             '''
             # 进一步过滤出96点数据不为空的日期
-            filterList2 = list(filter(lambda x: (x[itemName] != None or x[itemName] != ""), filterList1))
+            filterList2 = list(filter(lambda x: (x[itemName] != None and x[itemName] != ""), filterList1))
 
     # 生成有数据的日期
     havaDataDate = [d['date'][:10] for d in filterList2]
@@ -889,7 +889,10 @@ class Shanxi:
                 self.privateOutputListTransFile(outputDict,startDate[:7])
 
 
-    def publicMarketData(self,startDate,endDate):
+    '''
+        获取公有数据上传状态
+    '''
+    def getPublicDataUploadStauts(self,startDate,endDate):
 
         allDateList = []
         sd = datetime.strptime(startDate, "%Y-%m-%d")
@@ -1126,9 +1129,17 @@ class Shanxi:
         }
         spotMarketBusinessData = CommonClass.execRequest(self.session,url=spotMarketBusinessUrl,method=spotMarketBusinessMethod,json=spotMarketBusinessJson,).json()["data"]
 
-
-
-
+        #  机组实际发电曲线请求
+        tradingUnitPowerMethod = "POST"
+        tradingUnitPowerUrl = self.domain +"/datacenter/shanxi/api/public/data/status"
+        tradingUnitPowerJson = {
+            "startTime": startDate,
+            "endTime": endDate,
+            "dataType": [
+                "SPOT_AFTER"
+            ]
+        }
+        tradingUnitPowerData = CommonClass.execRequest(self.session,url=tradingUnitPowerUrl,method=tradingUnitPowerMethod,json=tradingUnitPowerJson,).json()["data"]
 
 
         responseData = deepcopy(marketResponseData)
@@ -1144,6 +1155,7 @@ class Shanxi:
         responseData['startStopUnit'] = startStopUnitData['dataList']
         responseData['overhaulPlan'] = overhaulPlanData['dataList']
         responseData['spotMarketBusiness'] = spotMarketBusinessData
+        responseData['tradingUnitPower'] = tradingUnitPowerData
 
         itemUploadStatusDict = {}
 
@@ -1522,6 +1534,19 @@ class Shanxi:
                     },
                 ]
             },
+            '机组实际发电曲线': {
+                'info': [
+                    {
+                        'dataListKey': "tradingUnitPower",
+                        'marketType': None,
+                        'itemName': "updateTime",
+                        'fieldType': "dataItem",
+                        'fieldName': "机组实际发电曲线",
+                        'itemOtherInfo': {'itemDataType': "str", },
+
+                    },
+                ]
+            },
         }
 
         # 对数据项批量处理
@@ -1564,17 +1589,23 @@ class Shanxi:
 
 
         #  断面约束情况及影子价格请求，单独处理
-        overhaulPlanMethod = "POST"
-        overhaulPlanUrl = self.domain +"/PublicDataManage/014/api/spot/device/overhaulPlan/query/latest"
-        overhaulPlanJson = {
-            "dateRanges": [{
-                "start": startDate,
-                "end": endDate
-            }],
-            "provinceAreaId": "014"
+        transSectionPriceMethod = "POST"
+        transSectionPriceUrl = self.domain +"/PublicDataManage/014/api/spot/transSection/transInfo/query/latest"
+        transSectionPriceJson = {
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "provinceAreaId": "014",
+            "timeSegment": {
+                "filterPoints": None,
+                "segmentType": "SEG_96"
+            }
         }
-        overhaulPlanData = CommonClass.execRequest(self.session,url=overhaulPlanUrl,method=overhaulPlanMethod,json=overhaulPlanJson,).json()["data"]
-        itemUploadStatusDict['断面约束情况及影子价格'] = '√' if overhaulPlanData['overLimitSectionList'] != [] else "无数据"
+        transSectionPriceData = CommonClass.execRequest(self.session,url=transSectionPriceUrl,method=transSectionPriceMethod,json=transSectionPriceJson,).json()["data"]
+        itemUploadStatusDict['断面约束情况及影子价格'] = '√' if transSectionPriceData['overLimitSectionList'] != [] else "无数据"
 
 
         #  发电市场月度结算信息请求，单独处理
@@ -1588,8 +1619,66 @@ class Shanxi:
         marketPriceYearDataFilter = list(filter(lambda x: x['month'] == startDate[:7], marketPriceYearData))
         itemUploadStatusDict['发电市场月度结算信息'] = '√' if marketPriceYearDataFilter != [] else "无数据"
 
-
         print(itemUploadStatusDict)
+        return itemUploadStatusDict
+
+
+    def outputPublicDataUploadStauts(self,outputDict,yearMonth):
+        # print(outputList)
+        try:
+            print("获取模板")
+            tempPath = CommonClass.mkDir("山西新能源数据校验", "导出", "华润验收清单模版.xlsx", isGetStr=True)
+            print(tempPath)
+
+            savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth + "验收清单.xlsx", isGetStr=True)
+            savePath = savePath if CommonClass.fileIsExist(savePath) else None
+            e = ExcelHeplerXlwing(savePath)
+            month = str(int(yearMonth[5:]))
+            print("开始导出")
+            e.copySheet(tempPath, "公有数据测试明细", month + "月公有数据测试明细")
+            detailFileRowColInfo = {
+                'cellAdress': 'c3:c106'
+            }
+            e.writePublicDetailData(savePath, month + "月公有数据测试明细", outputDict,detailFileRowColInfo)
+            e.copySheet(tempPath, "公有数据", "公有数据（" + month + "月）")
+            overViewFileRowColInfo = {
+                'cellAdress': 'e2:e86'
+            }
+            e.writePublicDetailData(savePath, "公有数据（" + month + "月）", outputDict,overViewFileRowColInfo)
+            print("导出结束")
+
+        finally:
+            e.close()
+
+
+    def execPublicMain(self, startDate=None,endDate=None,year=None,month=None ):
+
+        if startDate is not None:
+
+            outputDict = self.getPublicDataUploadStauts( startDate, endDate)
+            self.outputPublicDataUploadStauts(outputDict, startDate[:7])
+        else:
+            start = 1
+            end = 13
+            if month is not None:
+                start = month
+                end = month+1
+            for m in range(start,end):
+                # 获取月份的第一天
+                first_day = datetime(year, m, 1)
+
+                # 获取月份的天数（考虑闰年）
+                last_day_num = calendar.monthrange(year, m)
+                print(last_day_num)
+                # 获取月份的最后一天
+                last_day = datetime(year, m, last_day_num[1])
+
+                startDate = first_day.strftime("%Y-%m-%d")
+                endDate = last_day.strftime("%Y-%m-%d")
+                print(startDate,endDate)
+                outputDict = self.getPublicDataUploadStauts(startDate, endDate)
+                self.outputPublicDataUploadStauts(outputDict, startDate[:7])
+
 
 
 if __name__ == '__main__':
@@ -1647,7 +1736,8 @@ if __name__ == '__main__':
     # sx.execPrivateMain(year=2024,month=8)
 
 
-    startDate = "2024-11-01"
-    endDate = "2024-11-30"
-    sx.publicMarketData(startDate,endDate)
+    startDate = "2024-10-01"
+    endDate = "2024-10-31"
+    # sx.getPublicDataUploadStauts(startDate,endDate)
 
+    sx.execPublicMain(year=2024,month=10)
