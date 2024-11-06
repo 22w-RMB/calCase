@@ -1103,6 +1103,33 @@ class Shanxi:
         startStopUnitData['dataList'].extend(startUnitData['dataList'])
         startStopUnitData['dataList'].extend(stopUnitData['dataList'])
 
+        #  检修总容量请求
+        overhaulPlanMethod = "POST"
+        overhaulPlanUrl = self.domain +"/PublicDataManage/014/api/spot/device/overhaulPlan/query/latest"
+        overhaulPlanJson = {
+            "dateRanges": [{
+                "start": startDate,
+                "end": endDate
+            }],
+            "provinceAreaId": "014"
+        }
+        overhaulPlanData = CommonClass.execRequest(self.session,url=overhaulPlanUrl,method=overhaulPlanMethod,json=overhaulPlanJson,).json()["data"]
+
+        #  发电侧与用户侧日汇总信息请求
+        spotMarketBusinessMethod = "POST"
+        spotMarketBusinessUrl = self.domain +"/datacenter/shanxi/api/public/data/status"
+        spotMarketBusinessJson = {
+            "startTime": startDate,
+            "endTime": endDate,
+            "dataType": ["SPOT_MARKET_UNIT_DATA"],
+            "publicDataItem": "SPOT_MARKET_BUSINESS_DATA"
+        }
+        spotMarketBusinessData = CommonClass.execRequest(self.session,url=spotMarketBusinessUrl,method=spotMarketBusinessMethod,json=spotMarketBusinessJson,).json()["data"]
+
+
+
+
+
 
         responseData = deepcopy(marketResponseData)
         responseData['waterPower'] = waterPowerResponseData['dataList']
@@ -1115,6 +1142,8 @@ class Shanxi:
         responseData['discontinueBoot'] = discontinueBootData['dataList']
         responseData['overhaulCapacity'] = overhaulCapacityData['dataList']
         responseData['startStopUnit'] = startStopUnitData['dataList']
+        responseData['overhaulPlan'] = overhaulPlanData['dataList']
+        responseData['spotMarketBusiness'] = spotMarketBusinessData
 
         itemUploadStatusDict = {}
 
@@ -1467,6 +1496,32 @@ class Shanxi:
                     },
                 ]
             },
+            '输变电设备检修计划': {
+                'info': [
+                    {
+                        'dataListKey': "overhaulPlan",
+                        'marketType': "DAY_AHEAD",
+                        'itemName': "deviceName",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "str", },
+
+                    },
+                ]
+            },
+            '发电侧与用户侧日汇总信息': {
+                'info': [
+                    {
+                        'dataListKey': "spotMarketBusiness",
+                        'marketType': None,
+                        'itemName': "updateTime",
+                        'fieldType': None,
+                        'fieldName': None,
+                        'itemOtherInfo': {'itemDataType': "str", },
+
+                    },
+                ]
+            },
         }
 
         # 对数据项批量处理
@@ -1506,6 +1561,33 @@ class Shanxi:
                                      allDateList=allDateList)
             itemUploadStatusDict["联络线-"+channel] = find_missing_dates(dayStatusDict['noDataDate'],
                                                                      allDateLen=len(allDateList))
+
+
+        #  断面约束情况及影子价格请求，单独处理
+        overhaulPlanMethod = "POST"
+        overhaulPlanUrl = self.domain +"/PublicDataManage/014/api/spot/device/overhaulPlan/query/latest"
+        overhaulPlanJson = {
+            "dateRanges": [{
+                "start": startDate,
+                "end": endDate
+            }],
+            "provinceAreaId": "014"
+        }
+        overhaulPlanData = CommonClass.execRequest(self.session,url=overhaulPlanUrl,method=overhaulPlanMethod,json=overhaulPlanJson,).json()["data"]
+        itemUploadStatusDict['断面约束情况及影子价格'] = '√' if overhaulPlanData['overLimitSectionList'] != [] else "无数据"
+
+
+        #  发电市场月度结算信息请求，单独处理
+        marketPriceYearMethod = "GET"
+        marketPriceYearUrl = self.domain +"/datacenter/shanxi/api/data/market/price/queryByYear"
+        marketPriceYearJson = {
+            "provinceAreaId": "014",
+            "year": startDate[:4],
+        }
+        marketPriceYearData = CommonClass.execRequest(self.session,url=marketPriceYearUrl,method=marketPriceYearMethod,params=marketPriceYearJson,).json()["data"]
+        marketPriceYearDataFilter = list(filter(lambda x: x['month'] == startDate[:7], marketPriceYearData))
+        itemUploadStatusDict['发电市场月度结算信息'] = '√' if marketPriceYearDataFilter != [] else "无数据"
+
 
         print(itemUploadStatusDict)
 
