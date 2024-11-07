@@ -806,10 +806,10 @@ class Shanxi:
             # templateE = ExcelHeplerXlwing(tempPath)
             # template = templateE.getTemplateStyle("私有数据测试明细")
 
-            # 获取当前时间
-            now = datetime.now()
-            savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth + "验收清单.xlsx", isGetStr=True)
-            e = ExcelHeplerXlwing()
+            # savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth + "验收清单.xlsx", isGetStr=True)
+            savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth[:4] + "验收清单.xlsx", isGetStr=True)
+            openPath = savePath if CommonClass.fileIsExist(savePath) else None
+            e = ExcelHeplerXlwing(openPath)
             month = str(int(yearMonth[5:]))
             print("开始导出")
             # e.newExcel(sheetName=month + "月私有数据测试明细", templateStyle=template)
@@ -1568,6 +1568,8 @@ class Shanxi:
             itemUploadStatusDict[itemName] = find_missing_dates(list(set1), allDateLen=len(allDateList))
 
         # 省间通道
+        dayAheadProvinceChannelSet = set()
+        realTimeProvinceChannelSet = set()
         for channel in interProvinceClearingPowerChannelName:
             channelName = channel.split("-")[0]
             marketType = "DAY_AHEAD" if channel.split("-")[1] == "日前" else "REAL_TIME"
@@ -1576,6 +1578,17 @@ class Shanxi:
                                      allDateList=allDateList)
             itemUploadStatusDict["省间-"+channel] = find_missing_dates(dayStatusDict['noDataDate'],
                                                                      allDateLen=len(allDateList))
+            if channelName == "总加":
+                continue
+            if marketType == "DAY_AHEAD":
+                dayAheadProvinceChannelSet = dayAheadProvinceChannelSet.union(set(dayStatusDict['noDataDate']))
+            else:
+                realTimeProvinceChannelSet = realTimeProvinceChannelSet.union(set(dayStatusDict['noDataDate']))
+        itemUploadStatusDict['日前省间分通道成交情况'] = find_missing_dates(list(dayAheadProvinceChannelSet),
+                                                                   allDateLen=len(allDateList))
+        itemUploadStatusDict['日内省间分通道成交情况'] = find_missing_dates(list(realTimeProvinceChannelSet),
+                                                                   allDateLen=len(allDateList))
+
 
         # 联络线通道
         for channel in callWirePowerChannelName:
@@ -1630,9 +1643,10 @@ class Shanxi:
             tempPath = CommonClass.mkDir("山西新能源数据校验", "导出", "华润验收清单模版.xlsx", isGetStr=True)
             print(tempPath)
 
-            savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth + "验收清单.xlsx", isGetStr=True)
-            savePath = savePath if CommonClass.fileIsExist(savePath) else None
-            e = ExcelHeplerXlwing(savePath)
+            # savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth + "验收清单.xlsx", isGetStr=True)
+            savePath = CommonClass.mkDir("山西新能源数据校验", "导出", yearMonth[:4] + "验收清单.xlsx", isGetStr=True)
+            openPath = savePath if CommonClass.fileIsExist(savePath) else None
+            e = ExcelHeplerXlwing(openPath)
             month = str(int(yearMonth[5:]))
             print("开始导出")
             e.copySheet(tempPath, "公有数据测试明细", month + "月公有数据测试明细")
@@ -1733,7 +1747,7 @@ if __name__ == '__main__':
     # sx.execPrivateMain(startDate,endDate)
 
 
-    # sx.execPrivateMain(year=2024,month=8)
+
 
 
     startDate = "2024-10-01"
@@ -1741,3 +1755,4 @@ if __name__ == '__main__':
     # sx.getPublicDataUploadStauts(startDate,endDate)
 
     sx.execPublicMain(year=2024,month=10)
+    sx.execPrivateMain(year=2024,month=10)
