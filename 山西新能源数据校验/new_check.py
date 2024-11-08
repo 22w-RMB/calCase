@@ -339,6 +339,7 @@ class Shanxi:
 
     def login(self):
         CommonClass.login(self.session, self.domain, self.loginInfo)
+        self.tradeUnitIdList = self.getTradeUnit()
 
 
     def getUnit(self):
@@ -857,7 +858,7 @@ class Shanxi:
             e.close()
 
 
-    def execPrivateMain(self, startDate=None,endDate=None,year=None,month=None ):
+    def execPrivateMain(self,startDate=None,endDate=None,year=None,month=None):
 
         if startDate is not None:
             outputList = self.statisticsPrivateUploadStatus(startDate,endDate)
@@ -887,6 +888,25 @@ class Shanxi:
                 # self.privateOutputData(outputList)
                 outputDict = self.privateOutputListTrans(outputList,startDate,endDate)
                 self.privateOutputListTransFile(outputDict,startDate[:7])
+
+
+    def getTradeUnit(self):
+        tradeUnitNameList = ["岚水2#", "岚水1#", "余吾1#", "余吾2#", "容海1#", "容海2#", "金阳2#", "金阳1#", "风陵渡1＃", "风陵渡2＃"]
+        #  获取全网机组接口
+        getUnitMethod = "GET"
+        getUnitUrl = self.domain +"/PublicDataManage/014/api/model/tradingUnit/classify"
+        getUnitJson = {
+            "provinceAreaId": "014",
+        }
+        getUnitData = CommonClass.execRequest(self.session,url=getUnitUrl,method=getUnitMethod,params=getUnitJson,).json()["data"]
+        # print(getUnitData)
+        unitIdList = []
+        for classifyName in getUnitData:
+            for tradingUnit in classifyName['tradingUnitList']:
+                if tradingUnit['tradingUnitName'] in tradeUnitNameList:
+                    unitIdList.append(tradingUnit['tradingUnitId'])
+
+        return list(set(unitIdList))
 
 
     '''
@@ -1129,15 +1149,30 @@ class Shanxi:
         }
         spotMarketBusinessData = CommonClass.execRequest(self.session,url=spotMarketBusinessUrl,method=spotMarketBusinessMethod,json=spotMarketBusinessJson,).json()["data"]
 
-        #  机组实际发电曲线请求
+        # #  机组实际发电曲线请求，通过数据中心判断
+        # tradingUnitPowerMethod = "POST"
+        # tradingUnitPowerUrl = self.domain +"/datacenter/shanxi/api/public/data/status"
+        # tradingUnitPowerJson = {
+        #     "startTime": startDate,
+        #     "endTime": endDate,
+        #     "dataType": [
+        #         "SPOT_AFTER"
+        #     ]
+        # }
+        # tradingUnitPowerData = CommonClass.execRequest(self.session,url=tradingUnitPowerUrl,method=tradingUnitPowerMethod,json=tradingUnitPowerJson,).json()["data"]
+
+        #  机组实际发电曲线请求，通过机组实际出力页面判断
         tradingUnitPowerMethod = "POST"
-        tradingUnitPowerUrl = self.domain +"/datacenter/shanxi/api/public/data/status"
+        tradingUnitPowerUrl = self.domain +"/PublicDataManage/014/api/spot/unitActualPower/query/latest"
         tradingUnitPowerJson = {
-            "startTime": startDate,
-            "endTime": endDate,
-            "dataType": [
-                "SPOT_AFTER"
-            ]
+            "dateRanges": [
+                {
+                    "start": startDate,
+                    "end": endDate
+                }
+            ],
+            "tradingUnitIds": self.getTradeUnit(),
+            "provinceAreaId": "014"
         }
         tradingUnitPowerData = CommonClass.execRequest(self.session,url=tradingUnitPowerUrl,method=tradingUnitPowerMethod,json=tradingUnitPowerJson,).json()["data"]
 
@@ -1155,7 +1190,7 @@ class Shanxi:
         responseData['startStopUnit'] = startStopUnitData['dataList']
         responseData['overhaulPlan'] = overhaulPlanData['dataList']
         responseData['spotMarketBusiness'] = spotMarketBusinessData
-        responseData['tradingUnitPower'] = tradingUnitPowerData
+        responseData['tradingUnitPower'] = tradingUnitPowerData['dataList']
 
         itemUploadStatusDict = {}
 
@@ -1277,7 +1312,7 @@ class Shanxi:
                 'info': [
                     {
                         'dataListKey': "powerLimit",
-                        'marketType': None,
+                        'marketType': "DAY_AHEAD",
                         'itemName': "limitStatus",
                         'fieldType': None,
                         'fieldName': None,
@@ -1534,19 +1569,32 @@ class Shanxi:
                     },
                 ]
             },
+            # '机组实际发电曲线': {
+            #     'info': [
+            #         {
+            #             'dataListKey': "tradingUnitPower",
+            #             'marketType': None,
+            #             'itemName': "updateTime",
+            #             'fieldType': "dataItem",
+            #             'fieldName': "机组实际发电曲线",
+            #             'itemOtherInfo': {'itemDataType': "str", },
+            #
+            #         },
+            #     ]
+            # },  # 用数据中心接口配置
             '机组实际发电曲线': {
                 'info': [
                     {
                         'dataListKey': "tradingUnitPower",
-                        'marketType': None,
-                        'itemName': "updateTime",
-                        'fieldType': "dataItem",
-                        'fieldName': "机组实际发电曲线",
+                        'marketType': "REAL_TIME",
+                        'itemName': "tradingUnitName",
+                        'fieldType': None,
+                        'fieldName': None,
                         'itemOtherInfo': {'itemDataType': "str", },
 
                     },
                 ]
-            },
+            },  # 用机组实际发电曲线页面配置
         }
 
         # 对数据项批量处理
@@ -1589,7 +1637,6 @@ class Shanxi:
         itemUploadStatusDict['日内省间分通道成交情况'] = find_missing_dates(list(realTimeProvinceChannelSet),
                                                                    allDateLen=len(allDateList))
 
-
         # 联络线通道
         for channel in callWirePowerChannelName:
             channelName = channel[:-2]
@@ -1599,7 +1646,6 @@ class Shanxi:
                                      allDateList=allDateList)
             itemUploadStatusDict["联络线-"+channel] = find_missing_dates(dayStatusDict['noDataDate'],
                                                                      allDateLen=len(allDateList))
-
 
         #  断面约束情况及影子价格请求，单独处理
         transSectionPriceMethod = "POST"
@@ -1619,7 +1665,6 @@ class Shanxi:
         }
         transSectionPriceData = CommonClass.execRequest(self.session,url=transSectionPriceUrl,method=transSectionPriceMethod,json=transSectionPriceJson,).json()["data"]
         itemUploadStatusDict['断面约束情况及影子价格'] = '√' if transSectionPriceData['overLimitSectionList'] != [] else "无数据"
-
 
         #  发电市场月度结算信息请求，单独处理
         marketPriceYearMethod = "GET"
@@ -1754,5 +1799,5 @@ if __name__ == '__main__':
     endDate = "2024-10-31"
     # sx.getPublicDataUploadStauts(startDate,endDate)
 
-    sx.execPublicMain(year=2024,month=10)
-    sx.execPrivateMain(year=2024,month=10)
+    sx.execPublicMain(year=2024)
+    # sx.execPrivateMain(year=2024,month=10)
