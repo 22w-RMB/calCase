@@ -903,7 +903,7 @@ class Shanxi:
         unitIdList = []
         for classifyName in getUnitData:
             for tradingUnit in classifyName['tradingUnitList']:
-                if tradingUnit['tradingUnitName'] in tradeUnitNameList:
+                # if tradingUnit['tradingUnitName'] in tradeUnitNameList:
                     unitIdList.append(tradingUnit['tradingUnitId'])
 
         return list(set(unitIdList))
@@ -1677,6 +1677,12 @@ class Shanxi:
         marketPriceYearDataFilter = list(filter(lambda x: x['month'] == startDate[:7], marketPriceYearData))
         itemUploadStatusDict['发电市场月度结算信息'] = '√' if marketPriceYearDataFilter != [] else "无数据"
 
+        itemUploadStatusDict['分时交易限价'] = '√'
+        itemUploadStatusDict['中长期交易日历'] = '√'
+        itemUploadStatusDict['日前机组开机安排'] = '暂无'
+        itemUploadStatusDict['实时备用总量'] = '暂无'
+        itemUploadStatusDict['实时输电断面约束及阻塞'] = '暂无'
+
         print(itemUploadStatusDict)
         return itemUploadStatusDict
 
@@ -1756,35 +1762,35 @@ if __name__ == '__main__':
     #     "tenantId" : "e4f736aa7cc47f7c017ce4c3ac2302bc",
     # }
 
-    # info = {
-    #     "url_domain" :  "https://pets.crnewenergy.com.cn",
-    #     "logininfo" : {
-    #         "publicKey_url" :  "/usercenter/web/pf/login/info/publicKey",
-    #         "login_url" :  "/usercenter/web/login",
-    #         "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
-    #         "username" :  "tsintergy",
-    #         "password" :  "tsintergy@123",
-    #         "loginMode" :  2,
-    #     },
-    #     "tenantId" : "tsintergy",
-    # }
-
-
     info = {
-        "url_domain" :  "https://adssx-tcloud.tsintergy.com/",
+        "url_domain" :  "https://pets.crnewenergy.com.cn",
         "logininfo" : {
-            "publicKey_url" :  None,
+            "publicKey_url" :  "/usercenter/web/pf/login/info/publicKey",
             "login_url" :  "/usercenter/web/login",
             "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
-            "username" :  "zhanzewei",
-            "password" :  "Qinghua123@",
+            "username" :  "tsintergy",
+            "password" :  "tsintergy@123",
             "loginMode" :  2,
         },
-        "tenantId" : "2c9487a07fb53c54017fd51402310c7c",
+        "tenantId" : "tsintergy",
     }
 
+
+    # info = {
+    #     "url_domain" :  "https://adssx-tcloud.tsintergy.com/",
+    #     "logininfo" : {
+    #         "publicKey_url" :  None,
+    #         "login_url" :  "/usercenter/web/login",
+    #         "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
+    #         "username" :  "zhanzewei",
+    #         "password" :  "Qinghua123@",
+    #         "loginMode" :  2,
+    #     },
+    #     "tenantId" : "2c9487a07fb53c54017fd51402310c7c",
+    # }
+
     testSession = requests.Session()
-    sx = Shanxi(testSession,info)
+    sx = Shanxi(testSession, info)
     sx.login()
 
     # startDate = "2024-08-05"
@@ -1799,5 +1805,5 @@ if __name__ == '__main__':
     endDate = "2024-10-31"
     # sx.getPublicDataUploadStauts(startDate,endDate)
 
-    sx.execPublicMain(year=2024)
+    sx.execPublicMain(year=2022)
     # sx.execPrivateMain(year=2024,month=10)
