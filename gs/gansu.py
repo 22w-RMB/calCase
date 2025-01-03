@@ -606,7 +606,6 @@ class Gansu:
 
         pass
 
-
     #  生成全网日滚动
     def genetatePublicDailyRollData(self):
 
@@ -739,7 +738,6 @@ class Gansu:
 
         pass
 
-
     def getDayAheadPriceFileData(self):
 
         pass
@@ -811,6 +809,32 @@ class Gansu:
         finally:
             e1.close()
 
+    #  上传交易中心爬取合同
+    def uploadFireContract(self):
+
+        path = CommonClass.mkDir("gs", "输入","交易中心爬取合同",isGetStr=True)
+
+        url = self.domain + "/fire/gansu/api/power/trade/contract/data/import/trade/center"
+        fileList = []
+
+
+        for root, dirs, files in os.walk(path):
+
+            for filename in files:
+
+                filePath = os.path.join(root, filename)
+                fileList.append(("files", (filename, open(filePath, "rb"))))
+
+        print(fileList)
+
+        res = CommonClass.execRequest(self.session, method="post", url=url,
+                                      files=fileList).json()
+
+        print("上传情况：", res)
+
+        pass
+
+
 
 if __name__ == '__main__':
     testSession = requests.Session()
@@ -868,7 +892,7 @@ if __name__ == '__main__':
     #
     # gs_test.genetatePublicDailyRollFile("2020-03-01", "2020-12-31")
     gs_test.login()
-    gs_test.uploadPublicDailyRoll()
+    # gs_test.uploadPublicDailyRoll()
     #
     #
     # gs_test.genetateDayAheadPriceFile("2020-03-01", "2020-12-31")
@@ -878,3 +902,4 @@ if __name__ == '__main__':
 
     # gs_test.genetateDailyRollCalCaseFile()
 
+    gs_test.uploadFireContract()
