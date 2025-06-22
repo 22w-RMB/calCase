@@ -1,11 +1,26 @@
-
+import json
 from datetime import datetime, timedelta
 
 import requests
+import six
 
 from 江苏.国电投江苏.刘锐接口数据校验.class_info import PublicData
 from 江苏.国电投江苏.刘锐接口数据校验.interface_liurui import LiuRui
 from 江苏.国电投江苏.刘锐接口数据校验.interface_sys import SystemInterface
+
+
+LOGIN_INFO = {
+        "url_domain" :  "http://gdt.test.gzdevops3.tsintergy.com",
+        "logininfo" : {
+            "publicKey_url" :  None,
+            "login_url" :  "/usercenter/web/login",
+            "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
+            "username" :  "zhanzw01",
+            "password" :  "Qinghua123@",
+            "loginMode" :  2,
+        },
+        "tenantId" : "e4d4ed6c8d63dc6a018dd3c1bb1212de",
+    }
 
 def ini_public_data():
 
@@ -44,12 +59,12 @@ def ini_public_data():
 
     return dic
 
-def multi_liurui_day_resquest(startDate,endDate):
+def multi_liurui_day_resquest(start_date,end_date):
     lr = LiuRui()
     lr.update_token()
 
-    sd = datetime.strptime(startDate, "%Y-%m-%d")
-    ed = datetime.strptime(endDate, "%Y-%m-%d")
+    sd = datetime.strptime(start_date, "%Y-%m-%d")
+    ed = datetime.strptime(end_date, "%Y-%m-%d")
     public_data_dict = ini_public_data()
     while sd <= ed:
         date_str = datetime.strftime(sd, "%Y-%m-%d")
@@ -99,25 +114,15 @@ def multi_liurui_day_resquest(startDate,endDate):
         public_data_dict["实时-江南分区价格"].add_date_data(date_str, provincial_spot_regional_price['江北分区价格-日前'])
         public_data_dict["实时-江北分区价格"].add_date_data(date_str, provincial_spot_regional_price['江北分区价格-实时'])
 
-def system_public_data_process(info,startDate,endDate):
+    return public_data_dict
+
+def system_public_data_process(start_date,end_date):
     public_data_dict = ini_public_data()
-    info = {
-        "url_domain" :  "http://gdt.test.gzdevops3.tsintergy.com",
-        "logininfo" : {
-            "publicKey_url" :  None,
-            "login_url" :  "/usercenter/web/login",
-            "switch_url" :  "/usercenter/web/switchTenant?tenantId=" ,
-            "username" :  "zhanzw01",
-            "password" :  "Qinghua123@",
-            "loginMode" :  2,
-        },
-        "tenantId" : "e4d4ed6c8d63dc6a018dd3c1bb1212de",
-    }
 
     testSession = requests.Session()
-    js = SystemInterface(testSession,info)
+    js = SystemInterface(testSession,LOGIN_INFO)
     js.login()
-    sys_response_data = js.get_public_data("2025-06-20","2025-06-21")
+    sys_response_data = js.get_public_data(start_date,end_date)
 
     public_item_info = {
         "日前-系统负荷":{
@@ -230,13 +235,13 @@ def system_public_data_process(info,startDate,endDate):
         },
         "日前-重大设备检修": {
             'data_list_key': "overhaulPlan",
-            'data_key': "dataList",
+            'data_key': None,
             'filter_type_list': [
             ],
         },
         "日前-稳定限额": {
             'data_list_key': "bound",
-            'data_key': "dataList",
+            'data_key': None,
             'filter_type_list': [
             ],
         },
@@ -368,56 +373,194 @@ def system_public_data_process(info,startDate,endDate):
         },
     }
 
+    for key,value in public_item_info.items():
+        public_data_dict[key].add_date_dict_data(filter_data(sys_response_data,value))
+
+    return public_data_dict
+
 def filter_data(data_list,data_filter_info):
 
     d1 = data_list[data_filter_info['data_list_key']]
+    if data_filter_info['data_key'] == None:
+        return d1
 
-    # 过滤出日前或实时的数据
-    filterList1 = list(filter(lambda x: x.get('marketType') == marketType, dataList))
-    # 如果是联络线或者通道或新能源，那么
-    if fieldType is not None:
-        filterList1 = list(filter(lambda x: x[fieldType] == fieldName, filterList1))
+    temp_list = d1
+    for f in data_filter_info['filter_type_list']:
+        temp_list = list(filter(lambda x: x.get(f['type']) == f['name'], temp_list))
 
-    filterList2 = []
+    result_dict = {}
+    for item in temp_list:
+        item_date = item['date'][:10]
+        item_value = item[data_filter_info['data_key']]
+        result_dict[item_date] = item_value
 
-    if itemOtherInfo == None:
-        # 进一步过滤出96点数据不为空的日期
-        filterList2 = list(filter(lambda x: CommonClass.judgeListIsNone(x[itemName]) == False, filterList1))
+    # print(result_dict)
+    return result_dict
 
-    if itemOtherInfo is not None:
-        if itemOtherInfo['itemDataType'] == "dict" :
-            '''
-                {itemDataType : "dict" , dictKeyLists : []}
-            '''
-            def filterDictValue(dictData,dictKeyLists):
-                if dictData == None:
-                    return  False
-                filterTemp = list(filter(lambda x: dictData[x] == None,dictKeyLists))
-                return True if filterTemp == [] else False
+def compare_public_data(start_date,end_date):
 
-            # 进一步过滤出96点数据不为空的日期
-            filterList2 = list(filter(lambda x: filterDictValue(x[itemName],itemOtherInfo['dictKeyLists']) == True, filterList1))
+    error_info= {
 
-        if itemOtherInfo['itemDataType'] == "str" :
-            '''
-                {itemDataType : "str" }
-            '''
-            # 进一步过滤出96点数据不为空的日期
-            filterList2 = list(filter(lambda x: (x[itemName] != None and x[itemName] != ""), filterList1))
-
-    # 生成有数据的日期
-    havaDataDate = [d['date'][:10] for d in filterList2]
-    # 生成没有数据的日期
-    noDataDate = list(set(allDateList) - set(havaDataDate))
-
-    return {
-        'noDataDate': noDataDate,
-        'haveDataDate': list(set(havaDataDate)),
     }
 
+    # 刘锐结果
+    lr_result = multi_liurui_day_resquest(start_date,end_date)
+    # 系统返回
+    sys_result = system_public_data_process(start_date,end_date)
 
+    # def _recursive_diff(l, r, res, path='/'):
+    #     if type(l) != type(r) and type(l) != float and type(l) != int:
+    #         res.append({
+    #             'replace': path,
+    #             'sys': r,
+    #             # 'details': 'type',
+    #             'details': r'类型不同',
+    #             'liu_rui': l
+    #         })
+    #         return
+    #
+    #     delim = '/' if path != '/' else ''
+    #     if isinstance(l, dict):
+    #         for k, v in six.iteritems(l):
+    #             new_path = delim.join([path, k])
+    #             if k not in r:
+    #                 res.append({'replace': new_path, 'details': "刘锐有，系统没有"})
+    #             else:
+    #                 # 进行值为数组且数组内部元素为dict的处理
+    #                 _recursive_diff(DataDiffTools._mapper_translaterole_four_arr_to_dict(k, v),
+    #                                 DataDiffTools._mapper_translaterole_four_arr_to_dict(k, r[k]), res, new_path)
+    #                 # _recursive_diff(v, r[k], res, new_path)
+    #         for k, v in six.iteritems(r):
+    #             if k in l:
+    #                 continue
+    #             res.append({
+    #                 'add': delim.join([path, k]),
+    #                 'value': v
+    #             })
+    #     elif isinstance(l, list):
+    #         ll = len(l)
+    #         lr = len(r)
+    #         if ll > lr:
+    #             for i, item in enumerate(l[lr:], start=lr):
+    #                 res.append({
+    #                     'remove': delim.join([path, str(i)]),
+    #                     'prev': item,
+    #                     'details': 'array-item'
+    #                 })
+    #         elif lr > ll:
+    #             for i, item in enumerate(r[ll:], start=ll):
+    #                 res.append({
+    #                     'add': delim.join([path, str(i)]),
+    #                     'value': item,
+    #                     'details': 'array-item'
+    #                 })
+    #         minl = min(ll, lr)
+    #         if minl > 0:
+    #             for i, item in enumerate(l[:minl]):
+    #                 _recursive_diff(item, r[i], res, delim.join([path, str(i)]))
+    #     else:  # both items are atomic
+    #         if l != r:
+    #             res.append({
+    #                 'replace': path,
+    #                 'value': r,
+    #                 'prev': l
+    #             })
+
+    for key,value in lr_result.items():
+        if key not in error_info:
+            error_info[key] ={}
+        lr_dict_value = lr_result[key].date_data_dict
+        sys_dict_value = sys_result[key].date_data_dict
+
+        lr_dict_value_date = lr_dict_value.keys()
+        sys_dict_value_date = sys_dict_value.keys()
+
+        date_list = list(lr_dict_value_date|sys_dict_value_date)
+
+        for date in date_list:
+            if date not in lr_dict_value_date:
+                error_info[key].update({
+                    "日期" : date,
+                    "详情" : "刘锐没有，系统没有",
+                    # "刘锐数据" : lr_dict_value[date],
+                    # "系统数据" : None,
+                })
+                continue
+            if date not in sys_dict_value_date:
+                error_info[key].update({
+                    "日期": date,
+                    "详情": "刘锐有，系统没有",
+                    # "刘锐数据": None,
+                    # "系统数据": sys_dict_value[date],
+                })
+                continue
+
+            lr_date_value = lr_dict_value[date]
+            sys_date_value = sys_dict_value[date]
+
+            if type(lr_date_value) == type(sys_date_value):
+
+                # 列表比较
+                if isinstance(lr_date_value, list):
+
+                    if len(lr_date_value) != len(sys_date_value):
+                        error_info[key].update({
+                            "日期": date,
+                            "详情": "数据长度对不上",
+                            # "刘锐数据": lr_date_value,
+                            # "系统数据": sys_date_value,
+                        })
+                        continue
+
+                    compare_list = [1 if lr_date_value[i]!=sys_date_value[i] else 0 for i in range(0,len(lr_date_value))]
+                    res = sum(compare_list)
+                    if res > 0:
+                        error_info[key].update({
+                            "日期": date,
+                            "详情": "存在时刻点数据对不上",
+                            # "刘锐数据": lr_date_value,
+                            # "系统数据": sys_date_value,
+                        })
+
+                # 字典比较
+                if isinstance(lr_date_value, dict):
+
+                    temp_list = []
+                    for k in lr_date_value.keys():  # 设备名称
+                        for k1 in lr_date_value[k]: # 设备具体信息
+                            if lr_date_value[k][k1] != sys_date_value[k][k1]:
+                                temp_list.append("设备名称："+k+" 数据对不上")
+
+                    if len(temp_list) > 0:
+                        error_info[key].update({
+                            "日期": date,
+                            # "详情": str(temp_list),
+                            "详情": "数据对不上",
+                            # "刘锐数据": lr_date_value,
+                            # "系统数据": sys_date_value,
+                        })
+
+                    pass
+
+
+            else:
+                error_info[key].update({
+                    "日期": date,
+                    "详情": "数据类型对不上",
+                    # "刘锐数据": lr_date_value,
+                    # "系统数据": sys_date_value,
+                })
+
+    return error_info
 
 
 if __name__ == '__main__':
 
+    # l = multi_liurui_day_resquest("2025-06-21","2025-06-21")
+    #
+    # for k,v in l.items():
+    #     print(k,": ",v.date_data_dict)
 
+    data = compare_public_data("2025-05-03", "2025-05-03")
+    a = json.dumps(data, indent=4, ensure_ascii=False)
+    print(a)

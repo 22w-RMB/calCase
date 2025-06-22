@@ -124,8 +124,9 @@ class LiuRui:
         response = CommonClass.execRequest(session=self.session,url=url,method="GET",params=params)
 
         unit_list = response.json()['data']['list']
+        print(unit_list)
 
-        return [item['dayahead_provincial_load_forecast'] for item in unit_list]
+        return [item['dayahead_tie_line_plan'] for item in unit_list]
 
     def get_dayahead_provincial_new_energy_forecast(self, date):
         '''
