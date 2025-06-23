@@ -214,7 +214,7 @@ class LiuRui:
 
         unit_list = response.json()['data']['list']
 
-        return {item['equipment_name']:{'planStartTime': item['begin_time'], 'planEndTime': item['begin_time'], 'areaName': item['region_name']} for item in unit_list}
+        return {item['equipment_name']:{'planStartTime': item['begin_time'], 'planEndTime': item['end_time'], 'areaName': item['region_name']} for item in unit_list}
 
     def get_section_constraint(self, date):
         '''
@@ -348,4 +348,4 @@ class LiuRui:
 if __name__ == '__main__':
     lr = LiuRui()
     lr.update_token()
-    print(lr.get_section_constraint('2025-09-01'))
+    print(lr.get_equipment_maintenance_plan('2025-04-01'))

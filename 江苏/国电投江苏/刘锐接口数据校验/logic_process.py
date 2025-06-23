@@ -110,8 +110,8 @@ def multi_liurui_day_resquest(start_date,end_date):
         public_data_dict["实时-燃机江南"].add_date_data(date_str, realtime_fixed_power_forecast['江南'])
         public_data_dict["实时-燃机江北"].add_date_data(date_str, realtime_fixed_power_forecast['江北'])
         public_data_dict["日前-江南分区价格"].add_date_data(date_str, provincial_spot_regional_price['江南分区价格-日前'])
-        public_data_dict["日前-江北分区价格"].add_date_data(date_str, provincial_spot_regional_price['江南分区价格-实时'])
-        public_data_dict["实时-江南分区价格"].add_date_data(date_str, provincial_spot_regional_price['江北分区价格-日前'])
+        public_data_dict["日前-江北分区价格"].add_date_data(date_str, provincial_spot_regional_price['江北分区价格-日前'])
+        public_data_dict["实时-江南分区价格"].add_date_data(date_str, provincial_spot_regional_price['江南分区价格-实时'])
         public_data_dict["实时-江北分区价格"].add_date_data(date_str, provincial_spot_regional_price['江北分区价格-实时'])
 
     return public_data_dict
@@ -137,8 +137,8 @@ def system_public_data_process(start_date,end_date):
             'data_key': "power",
             'filter_type_list': [
                 {'type': 'marketType','name': 'DAY_AHEAD' },
-                {'type': 'type','name': '受电计划华东' },
-                {'type': 'channelName','name': 'CALL_WIRE' },
+                {'type': 'type','name': 'CALL_WIRE' },
+                {'type': 'channelName','name': '受电计划华东' },
             ],
         },
         "日前-新能源风电": {
@@ -257,8 +257,8 @@ def system_public_data_process(start_date,end_date):
             'data_key': "power",
             'filter_type_list': [
                 {'type': 'marketType', 'name': 'REAL_TIME'},
-                {'type': 'type', 'name': '受电计划华东'},
-                {'type': 'channelName', 'name': 'CALL_WIRE'},
+                {'type': 'type', 'name': 'CALL_WIRE'},
+                {'type': 'channelName', 'name': '受电计划华东'},
             ],
         },
         "实时-新能源风电": {
@@ -479,20 +479,27 @@ def compare_public_data(start_date,end_date):
 
         for date in date_list:
             if date not in lr_dict_value_date:
-                error_info[key].update({
-                    "日期" : date,
-                    "详情" : "刘锐没有，系统没有",
-                    # "刘锐数据" : lr_dict_value[date],
-                    # "系统数据" : None,
-                })
+                if sys_dict_value[date] =={} or sys_dict_value[date]==[]:
+                    pass
+                else:
+                    error_info[key].update({
+                        "日期" : date,
+                        "详情" : "刘锐没有，系统有",
+                        # "刘锐数据" : lr_dict_value[date],
+                        # "系统数据" : None,
+                    })
                 continue
+
             if date not in sys_dict_value_date:
-                error_info[key].update({
-                    "日期": date,
-                    "详情": "刘锐有，系统没有",
-                    # "刘锐数据": None,
-                    # "系统数据": sys_dict_value[date],
-                })
+                if lr_dict_value[date] =={} or lr_dict_value[date]==[]:
+                    pass
+                else:
+                    error_info[key].update({
+                        "日期": date,
+                        "详情": "刘锐有，系统没有",
+                        # "刘锐数据": None,
+                        # "系统数据": sys_dict_value[date],
+                    })
                 continue
 
             lr_date_value = lr_dict_value[date]
@@ -530,7 +537,6 @@ def compare_public_data(start_date,end_date):
                         for k1 in lr_date_value[k]: # 设备具体信息
                             if lr_date_value[k][k1] != sys_date_value[k][k1]:
                                 temp_list.append("设备名称："+k+" 数据对不上")
-
                     if len(temp_list) > 0:
                         error_info[key].update({
                             "日期": date,
@@ -561,6 +567,6 @@ if __name__ == '__main__':
     # for k,v in l.items():
     #     print(k,": ",v.date_data_dict)
 
-    data = compare_public_data("2025-05-03", "2025-05-03")
+    data = compare_public_data("2025-01-01", "2025-01-03")
     a = json.dumps(data, indent=4, ensure_ascii=False)
     print(a)

@@ -138,4 +138,4 @@ if __name__ == '__main__':
     testSession = requests.Session()
     js = SystemInterface(testSession,info)
     js.login()
-    js.get_public_data("2025-06-20","2025-06-21")
+    js.get_public_data("2025-04-01","2025-04-01")
