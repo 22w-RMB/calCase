@@ -1,3 +1,5 @@
+import json
+
 import requests
 
 from 江苏.国电投江苏.刘锐接口数据校验.common import CommonClass
@@ -77,21 +79,35 @@ class LiuRui:
 
     def get_contract_total_curve(self, business_unit_id, start_date, end_date):
         '''
-        出清结果
+        中长期合同曲线
         :return: 返回多天出清结果
         '''
-        url = self.pre_url + "/v1/spot/provincial_spot_clearing_result"
+        url = self.pre_url + "/v1/trade/contract_total_curve"
         params = {
             "market_id": self.market_id,
-            "dispatch_unit_id": self.market_id,
-            "date": self.market_id,
+            "business_unit_id": business_unit_id,
+            "start_date": start_date,
+            "end_date": end_date,
         }
 
         response = CommonClass.execRequest(session=self.session,url=url,method="GET",params=params)
 
         unit_list = response.json()['data']['list']
 
-        return [BusinessUnit(item['business_unit_id'],item['business_unit_name']) for item in unit_list]
+        contract_name_list = list(set([item['contract_name'] for item in unit_list]))
+        date_list = list(set([item['time'][:10] for item in unit_list]))
+        comtract_detail_dict = {}
+
+        for contract_name in contract_name_list:
+            comtract_detail_dict[contract_name] = {}
+            for date in date_list:
+                comtract_detail_dict[contract_name][date] = {}
+                temp_list = list(filter(lambda x: x['contract_name'] == contract_name and x['time'][:10] == date, unit_list))
+                comtract_detail_dict[contract_name][date]['ele'] = [item['total_quantity'] for item in temp_list ]
+                comtract_detail_dict[contract_name][date]['price'] = [item['average_price'] for item in temp_list ]
+
+
+        return comtract_detail_dict
 
     def get_dayahead_provincial_load_forecast(self, date):
         '''
@@ -348,4 +364,6 @@ class LiuRui:
 if __name__ == '__main__':
     lr = LiuRui()
     lr.update_token()
-    print(lr.get_equipment_maintenance_plan('2025-04-01'))
+    data = lr.get_contract_total_curve('3CBDF453B001555','2025-06-03','2025-06-03')
+    a = json.dumps(data, indent=4, ensure_ascii=False)
+    print(a)
