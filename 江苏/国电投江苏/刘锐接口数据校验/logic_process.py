@@ -1,12 +1,18 @@
+import copy
 import json
-from datetime import datetime, timedelta
+
 
 import requests
 import six
+import numpy as np
 
-from 江苏.国电投江苏.刘锐接口数据校验.class_info import PublicData
+from datetime import datetime, timedelta
+
+from 江苏.国电投江苏.刘锐接口数据校验.class_info import PublicData,ContractCalResult
 from 江苏.国电投江苏.刘锐接口数据校验.interface_liurui import LiuRui
 from 江苏.国电投江苏.刘锐接口数据校验.interface_sys import SystemInterface
+from 江苏.国电投江苏.刘锐接口数据校验.common import CommonClass
+from 江苏.国电投江苏.刘锐接口数据校验.excel_handler import ExcelHeplerXlwing
 
 
 LOGIN_INFO = {
@@ -408,63 +414,7 @@ def compare_public_data(start_date,end_date):
     # 系统返回
     sys_result = system_public_data_process(start_date,end_date)
 
-    # def _recursive_diff(l, r, res, path='/'):
-    #     if type(l) != type(r) and type(l) != float and type(l) != int:
-    #         res.append({
-    #             'replace': path,
-    #             'sys': r,
-    #             # 'details': 'type',
-    #             'details': r'类型不同',
-    #             'liu_rui': l
-    #         })
-    #         return
-    #
-    #     delim = '/' if path != '/' else ''
-    #     if isinstance(l, dict):
-    #         for k, v in six.iteritems(l):
-    #             new_path = delim.join([path, k])
-    #             if k not in r:
-    #                 res.append({'replace': new_path, 'details': "刘锐有，系统没有"})
-    #             else:
-    #                 # 进行值为数组且数组内部元素为dict的处理
-    #                 _recursive_diff(DataDiffTools._mapper_translaterole_four_arr_to_dict(k, v),
-    #                                 DataDiffTools._mapper_translaterole_four_arr_to_dict(k, r[k]), res, new_path)
-    #                 # _recursive_diff(v, r[k], res, new_path)
-    #         for k, v in six.iteritems(r):
-    #             if k in l:
-    #                 continue
-    #             res.append({
-    #                 'add': delim.join([path, k]),
-    #                 'value': v
-    #             })
-    #     elif isinstance(l, list):
-    #         ll = len(l)
-    #         lr = len(r)
-    #         if ll > lr:
-    #             for i, item in enumerate(l[lr:], start=lr):
-    #                 res.append({
-    #                     'remove': delim.join([path, str(i)]),
-    #                     'prev': item,
-    #                     'details': 'array-item'
-    #                 })
-    #         elif lr > ll:
-    #             for i, item in enumerate(r[ll:], start=ll):
-    #                 res.append({
-    #                     'add': delim.join([path, str(i)]),
-    #                     'value': item,
-    #                     'details': 'array-item'
-    #                 })
-    #         minl = min(ll, lr)
-    #         if minl > 0:
-    #             for i, item in enumerate(l[:minl]):
-    #                 _recursive_diff(item, r[i], res, delim.join([path, str(i)]))
-    #     else:  # both items are atomic
-    #         if l != r:
-    #             res.append({
-    #                 'replace': path,
-    #                 'value': r,
-    #                 'prev': l
-    #             })
+
 
     for key,value in lr_result.items():
         if key not in error_info:
@@ -560,13 +510,159 @@ def compare_public_data(start_date,end_date):
     return error_info
 
 
+def get_unit_contract(start_date,end_date,sys_trade_unit_name_list):
+
+    lr = LiuRui()
+    lr.update_token()
+    sys_trade_unit_name_list = sys_trade_unit_name_list
+    lr_trade_unit_object_list = lr.get_business_unit()
+    lr_trade_unit_name_dict = {item.business_unit_name:item.business_unit_id for item in lr_trade_unit_object_list}
+    sys_in_lr_id_dict = {}
+    for sys in sys_trade_unit_name_list:
+        if sys not in lr_trade_unit_name_dict.keys():
+            sys_in_lr_id_dict[sys] = None
+        else:
+            sys_in_lr_id_dict[sys] = lr_trade_unit_name_dict[sys]
+
+    trade_unit_contract_list = []
+    for k,v in sys_in_lr_id_dict.items():
+        trade_unit_contract_list.extend( lr.get_contract_total_curve(v,start_date,end_date,k))
+
+    # print(trade_unit_contract_dict)
+    return trade_unit_contract_list
+
+def filter_contract_data(trade_unit_contract_list):
+
+    # 根据合同名称、日期过滤
+    contract_name_list = list(set([item.contract_name for item in trade_unit_contract_list]))
+    date_list = list(set([item.date for item in trade_unit_contract_list]))
+    contract_name_result_list = []
+    for contract_name in contract_name_list:
+        for date in date_list:
+            filter_temp_list = list(filter(lambda x: x.contract_name == contract_name and x.date== date, trade_unit_contract_list))
+            cal_res_dict = cal_contract(filter_temp_list)
+            ele = [contract_name,date,"电量",]
+            price = [contract_name,date,"电价",]
+            fee = [contract_name,date,"电费",]
+            ele.append(cal_res_dict.total_ele)
+            ele.extend(cal_res_dict.ele)
+            price.append(cal_res_dict.total_price)
+            price.extend(cal_res_dict.price)
+            fee.append(cal_res_dict.total_fee)
+            fee.extend(cal_res_dict.fee)
+            contract_name_result_list.append(ele)
+            contract_name_result_list.append(price)
+            contract_name_result_list.append(fee)
+
+    # 根据机组过滤
+    trade_name_list = list(set([item.trade_name for item in trade_unit_contract_list]))
+    trade_name_result_list = []
+    for trade_name in trade_name_list:
+        for date in date_list:
+            filter_temp_list = list(filter(lambda x: x.trade_name == trade_name and x.date== date, trade_unit_contract_list))
+            cal_res_dict = cal_contract(filter_temp_list)
+            ele = [trade_name,date,"电量",]
+            price = [trade_name,date,"电价",]
+            fee = [trade_name,date,"电费",]
+            ele.append(cal_res_dict.total_ele)
+            ele.extend(cal_res_dict.ele)
+            price.append(cal_res_dict.total_price)
+            price.extend(cal_res_dict.price)
+            fee.append(cal_res_dict.total_fee)
+            fee.extend(cal_res_dict.fee)
+            trade_name_result_list.append(ele)
+            trade_name_result_list.append(price)
+            trade_name_result_list.append(fee)
+
+    # 根据日期过滤
+    date_result_list = []
+    for date in date_list:
+        filter_temp_list = list(
+            filter(lambda x: x.date == date, trade_unit_contract_list))
+        cal_res_dict = cal_contract(filter_temp_list)
+        ele = [ date, "电量", ]
+        price = [ date, "电价", ]
+        fee = [ date, "电费", ]
+        ele.append(cal_res_dict.total_ele)
+        ele.extend(cal_res_dict.ele)
+        price.append(cal_res_dict.total_price)
+        price.extend(cal_res_dict.price)
+        fee.append(cal_res_dict.total_fee)
+        fee.extend(cal_res_dict.fee)
+        date_result_list.append(ele)
+        date_result_list.append(price)
+        date_result_list.append(fee)
+
+    return {
+        "合同名称":contract_name_result_list,
+        "交易单元":trade_name_result_list,
+        "日期":date_result_list,
+    }
+
+def cal_contract(contract_object_list):
+    if contract_object_list == []:
+        return ContractCalResult(None,None,None,[],[],[])
+    total_ele = None
+    total_price = None
+    total_fee = None
+    ele = []
+    price = []
+    fee = []
+
+    for contract_object in contract_object_list:
+
+        contract_object_fee = np.multiply(contract_object.ele, contract_object.price).tolist()
+        if ele == []:
+            ele = copy.deepcopy(contract_object.ele)
+            price = copy.deepcopy(contract_object.price)
+            fee = copy.deepcopy(contract_object_fee)
+        else:
+            ele = np.add(ele,contract_object.ele).tolist()
+            fee = np.add(fee,contract_object_fee).tolist()
+            price = np.divide(fee,ele).tolist()
+
+        total_fee = sum(fee)
+        total_ele = sum(ele)
+        total_price = total_fee / total_ele
+
+    return ContractCalResult(total_ele,total_price,total_fee,ele,price,fee)
+
+
+def output_contract_file(filter_contract_data_res_dict):
+    # print(outputList)
+    try:
+        print("获取模板")
+        tempPath = CommonClass.mkDir("刘锐接口数据校验", "导出", "模板.xlsx", isGetStr=True)
+        print(tempPath)
+
+        savePath = CommonClass.mkDir( "刘锐接口数据校验", "导出",  "合同数据明细.xlsx", isGetStr=True)
+        e = ExcelHeplerXlwing()
+
+        print("开始导出")
+        e.copySheet(tempPath, "合同名称","合同名称")
+        e.copySheet(tempPath, "交易单元", "交易单元")
+        e.copySheet(tempPath, "日期","日期")
+        e.write_contract(savePath,filter_contract_data_res_dict)
+
+        print("导出结束")
+    finally:
+        e.close()
+
+def exec_contract_main(sys_trade_unit_name_list,start_date,end_date):
+
+    data = get_unit_contract(start_date, end_date,sys_trade_unit_name_list)
+    res = filter_contract_data(data)
+    output_contract_file(res)
+
 if __name__ == '__main__':
 
     # l = multi_liurui_day_resquest("2025-06-21","2025-06-21")
     #
     # for k,v in l.items():
     #     print(k,": ",v.date_data_dict)
-
-    data = compare_public_data("2025-01-01", "2025-01-03")
-    a = json.dumps(data, indent=4, ensure_ascii=False)
-    print(a)
+    # a = json.dumps(data, indent=4, ensure_ascii=False)
+    # data = compare_public_data("2025-01-01", "2025-01-03")
+    l = ["国家电投集团响水新能源有限公司(风电)", "中泗光伏五站", "中电滨海风电", "舜大宝应集中式光伏"]  # ,"中泗光伏五站","中电滨海风电","舜大宝应集中式光伏"
+    exec_contract_main(l,"2025-06-01",'2026-06-30')
+    # a = json.dumps(data, indent=4, ensure_ascii=False)
+    # print(res)

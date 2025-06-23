@@ -39,7 +39,7 @@ class BusinessUnit:
 
     @property
     def business_unit_name(self):
-        return self.business_unit_name
+        return self._business_unit_name
 
     @business_unit_name.setter
     def business_unit_name(self,value):
@@ -106,6 +106,26 @@ class PublicData:
     @date_data_dict.setter
     def date_data_dict(self, value):
         self._date_data_dict = value
+
+class ContractInfo:
+
+    def __init__(self,trade_id,trade_name,contract_name,date,ele,price):
+        self.trade_id = trade_id
+        self.trade_name = trade_name
+        self.contract_name = contract_name
+        self.date = date
+        self.ele = ele
+        self.price = price
+
+class ContractCalResult:
+
+    def __init__(self,total_ele,total_price,toal_fee,ele,price,fee):
+        self.total_ele = total_ele
+        self.total_price = total_price
+        self.ele = ele
+        self.price = price
+        self.total_fee = toal_fee
+        self.fee = fee
 
 
 if __name__ == '__main__':

@@ -3,7 +3,7 @@ import json
 import requests
 
 from 江苏.国电投江苏.刘锐接口数据校验.common import CommonClass
-from 江苏.国电投江苏.刘锐接口数据校验.class_info import DispatchUnit,BusinessUnit
+from 江苏.国电投江苏.刘锐接口数据校验.class_info import DispatchUnit,BusinessUnit,ContractInfo
 
 class LiuRui:
 
@@ -77,7 +77,7 @@ class LiuRui:
 
         return [BusinessUnit(item['business_unit_id'],item['business_unit_name']) for item in unit_list]
 
-    def get_contract_total_curve(self, business_unit_id, start_date, end_date):
+    def get_contract_total_curve(self, business_unit_id, start_date, end_date,business_unit_name=None):
         '''
         中长期合同曲线
         :return: 返回多天出清结果
@@ -92,22 +92,23 @@ class LiuRui:
 
         response = CommonClass.execRequest(session=self.session,url=url,method="GET",params=params)
 
-        unit_list = response.json()['data']['list']
+        if response.json()['data'] == {}:
+            return []
+        contract_list = response.json()['data']['list']
 
-        contract_name_list = list(set([item['contract_name'] for item in unit_list]))
-        date_list = list(set([item['time'][:10] for item in unit_list]))
-        comtract_detail_dict = {}
+        contract_name_list = list(set([item['contract_name'] for item in contract_list]))
+        date_list = list(set([item['time'][:10] for item in contract_list]))
+        contract_object_list = []
 
         for contract_name in contract_name_list:
-            comtract_detail_dict[contract_name] = {}
             for date in date_list:
-                comtract_detail_dict[contract_name][date] = {}
-                temp_list = list(filter(lambda x: x['contract_name'] == contract_name and x['time'][:10] == date, unit_list))
-                comtract_detail_dict[contract_name][date]['ele'] = [item['total_quantity'] for item in temp_list ]
-                comtract_detail_dict[contract_name][date]['price'] = [item['average_price'] for item in temp_list ]
+                temp_list = list(filter(lambda x: x['contract_name'] == contract_name and x['time'][:10] == date, contract_list))
+                ele = [item['total_quantity'] for item in temp_list]
+                price = [item['average_price'] for item in temp_list]
+                contract_object_list.append(  ContractInfo(business_unit_id,business_unit_name,contract_name,date,ele,price) )
 
 
-        return comtract_detail_dict
+        return contract_object_list
 
     def get_dayahead_provincial_load_forecast(self, date):
         '''

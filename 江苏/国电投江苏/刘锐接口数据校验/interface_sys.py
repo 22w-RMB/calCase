@@ -118,8 +118,26 @@ class SystemInterface:
         # print(public_data_dict)
         return public_data_dict
 
+    def get_new_energy_unit_info(self):
 
+        pass
 
+    def get_fire_unit_info(self):
+        #  市场行情看板请求
+        method = "get"
+        url = self.domain + "/jsfire/api/unit/list"
+        response = CommonClass.execRequest(self.session, url=url, method=method,)
+        # print(market_response.json()["data"])
+        response_unit_list = response.json()["data"]
+
+        trade_unit_name_list = list(set([item['tradeUnitName'] for item in response_unit_list]))
+        unit_name_list = [item['unitName'] for item in response_unit_list]
+
+        return {
+            "交易单元": trade_unit_name_list,
+            "机组": unit_name_list,
+        }
+        pass
 
 if __name__ == '__main__':
     info = {
