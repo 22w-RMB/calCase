@@ -492,6 +492,9 @@ def compare_public_data(start_date,end_date):
 
                     temp_list = []
                     for k in lr_date_value.keys():  # 设备名称
+                        if k not in sys_date_value.keys():
+                            temp_list.append("设备名称：" + k + " 系统没有")
+                            continue
                         for k1 in lr_date_value[k]: # 设备具体信息
                             if lr_date_value[k][k1] != sys_date_value[k][k1]:
                                 temp_list.append("设备名称："+k+" 数据对不上")
@@ -548,6 +551,7 @@ def filter_contract_data(trade_unit_contract_list):
     for contract_name in contract_name_list:
         for date in date_list:
             filter_temp_list = list(filter(lambda x: x.contract_name == contract_name and x.date== date, trade_unit_contract_list))
+            if filter_temp_list==[]: continue
             cal_res_dict = cal_contract(filter_temp_list)
             ele = [contract_name,date,"电量",]
             price = [contract_name,date,"电价",]
@@ -568,6 +572,7 @@ def filter_contract_data(trade_unit_contract_list):
     for trade_name in trade_name_list:
         for date in date_list:
             filter_temp_list = list(filter(lambda x: x.trade_name == trade_name and x.date== date, trade_unit_contract_list))
+            if filter_temp_list==[]: continue
             cal_res_dict = cal_contract(filter_temp_list)
             ele = [trade_name,date,"电量",]
             price = [trade_name,date,"电价",]
@@ -631,7 +636,7 @@ def cal_contract(contract_object_list):
 
         total_fee = sum(fee)
         total_ele = sum(ele)
-        total_price = total_fee / total_ele
+        total_price = None if total_ele==0 else total_fee / total_ele
 
     return ContractCalResult(total_ele,total_price,total_fee,ele,price,fee)
 
@@ -660,6 +665,7 @@ def exec_contract_main(sys_trade_unit_name_list,start_date,end_date):
 
     data = get_unit_contract(start_date, end_date,sys_trade_unit_name_list)
     res = filter_contract_data(data)
+    # print(res)
     output_contract_file(res)
 
 if __name__ == '__main__':
@@ -669,12 +675,13 @@ if __name__ == '__main__':
     # for k,v in l.items():
     #     print(k,": ",v.date_data_dict)
     # a = json.dumps(data, indent=4, ensure_ascii=False)
-    data = compare_public_data("2025-06-07", "2025-06-07")
-    a = json.dumps(data, indent=4, ensure_ascii=False)
-    print(a)
+    # data = compare_public_data("2025-05-07", "2025-05-07")
+    # a = json.dumps(data, indent=4, ensure_ascii=False)
+    # print(a)
 
     # l = ["国家电投集团响水新能源有限公司(风电)", "中泗光伏五站", "中电滨海风电", "舜大宝应集中式光伏"]  # ,"中泗光伏五站","中电滨海风电","舜大宝应集中式光伏"
-    # exec_contract_main(l,"2025-06-01",'2026-06-30')
+    l = ["江苏常熟#1-4","滨海月亮湾#1-2",  "江苏常熟#5-6"]  # "江苏常熟#1-4", ,"滨海月亮湾#1-2",  "江苏常熟#5-6"
+    exec_contract_main(l,"2025-06-04",'2025-06-04')
     # a = json.dumps(data, indent=4, ensure_ascii=False)
     # print(res)
 
