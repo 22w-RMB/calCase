@@ -101,12 +101,16 @@ class LiuRui:
         contract_object_list = []
 
         for contract_name in contract_name_list:
+            if contract_name == None:
+                print(business_unit_id,":",contract_name,)
+                continue
             for date in date_list:
                 temp_list = list(filter(lambda x: x['contract_name'] == contract_name and x['time'][:10] == date, contract_list))
+                if temp_list ==[]:
+                    continue
                 ele = [item['total_quantity'] for item in temp_list]
                 price = [item['average_price'] for item in temp_list]
-                contract_object_list.append(  ContractInfo(business_unit_id,business_unit_name,contract_name,date,ele,price) )
-
+                contract_object_list.append( ContractInfo(business_unit_id,business_unit_name,contract_name,date,ele,price) )
 
         return contract_object_list
 

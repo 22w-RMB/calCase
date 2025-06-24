@@ -535,8 +535,17 @@ def get_unit_contract(start_date,end_date,sys_trade_unit_name_list):
         else:
             sys_in_lr_id_dict[sys] = lr_trade_unit_name_dict[sys]
 
+    sd = datetime.strptime(start_date, "%Y-%m-%d")
+    ed = datetime.strptime(end_date, "%Y-%m-%d")
+
+
     trade_unit_contract_list = []
     for k,v in sys_in_lr_id_dict.items():
+        # while sd <= ed:
+        #     date_str = datetime.strftime(sd, "%Y-%m-%d")
+        #     sd += timedelta(days=1)
+        #     trade_unit_contract_list.extend( lr.get_contract_total_curve(v,date_str,date_str,k))
+        lr.update_token()
         trade_unit_contract_list.extend( lr.get_contract_total_curve(v,start_date,end_date,k))
 
     # print(trade_unit_contract_dict)
@@ -623,8 +632,14 @@ def cal_contract(contract_object_list):
     fee = []
 
     for contract_object in contract_object_list:
-
-        contract_object_fee = np.multiply(contract_object.ele, contract_object.price).tolist()
+        try:
+            contract_object_fee = np.multiply(contract_object.ele, contract_object.price).tolist()
+        except Exception as e:
+            print("交易单元名称",contract_object.trade_name)
+            print("合同名称",contract_object.contract_name)
+            print("日期",contract_object.date)
+            print("合同价",contract_object.price)
+            print("合同价",contract_object.price)
         if ele == []:
             ele = copy.deepcopy(contract_object.ele)
             price = copy.deepcopy(contract_object.price)
@@ -680,8 +695,9 @@ if __name__ == '__main__':
     # print(a)
 
     # l = ["国家电投集团响水新能源有限公司(风电)", "中泗光伏五站", "中电滨海风电", "舜大宝应集中式光伏"]  # ,"中泗光伏五站","中电滨海风电","舜大宝应集中式光伏"
-    l = ["江苏常熟#1-4","滨海月亮湾#1-2",  "江苏常熟#5-6"]  # "江苏常熟#1-4", ,"滨海月亮湾#1-2",  "江苏常熟#5-6"
-    exec_contract_main(l,"2025-06-04",'2025-06-04')
+    # l = ["江苏常熟#1-4","滨海月亮湾#1-2",  "江苏常熟#5-6"]  # "江苏常熟#1-4", ,"滨海月亮湾#1-2",  "江苏常熟#5-6"
+    l = ["国家电投集团响水新能源有限公司(风电)","中泗光伏五站","中电滨海风电","中电投东海风力发电有限公司(风电)","中泗光伏五站二期","国家电投集团徐州贾汪新能源有限公司(风电)","杨巷风电场","江苏宜兴杨巷光伏","中电二洪风电","滨海智慧风力发电有限公司(风电)","和风如海风电","如东海翔海上风力发电有限公司(风电)","九思海上风力发电如东有限公司(风电)","苏美达东台发电有限公司一期","上海电力盐城北龙港光伏一期二期","海安县光亚新能源有限公司","协合光伏电厂光伏机组","丰县苏新新能源集中式光伏","苏上光伏电厂#1机","海安策兰投资有限公司","宝应上电投新能源发展有限公司(光伏)","华西洪泽光伏一期机组","中电投青云光伏发电(连云港)有限公司","海安鼎辉投资有限公司","海安弘煜投资有限公司","海安建海投资有限公司","振发太阳能科技滨海6MW一期光伏","金湖振合新能源科技有限公司一期机组","楼王光伏","淮安中恒新能源有限公司(风电)","舜大宝应集中式光伏","中建材郑楼镇10MW二期集中式光伏","宿迁市中建材郑楼镇10MW集中式光伏","新沂苏新新能源集中式光伏","沛县红日集中式光伏","中电投洪泽光伏机组（一期）","中电投大丰集中式光伏","高邮协鑫光伏有限公司一期","南通协鑫新能源二期集中式光伏","宝应协鑫光伏#1机","阜宁鑫源二期集中式光伏","东海县协鑫三期集中式光伏","镇江鑫龙渔光互补二期集中式光伏","南京协鑫海滨集中式光伏","阜宁县鑫源一期","金湖戴莫能源科技有限公司(风电)","扬州艳阳天新能源集中式光伏","国电滨海风电#70-#92（振东一期）","国电滨海风电#B47-#B71（振东二期）","国电滨海风电#24-#46（滨淮一期）","国电滨海风电#1-#23（头罾一期）","国电滨海风电#A47-#A66#A121-#A139（头罾二期）","国电滨海风电#47-#69（淮海一期）","国电滨海风电#A98-#A120（振东三期）","中电投洪泽光伏机组（二期）","中电投洪泽光伏机组(三期)","中电投高邮新能源有限公司（二期）","中电投高邮新能源有限公司（三期）","中电投滨海海上风力发电有限公司","国家电投集团滨海海上风力发电有限公司（二期）","苏美达东台发电有限公司二期","中电投青云光伏二期","高邮市振发新能源科技有限公司","振发太阳能科技滨海10MW二期光伏","振发太阳能科技滨海4MW光伏","金湖振合新能源科技有限公司二期机组","金湖振合新能源科技有限公司三期机组","华西洪泽光伏二期机组","中电大丰#1-174","中电大丰二期#175-#194","国家电投集团响水陈家港风力发电有限公司(风电)","上海电力大丰海上风电有限公司(风电)","沛县鋆达新能源科技有限公司#1","高邮市振发新能源科技有限公司一期","金湖县海新能源有限公司#1-19","中电投高邮新能源有限公司（一期）","高邮协鑫光伏有限公司二期","国电滨海风电#A75-#A97（头罾三期）","苏上光伏电厂#2机","南通协鑫新能源有限公司（一期5M)","中电投建湖光伏发电有限公司一期","中电投建湖光伏三期","中电投建湖光伏四期","中电投建湖光伏五期","中电投建湖光伏二期"]
+    exec_contract_main(l,"2025-06-01",'2025-06-30')
     # a = json.dumps(data, indent=4, ensure_ascii=False)
     # print(res)
 
