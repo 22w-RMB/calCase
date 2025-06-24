@@ -3,7 +3,7 @@ import json
 import requests
 
 from 江苏.国电投江苏.刘锐接口数据校验.common import CommonClass
-from 江苏.国电投江苏.刘锐接口数据校验.class_info import DispatchUnit,BusinessUnit,ContractInfo
+from 江苏.国电投江苏.刘锐接口数据校验.class_info import DispatchUnit,BusinessUnit,ContractInfo,ContractErrorInfo
 
 class LiuRui:
 
@@ -99,10 +99,11 @@ class LiuRui:
         contract_name_list = list(set([item['contract_name'] for item in contract_list]))
         date_list = list(set([item['time'][:10] for item in contract_list]))
         contract_object_list = []
-
+        error_info = []
         for contract_name in contract_name_list:
             if contract_name == None:
-                print(business_unit_id,":",contract_name,)
+                # print(business_unit_id,":",contract_name,)
+                error_info.append(ContractErrorInfo(business_unit_id,business_unit_name,start_date+"~"+end_date,None,"存在 合同名称为null的情况"))
                 continue
             for date in date_list:
                 temp_list = list(filter(lambda x: x['contract_name'] == contract_name and x['time'][:10] == date, contract_list))
@@ -110,9 +111,17 @@ class LiuRui:
                     continue
                 ele = [item['total_quantity'] for item in temp_list]
                 price = [item['average_price'] for item in temp_list]
+                if len(ele) != 96 or len(price)!=96:
+                    # error_info.append("机组："+business_unit_name+","+date + "：" + contract_name + "，量价不够96点，只有"+str(len(ele)))
+                    error_info.append(
+                        ContractErrorInfo(business_unit_id, business_unit_name, date , contract_name,"量价不够96点，只有"+str(len(ele)))
+                    )
                 contract_object_list.append( ContractInfo(business_unit_id,business_unit_name,contract_name,date,ele,price) )
 
-        return contract_object_list
+        return {
+            "error_info" : error_info,
+            "contract_object_list" : contract_object_list,
+        }
 
     def get_dayahead_provincial_load_forecast(self, date):
         '''

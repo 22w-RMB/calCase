@@ -127,6 +127,18 @@ class ContractCalResult:
         self.total_fee = toal_fee
         self.fee = fee
 
+class ContractErrorInfo:
+
+    def __init__(self,trade_id,trade_name,date,contract_name,detail):
+        self.trade_id = trade_id
+        self.trade_name = trade_name
+        self.contract_name = contract_name
+        self.date = date
+        self.detail = detail
+
+    def get_info_list(self):
+
+        return [self.trade_id,self.trade_name,self.contract_name,self.date,self.detail]
 
 if __name__ == '__main__':
     d = BusinessUnit("1","2")

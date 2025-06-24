@@ -65,6 +65,14 @@ class ExcelHeplerXlwing:
 
         self.saveFile(savePath)
 
+    def write_contract_error_info(self,savePath,trade_unit_contract_error_list):
+
+        ws1 = self.wb.sheets["错误信息"]
+
+        ws1.range('a2:zz100000').value = trade_unit_contract_error_list
+
+        self.saveFile(savePath)
+
 
     def saveFile(self, savePath = None):
 
