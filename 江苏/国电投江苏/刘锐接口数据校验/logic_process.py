@@ -694,7 +694,7 @@ def output_contract_error_file(trade_unit_contract_error_list):
 
         print("开始导出")
         e.copySheet(tempPath, "错误信息", "错误信息")
-        e.write_contract(savePath, trade_unit_contract_error_list)
+        e.write_contract_error_info(savePath, trade_unit_contract_error_list)
 
         print("导出结束")
     finally:
@@ -717,7 +717,7 @@ def exec_contract_main(sys_trade_unit_name_list, start_date, end_date):
         except Exception as e:
             print(date_str)
         # print(res)
-        # output_contract_file(res)
+        output_contract_file(res)
 
 
 if __name__ == '__main__':
@@ -747,7 +747,7 @@ if __name__ == '__main__':
          "国家电投集团响水陈家港风力发电有限公司(风电)", "上海电力大丰海上风电有限公司(风电)", "沛县鋆达新能源科技有限公司#1", "高邮市振发新能源科技有限公司一期", "金湖县海新能源有限公司#1-19",
          "中电投高邮新能源有限公司（一期）", "高邮协鑫光伏有限公司二期", "国电滨海风电#A75-#A97（头罾三期）", "苏上光伏电厂#2机", "南通协鑫新能源有限公司（一期5M)",
          "中电投建湖光伏发电有限公司一期", "中电投建湖光伏三期", "中电投建湖光伏四期", "中电投建湖光伏五期", "中电投建湖光伏二期"]
-    exec_contract_main(l, "2025-06-02", '2025-06-30')
+    exec_contract_main(l, "2025-06-01", '2025-06-01')
     # a = json.dumps(data, indent=4, ensure_ascii=False)
     # print(res)
 

@@ -103,7 +103,7 @@ class LiuRui:
         for contract_name in contract_name_list:
             if contract_name == None:
                 # print(business_unit_id,":",contract_name,)
-                error_info.append(ContractErrorInfo(business_unit_id,business_unit_name,start_date+"~"+end_date,None,"存在 合同名称为null的情况"))
+                error_info.append(ContractErrorInfo(business_unit_id,business_unit_name,start_date+"~"+end_date,None,"存在合同名称为null的情况"))
                 continue
             for date in date_list:
                 temp_list = list(filter(lambda x: x['contract_name'] == contract_name and x['time'][:10] == date, contract_list))
