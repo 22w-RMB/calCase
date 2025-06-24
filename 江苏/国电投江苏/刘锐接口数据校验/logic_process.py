@@ -429,7 +429,7 @@ def compare_public_data(start_date,end_date):
 
         for date in date_list:
             if date not in lr_dict_value_date:
-                if sys_dict_value[date] =={} or sys_dict_value[date]==[]:
+                if sys_dict_value[date] == {} or sys_dict_value[date]==[]:
                     pass
                 else:
                     error_info[key].update({
@@ -459,6 +459,14 @@ def compare_public_data(start_date,end_date):
 
                 # 列表比较
                 if isinstance(lr_date_value, list):
+                    if len(lr_date_value) == 0 and ( sum([0 if item is None else 1 for item in sys_date_value]) )==0:
+                        error_info[key].update({
+                            "日期": date,
+                            "详情": "双方都没有数据",
+                            # "刘锐数据": lr_date_value,
+                            # "系统数据": sys_date_value,
+                        })
+                        continue
 
                     if len(lr_date_value) != len(sys_date_value):
                         error_info[key].update({
@@ -661,8 +669,13 @@ if __name__ == '__main__':
     # for k,v in l.items():
     #     print(k,": ",v.date_data_dict)
     # a = json.dumps(data, indent=4, ensure_ascii=False)
-    # data = compare_public_data("2025-01-01", "2025-01-03")
-    l = ["国家电投集团响水新能源有限公司(风电)", "中泗光伏五站", "中电滨海风电", "舜大宝应集中式光伏"]  # ,"中泗光伏五站","中电滨海风电","舜大宝应集中式光伏"
-    exec_contract_main(l,"2025-06-01",'2026-06-30')
+    data = compare_public_data("2025-06-07", "2025-06-07")
+    a = json.dumps(data, indent=4, ensure_ascii=False)
+    print(a)
+
+    # l = ["国家电投集团响水新能源有限公司(风电)", "中泗光伏五站", "中电滨海风电", "舜大宝应集中式光伏"]  # ,"中泗光伏五站","中电滨海风电","舜大宝应集中式光伏"
+    # exec_contract_main(l,"2025-06-01",'2026-06-30')
     # a = json.dumps(data, indent=4, ensure_ascii=False)
     # print(res)
+
+
